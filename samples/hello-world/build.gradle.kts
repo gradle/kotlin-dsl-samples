@@ -1,3 +1,7 @@
+buildscript {
+
+}
+
 apply<ApplicationPlugin>()
 
 configure<ApplicationPluginConvention> {
