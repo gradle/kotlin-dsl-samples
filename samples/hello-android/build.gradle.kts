@@ -1,11 +1,11 @@
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.DefaultProductFlavor
-
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.plugin.KotlinAndroidPluginWrapper
 import java.lang.System
 
 buildscript {
@@ -35,10 +35,10 @@ repositories {
 
 apply {
     plugin<AppPlugin>()
-    plugin("kotlin-android")
+    plugin<KotlinAndroidPluginWrapper>()
 }
 
-configure<AppExtension> {
+android {
     buildToolsVersion("23.0.3")
     compileSdkVersion(23)
 
@@ -66,7 +66,9 @@ dependencies {
 }
 
 //Extension functions to allow comfortable references
-fun <T> NamedDomainObjectContainer<T>.release(func: T.() -> Unit) = findByName("release").apply(func)
+fun Project.android(func: AppExtension.() -> Unit) = the<AppExtension>().func()
+
+fun NamedDomainObjectContainer<BuildType>.release(func: BuildType.() -> Unit) = findByName("release").apply(func)
 
 fun AppExtension.defaultConfigExtension(func: DefaultProductFlavor.() -> Unit) = defaultConfig.apply(func)
 
