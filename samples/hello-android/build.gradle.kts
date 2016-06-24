@@ -1,7 +1,10 @@
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.DefaultProductFlavor
+
 import org.gradle.api.NamedDomainObjectContainer
 import java.lang.System
 
@@ -29,6 +32,7 @@ repositories {
     maven { setUrl(extra["repo"]) }
 }
 
+
 apply {
     plugin<AppPlugin>()
     plugin("kotlin-android")
@@ -38,16 +42,17 @@ configure<AppExtension> {
     buildToolsVersion("23.0.3")
     compileSdkVersion(23)
 
-    defaultConf {
-        minSdkVersion = DefaultApiVersion.create(15)
-        targetSdkVersion = DefaultApiVersion.create(23)
+    defaultConfigExtension {
+        setMinSdkVersion(15)
+        setTargetSdkVersion(23)
+
         applicationId = "com.example.kotlingradle"
         versionCode = 1
         versionName = "1.0"
     }
 
-    buildTypes {
-        it.release {
+    buildTypesExtension {
+        release {
             isMinifyEnabled = false
             proguardFiles("proguard-rules.pro")
         }
@@ -63,4 +68,10 @@ dependencies {
 //Extension functions to allow comfortable references
 fun <T> NamedDomainObjectContainer<T>.release(func: T.() -> Unit) = findByName("release").apply(func)
 
-fun AppExtension.defaultConf(func: DefaultProductFlavor.() -> Unit) = defaultConfig.apply(func)
+fun AppExtension.defaultConfigExtension(func: DefaultProductFlavor.() -> Unit) = defaultConfig.apply(func)
+
+fun AppExtension.buildTypesExtension(func: NamedDomainObjectContainer<BuildType>.() -> Unit) = buildTypes { func.invoke(it) }
+
+fun DefaultProductFlavor.setMinSdkVersion(value: Int) = setMinSdkVersion(DefaultApiVersion.create(value))
+
+fun DefaultProductFlavor.setTargetSdkVersion(value: Int) = setTargetSdkVersion(DefaultApiVersion.create(value))
