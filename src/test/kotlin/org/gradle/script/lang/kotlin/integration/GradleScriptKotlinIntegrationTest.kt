@@ -14,6 +14,7 @@ import org.hamcrest.MatcherAssert.assertThat
 
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.junit.rules.TemporaryFolder
 
 import java.io.File
@@ -22,6 +23,9 @@ class GradleScriptKotlinIntegrationTest {
 
     @JvmField
     @Rule val projectDir = TemporaryFolder()
+
+    @JvmField
+    @Rule val thrown = ExpectedException.none()
 
     @Test
     fun `given a script with SAM conversions, it can run it`() {
@@ -101,6 +105,20 @@ class GradleScriptKotlinIntegrationTest {
         assertThat(
             kotlinBuildScriptModel().classPath.map { it.canonicalFile },
             hasItem(existingFolder("buildSrc/build/classes/main")))
+    }
+
+    @Test
+    fun `given multiple buildscript blocks in a single script, parsing will fail with an appropriate error`() {
+        thrown.expectMessage("Only one `buildscript` block is allowed per script")
+
+        withBuildScript("""
+            buildscript {
+            }
+            buildscript {
+            }
+        """)
+
+        build()
     }
 
     private fun withBuildScript(script: String) {
