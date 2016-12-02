@@ -26,6 +26,8 @@ buildscript {
     extra["kotlinVersion"] = kotlinVersion
     extra["kotlinRepo"] = kotlinRepo
 
+    //usingPluginPortalIndex()
+
     repositories {
         maven { setUrl(kotlinRepo) }
     }
