@@ -15,10 +15,12 @@ apply {
 
 repositories {
     jcenter()
+    maven { setUrl("https://repo.gradle.org/gradle/repo") }
 }
 
 dependencies {
     compile(gradleApi())
+    compile(kotlinModule("stdlib"))
 }
 
 version = "0.1.0"

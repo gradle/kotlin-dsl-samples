@@ -149,11 +149,12 @@ open class FetchPluginPortalIndex : DefaultTask() {
         }
         return retry(3)
     }
+}
 
-    private fun ExecutorService.shutdownAndAwaitTermination() {
-        shutdown()
-        awaitTermination(1, TimeUnit.DAYS)
-    }
+internal
+fun ExecutorService.shutdownAndAwaitTermination() {
+    shutdown()
+    awaitTermination(1, TimeUnit.DAYS)
 }
 
 internal
