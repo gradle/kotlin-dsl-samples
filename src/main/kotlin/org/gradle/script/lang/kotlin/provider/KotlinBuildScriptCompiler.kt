@@ -147,9 +147,17 @@ class KotlinBuildScriptCompiler(
             scriptClass.getConstructor(Project::class.java).newInstance(target)
         } catch(e: InvocationTargetException) {
             if (e.cause is Error) {
-                logClassLoaderHierarchyOf(scriptClass, target as Project)
+                tryToLogClassLoaderHierarchyOf(scriptClass, target as Project)
             }
             throw e.targetException
+        }
+    }
+
+    private fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
+        try {
+            logClassLoaderHierarchyOf(scriptClass, target)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -176,11 +184,15 @@ class KotlinBuildScriptCompiler(
 
     private fun baseDirsOf(project: Project) =
         arrayListOf<Pair<String, String>>().apply {
-            withBaseDir("PROJECT_ROOT", project.rootDir)
-            withBaseDir("GRADLE", project.gradle.gradleHomeDir)
-            withBaseDir("GRADLE_USER", project.gradle.gradleUserHomeDir)
             withBaseDir("HOME", userHome())
+            withBaseDir("PROJECT_ROOT", project.rootDir)
+            withOptionalBaseDir("GRADLE", project.gradle.gradleHomeDir)
+            withOptionalBaseDir("GRADLE_USER", project.gradle.gradleUserHomeDir)
         }
+
+    private fun ArrayList<Pair<String, String>>.withOptionalBaseDir(key: String, dir: File?) {
+        dir?.let { withBaseDir(key, it) }
+    }
 
     private fun ArrayList<Pair<String, String>>.withBaseDir(key: String, dir: File) {
         val label = '$' + key
