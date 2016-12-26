@@ -38,7 +38,7 @@ fun extractBuildscriptBlockFrom(script: String) =
  */
 fun extractTopLevelSectionFrom(script: String, identifier: String): IntRange? =
     KotlinLexer().run {
-        start(script)
+        start(script.replace(Regex.fromLiteral("\r"), ""))
         while (tokenType != null) {
             nextTopLevelSection(identifier)?.let {
                 advance()
