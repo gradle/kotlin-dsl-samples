@@ -66,6 +66,15 @@ fun RepositoryHandler.gradleScriptKotlin(): ArtifactRepository =
  */
 fun DependencyHandler.kotlinModule(module: String, version: String? = null): Any =
     "org.jetbrains.kotlin:kotlin-${'$'}module:${'$'}{version ?: embeddedKotlinVersion}"
+    
+/**
+ * Builds the dependency notation for the named Kotlinx [module] at the given [version].
+ *
+ * @param module simple name of the Kotlinx module, for example "coroutines-core".
+ * @param version desired kotlinx modules version.
+ */
+fun DependencyHandler.kotlinxModule(module: String, version: String): Any = "org.jetbrains.kotlinx:kotlinx-${'$'}module:${'$'}version"
+
 """)
     }
 }
