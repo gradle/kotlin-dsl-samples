@@ -50,3 +50,7 @@ In order to determine what class you need to use in your `configure<...>` call y
 examine the plugins source code to determine which object is being used to configure the plugin.
 There may be more than one object for some plugins.
 
+**New in Gradle Script Kotlin**
+There is now a task that will print to the console the code needed to help you configure all the plugins that the build finds in the project.
+Simply run the `gskProjectAccessors` task.
+
