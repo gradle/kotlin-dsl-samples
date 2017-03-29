@@ -16,181 +16,136 @@
 
 package org.gradle.script.lang.kotlin.support
 
-import org.gradle.script.lang.kotlin.compiler.HasImplicitReceiverPlugin
+import org.gradle.api.HasImplicitReceiver
+import org.gradle.internal.classpath.ClassPath
 
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.cli.common.messages.MessageUtil
 
-import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinToJVMBytecodeCompiler.compileBunchOfSources
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinToJVMBytecodeCompiler.compileScript
-import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoot
-import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
-
-import org.jetbrains.kotlin.codegen.CompilationException
-
-import org.jetbrains.kotlin.com.intellij.openapi.Disposable
-import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer.dispose
-import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer.newDisposable
-
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
-import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.CompilerConfigurationKey
-import org.jetbrains.kotlin.config.JVMConfigurationKeys
-import org.jetbrains.kotlin.config.JVMConfigurationKeys.*
-import org.jetbrains.kotlin.config.addKotlinSourceRoots
-
-import org.jetbrains.kotlin.script.KotlinScriptDefinition
-import org.jetbrains.kotlin.utils.PathUtil
+import org.jetbrains.kotlin.daemon.client.KotlinCompilerClient
+import org.jetbrains.kotlin.daemon.common.*
 
 import org.slf4j.Logger
 
 import java.io.File
+import kotlin.script.dependencies.KotlinScriptExternalDependencies
 
+
+internal const val SAM_WITH_RECEIVER_JAR_PREFIX = "kotlin-sam-with-receiver"
+private const val SAM_WITH_RECEIVER_ID = "org.jetbrains.kotlin.samWithReceiver"
+internal const val SOURCE_SECTIONS_JAR_PREFIX = "kotlin-source-sections"
+private const val SOURCE_SECTIONS_ID = "org.jetbrains.kotlin.sourceSections"
+
+private val SAM_WITH_RECEIVER_ANNOTATIONS = listOf(HasImplicitReceiver::class.qualifiedName!!)
 
 internal
-fun compileKotlinScriptToDirectory(
+fun CompilerClient.compileKotlinScriptToDirectory(
     outputDirectory: File,
     scriptFile: File,
-    scriptDef: KotlinScriptDefinition,
+    scriptTemplateName: String,
+    scriptDeps: KotlinScriptExternalDependencies?,
     classPath: List<File>,
-    classLoader: ClassLoader,
-    messageCollector: MessageCollector): Class<*> {
+    messageCollector: MessageCollector,
+    compilerPluginsClasspath: ClassPath,
+    compileOnlySections: Collection<String>? = null): List<File> {
 
-    withRootDisposable { rootDisposable ->
-
-        withCompilationExceptionHandler(messageCollector) {
-
-            val sourceFiles = listOf(scriptFile)
-            val configuration = compilerConfigurationFor(messageCollector, sourceFiles).apply {
-                put(RETAIN_OUTPUT_IN_MEMORY, true)
-                put(OUTPUT_DIRECTORY, outputDirectory)
-                setModuleName("buildscript")
-                addScriptDefinition(scriptDef)
-                classPath.forEach { addJvmClasspathRoot(it) }
-            }
-            val environment = kotlinCoreEnvironmentFor(configuration, rootDisposable).apply {
-                HasImplicitReceiverPlugin.apply(project)
-            }
-            return compileScript(environment, classLoader)
-                ?: throw IllegalStateException("Internal error: unable to compile script, see log for details")
+    val samWithReceiverPlugin = compilerPluginsClasspath.filter { it.name.startsWith(SAM_WITH_RECEIVER_JAR_PREFIX) }.asFiles
+    if (samWithReceiverPlugin.isEmpty())
+        throw Exception("$SAM_WITH_RECEIVER_JAR_PREFIX is not found in the classpath $compilerPluginsClasspath")
+    val args = arrayListOf(
+        "-d", outputDirectory.canonicalPath,
+        "-cp", classPath.joinToString(File.pathSeparator) { it.canonicalPath },
+        "-script-templates", scriptTemplateName,
+        "-Xreport-output-files",
+        "-Xplugin=${samWithReceiverPlugin.first().canonicalPath}",
+        "-P", SAM_WITH_RECEIVER_ANNOTATIONS.joinToString(",") { "plugin:$SAM_WITH_RECEIVER_ID:annotation=$it" }
+    ).apply {
+        if (compileOnlySections != null && compileOnlySections.isNotEmpty()) {
+            val sourceSectionsPlugin = compilerPluginsClasspath.filter { it.name.startsWith(SOURCE_SECTIONS_JAR_PREFIX) }.asFiles
+            if (sourceSectionsPlugin.isEmpty())
+                throw Exception("$SOURCE_SECTIONS_JAR_PREFIX is not found in the classpath $sourceSectionsPlugin")
+            add("-Xplugin=${sourceSectionsPlugin.first().canonicalPath}")
+            add("-P")
+            add(compileOnlySections.joinToString(",") { "plugin:$SOURCE_SECTIONS_ID:allowedSection=$it" })
         }
+        if (scriptDeps != null) {
+            // TODO: check the escaping
+            val cp = scriptDeps.classpath.joinToString(File.pathSeparator)
+            val imp = scriptDeps.imports.joinToString(";")
+            add("-Xscript-resolver-environment=classpath=\"$cp\",imports=\"$imp\"")
+        }
+        add(scriptFile.canonicalPath)
     }
+//    messageCollector.report(CompilerMessageSeverity.INFO, "compiling with args:\n${args.joinToString("\n")}")
+    return compileImpl(messageCollector, *args.toTypedArray())
+}
+
+private fun CompilerClient.compileImpl(messageCollector: MessageCollector, vararg args: String): List<File> {
+    val results = arrayListOf<File>()
+    val code = KotlinCompilerClient.compile(daemon, sessionId, CompileService.TargetPlatform.JVM, args, messageCollector,
+        { classfile, sources -> results.add(classfile) },
+        reportSeverity = ReportSeverity.DEBUG)
+
+    if (code != 0) throw IllegalStateException("Internal error: unable to compile script (error code: $code), see log for details")
+
+    return results
 }
 
 
 internal
-fun compileToJar(
+fun CompilerClient.compileToJar(
     outputJar: File,
     sourceFiles: Iterable<File>,
     logger: Logger,
     classPath: Iterable<File> = emptyList()): Boolean =
 
-    compileTo(OUTPUT_JAR, outputJar, sourceFiles, logger, classPath)
+    compileTo(outputJar, sourceFiles, logger, classPath)
 
 
 internal
-fun compileToDirectory(
+fun CompilerClient.compileToDirectory(
     outputDirectory: File,
     sourceFiles: Iterable<File>,
     logger: Logger,
     classPath: Iterable<File> = emptyList()): Boolean =
 
-    compileTo(OUTPUT_DIRECTORY, outputDirectory, sourceFiles, logger, classPath)
+    compileTo(outputDirectory, sourceFiles, logger, classPath)
 
 
 private
-fun compileTo(
-    outputConfigurationKey: CompilerConfigurationKey<File>,
+fun CompilerClient.compileTo(
     output: File,
     sourceFiles: Iterable<File>,
     logger: Logger,
     classPath: Iterable<File>): Boolean {
 
-    withRootDisposable { disposable ->
         withMessageCollectorFor(logger) { messageCollector ->
-            val configuration = compilerConfigurationFor(messageCollector, sourceFiles).apply {
-                put(outputConfigurationKey, output)
-                setModuleName(output.nameWithoutExtension)
-                classPath.forEach { addJvmClasspathRoot(it) }
-                addJvmClasspathRoot(kotlinStdlibJar)
-            }
-            val environment = kotlinCoreEnvironmentFor(configuration, disposable)
-            return compileBunchOfSources(environment)
+
+            compileImpl(messageCollector,
+                "-d", output.canonicalPath,
+                "-cp", classPath.joinToString(File.pathSeparator) { it.canonicalPath } + File.pathSeparator + kotlinStdlibJar.canonicalPath,
+                *sourceFiles.map { it.path }.toTypedArray()
+            )
+            return true
         }
-    }
 }
 
 
 private
 val kotlinStdlibJar: File
-    get() = PathUtil.getResourcePathForClass(Unit::class.java)
+    get() = File(Unit::class.java.let {
 
 
-private inline
-fun <T> withRootDisposable(action: (Disposable) -> T): T {
-    val rootDisposable = newDisposable()
-    try {
-        return action(rootDisposable)
-    } finally {
-        dispose(rootDisposable)
-    }
-}
+it.classLoader.getResource(it.name.replace('.', '/') + ".class").toString() // TODO: check if it is a good enough replacement for the old code relying on the intellij utils
+})
 
 
 private inline
 fun <T> withMessageCollectorFor(log: Logger, action: (MessageCollector) -> T): T {
     val messageCollector = messageCollectorFor(log)
-    withCompilationExceptionHandler(messageCollector) {
-        return action(messageCollector)
-    }
+    return action(messageCollector)
 }
-
-
-private inline
-fun <T> withCompilationExceptionHandler(messageCollector: MessageCollector, action: () -> T): T {
-    try {
-        return action()
-    } catch (ex: CompilationException) {
-        messageCollector.report(
-            CompilerMessageSeverity.EXCEPTION,
-            ex.localizedMessage,
-            MessageUtil.psiElementToMessageLocation(ex.element))
-
-        throw IllegalStateException("Internal compiler error: ${ex.localizedMessage}", ex)
-    }
-}
-
-
-private
-fun compilerConfigurationFor(messageCollector: MessageCollector, sourceFiles: Iterable<File>): CompilerConfiguration =
-    CompilerConfiguration().apply {
-        addKotlinSourceRoots(sourceFiles.map { it.canonicalPath })
-        addJvmClasspathRoots(PathUtil.getJdkClassesRoots())
-        put<MessageCollector>(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, messageCollector)
-    }
-
-
-private
-fun CompilerConfiguration.setModuleName(name: String) {
-    put(CommonConfigurationKeys.MODULE_NAME, name)
-}
-
-
-private
-fun CompilerConfiguration.addScriptDefinition(scriptDef: KotlinScriptDefinition) {
-    add(JVMConfigurationKeys.SCRIPT_DEFINITIONS, scriptDef)
-}
-
-
-private
-fun kotlinCoreEnvironmentFor(configuration: CompilerConfiguration, rootDisposable: Disposable) =
-    KotlinCoreEnvironment.createForProduction(rootDisposable, configuration, EnvironmentConfigFiles.JVM_CONFIG_FILES)
-
 
 internal
 fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it }): MessageCollector =
@@ -203,10 +158,10 @@ fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it 
 
         override fun clear() { errors = 0 }
 
-        override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageLocation) {
+        override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageLocation?) {
 
             fun msg() =
-                location.run {
+                location?.run {
                     path?.let(pathTranslation)?.let { path ->
                         when {
                             line >= 0 && column >= 0 -> compilerMessageFor(path, line, column, message)
@@ -223,7 +178,7 @@ fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it 
                     errors++
                     log.error { taggedMsg() }
                 }
-                in CompilerMessageSeverity.VERBOSE -> log.trace { msg() }
+                in CompilerMessageSeverity.VERBOSE -> log.debug { msg() }
                 CompilerMessageSeverity.STRONG_WARNING -> log.info { taggedMsg() }
                 CompilerMessageSeverity.WARNING -> log.info { taggedMsg() }
                 CompilerMessageSeverity.INFO -> log.info { msg() }

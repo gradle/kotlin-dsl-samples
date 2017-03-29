@@ -16,10 +16,6 @@
 
 package org.gradle.script.lang.kotlin.accessors
 
-import org.jetbrains.kotlin.lexer.KotlinLexer
-import org.jetbrains.kotlin.lexer.KtTokens
-
-
 internal
 fun ProjectSchema<String>.forEachAccessor(action: (String) -> Unit) {
     extensions.forEach { (name, type) ->
@@ -82,13 +78,14 @@ fun isLegalExtensionName(name: String): Boolean =
 private
 val invalidNameChars = charArrayOf('.', '/', '\\')
 
+// captures standard and quoted (`...`) identifiers, captures identifier in the groups 1 (regular) or 2 (quoted)
+private val KOTLIN_IDENTIFIER_RE = """^([\p{Alpha}_]\w*)$|`((?:[^`\\]|\\.)*)`$""".toRegex()
+private val KOTLIN_RESERVED_IDENTIFIERS = hashSetOf(
+    "_", "__", "___", "typealias", "interface", "continue", "package", "return", "object", "while", "break", "class"
+    , "throw", "false", "super", "typeof", "when", "true", "this", "null", "else", "try", "val", "var", "fun", "for"
+    , "is", "in", "if", "do", "as")
 
 private
-fun isKotlinIdentifier(candidate: String): Boolean =
-    KotlinLexer().run {
-        start(candidate)
-        tokenStart == 0
-            && tokenEnd == candidate.length
-            && tokenType == KtTokens.IDENTIFIER
-    }
+fun isKotlinIdentifier(candidate: String): Boolean = KOTLIN_IDENTIFIER_RE.matches(candidate) && (candidate !in KOTLIN_RESERVED_IDENTIFIERS)
+
 

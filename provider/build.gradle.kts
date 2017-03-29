@@ -18,7 +18,12 @@ dependencies {
     compile(project(":tooling-models"))
     compile(kotlin("stdlib"))
     compile(kotlin("reflect"))
-    compile(kotlin("compiler-embeddable"))
+    compile(kotlin("script-runtime"))
+    compile(kotlin("compiler-client-embeddable"))
+
+    runtime(kotlin("compiler"))
+    runtime(kotlinCompilerPlugin("sam-with-receiver"))
+    runtime(kotlinCompilerPlugin("source-sections"))
 
     testCompile(project(":test-fixtures"))
 }
@@ -64,6 +69,7 @@ withParallelTests()
 
 // --- Utility functions -----------------------------------------------
 fun kotlin(module: String) = "org.jetbrains.kotlin:kotlin-$module:$kotlinVersion"
+fun kotlinCompilerPlugin(module: String) = "org.jetbrains.kotlin:kotlin-$module-compiler-plugin:$kotlinVersion"
 
 inline fun <reified T : Task> task(noinline configuration: T.() -> Unit) = tasks.creating(T::class, configuration)
 

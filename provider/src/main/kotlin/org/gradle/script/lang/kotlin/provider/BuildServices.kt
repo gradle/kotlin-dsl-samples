@@ -23,29 +23,46 @@ import org.gradle.api.internal.cache.GeneratedGradleJarCache
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.script.lang.kotlin.cache.ScriptCache
 import org.gradle.script.lang.kotlin.support.ImplicitImports
+import org.gradle.script.lang.kotlin.support.CompilerClient
+import org.gradle.script.lang.kotlin.support.loggerFor
+import org.gradle.script.lang.kotlin.support.messageCollectorFor
 
 
 internal
 object BuildServices {
 
+    private val logger = loggerFor<KotlinScriptPluginFactory>()
+
+    @Suppress("unused")
+    private
+    fun createCompilerClient(
+        dependencyFactory: DependencyFactory) =
+
+        CompilerClient(
+            gradleApiJarsProviderFor(dependencyFactory),
+            messageCollectorFor(logger))
+
     @Suppress("unused")
     fun createCachingKotlinCompiler(
         scriptCache: ScriptCache,
         implicitImports: ImplicitImports,
+        compilerClient: CompilerClient,
         progressLoggerFactory: ProgressLoggerFactory) =
 
-        CachingKotlinCompiler(scriptCache, implicitImports, progressLoggerFactory)
+        CachingKotlinCompiler(scriptCache, implicitImports, compilerClient, progressLoggerFactory)
 
     @Suppress("unused")
     fun createKotlinScriptClassPathProvider(
         classPathRegistry: ClassPathRegistry,
         dependencyFactory: DependencyFactory,
+        compilerClient: CompilerClient,
         jarCache: GeneratedGradleJarCache,
         progressLoggerFactory: ProgressLoggerFactory) =
 
         KotlinScriptClassPathProvider(
             classPathRegistry,
             gradleApiJarsProviderFor(dependencyFactory),
+            compilerClient,
             versionedJarCacheFor(jarCache),
             StandardJarGenerationProgressMonitorProvider(progressLoggerFactory))
 

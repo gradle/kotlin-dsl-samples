@@ -26,6 +26,7 @@ import org.gradle.internal.classpath.DefaultClassPath
 
 import org.gradle.script.lang.kotlin.cache.ScriptCache
 import org.gradle.script.lang.kotlin.codegen.fileHeader
+import org.gradle.script.lang.kotlin.support.CompilerClient
 import org.gradle.script.lang.kotlin.support.compileToJar
 import org.gradle.script.lang.kotlin.support.loggerFor
 import org.gradle.script.lang.kotlin.support.serviceOf
@@ -50,7 +51,7 @@ fun buildAccessorsClassPathFor(project: Project, classPath: ClassPath) =
         val cacheDir =
             scriptCacheOf(project)
                 .cacheDirFor(cacheKeyFor(projectSchema)) {
-                    buildAccessorsJarFor(projectSchema, classPath, outputDir = baseDir)
+                    buildAccessorsJarFor(projectSchema, project.serviceOf<CompilerClient>(), classPath, outputDir = baseDir)
                 }
         AccessorsClassPath(
             DefaultClassPath(accessorsJar(cacheDir)),
@@ -87,10 +88,10 @@ fun scriptCacheOf(project: Project) = project.serviceOf<ScriptCache>()
 
 
 private
-fun buildAccessorsJarFor(projectSchema: ProjectSchema<String>, classPath: ClassPath, outputDir: File) {
+fun buildAccessorsJarFor(projectSchema: ProjectSchema<String>, compilerClient: CompilerClient, classPath: ClassPath, outputDir: File) {
     val sourceFile = File(accessorsSourceDir(outputDir), "org/gradle/script/lang/kotlin/accessors.kt")
     writeAccessorsTo(sourceFile, projectSchema)
-    compileToJar(accessorsJar(outputDir), listOf(sourceFile), logger, classPath.asFiles)
+    compilerClient.compileToJar(accessorsJar(outputDir), listOf(sourceFile), logger, classPath.asFiles)
 }
 
 private

@@ -20,11 +20,17 @@ import org.gradle.script.lang.kotlin.KotlinBuildScript
 import org.gradle.script.lang.kotlin.ScriptHandlerScope
 
 import org.gradle.api.Project
+import org.gradle.script.lang.kotlin.resolver.KotlinBuildScriptDependenciesResolver
+import kotlin.script.templates.ScriptTemplateDefinition
 
 
 /**
  * Base class for `buildscript` block evaluation.
  */
+// TODO: it makes sense to have simpler resolvers for this template, since in fact only implicit imports are used
+@ScriptTemplateDefinition(
+    resolver = KotlinBuildScriptDependenciesResolver::class,
+    scriptFilePattern = ".*\\.gradle\\.kts")
 abstract class KotlinBuildscriptBlock(project: Project) : KotlinBuildScript(project) {
 
     /**

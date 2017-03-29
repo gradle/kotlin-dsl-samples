@@ -3,8 +3,8 @@ package org.gradle.script.lang.kotlin.resolver
 import org.gradle.script.lang.kotlin.fixtures.assertInstanceOf
 import org.gradle.script.lang.kotlin.fixtures.withInstanceOf
 
-import org.jetbrains.kotlin.script.KotlinScriptExternalDependencies
-import org.jetbrains.kotlin.script.ScriptContents
+import kotlin.script.dependencies.KotlinScriptExternalDependencies
+import kotlin.script.dependencies.ScriptContents
 
 import org.junit.Test
 

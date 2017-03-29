@@ -17,11 +17,17 @@
 package org.gradle.script.lang.kotlin.support
 
 import org.gradle.plugin.use.PluginDependenciesSpec
+import org.gradle.script.lang.kotlin.resolver.KotlinBuildScriptDependenciesResolver
+import kotlin.script.templates.ScriptTemplateDefinition
 
 
 /**
  * Base class for `plugins` block evaluation.
  */
+// TODO: it makes sense to have simpler resolvers for this template, since in fact only implicit imports are used
+@ScriptTemplateDefinition(
+    resolver = KotlinBuildScriptDependenciesResolver::class,
+    scriptFilePattern = ".*\\.gradle\\.kts")
 abstract class KotlinPluginsBlock(val pluginDependencies: PluginDependenciesSpec) {
 
     inline

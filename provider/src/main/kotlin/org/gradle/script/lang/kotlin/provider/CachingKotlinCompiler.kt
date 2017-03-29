@@ -23,6 +23,7 @@ import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
 
 import org.gradle.script.lang.kotlin.KotlinBuildScript
+import org.gradle.script.lang.kotlin.resolver.KotlinBuildScriptDependencies
 import org.gradle.script.lang.kotlin.cache.ScriptCache
 
 import org.gradle.script.lang.kotlin.support.loggerFor
@@ -31,21 +32,18 @@ import org.gradle.script.lang.kotlin.support.KotlinBuildscriptBlock
 import org.gradle.script.lang.kotlin.support.KotlinPluginsBlock
 import org.gradle.script.lang.kotlin.support.compileKotlinScriptToDirectory
 import org.gradle.script.lang.kotlin.support.messageCollectorFor
-
-import org.jetbrains.kotlin.com.intellij.openapi.project.Project
-
-import org.jetbrains.kotlin.script.KotlinScriptDefinition
-import org.jetbrains.kotlin.script.KotlinScriptExternalDependencies
+import org.gradle.script.lang.kotlin.support.CompilerClient
 
 import java.io.File
-
 import kotlin.reflect.KClass
+import kotlin.script.dependencies.KotlinScriptExternalDependencies
 
 
 internal
 class CachingKotlinCompiler(
     val scriptCache: ScriptCache,
     val implicitImports: ImplicitImports,
+    val compilerClient: CompilerClient,
     val progressLoggerFactory: ProgressLoggerFactory) {
 
     private
@@ -55,21 +53,22 @@ class CachingKotlinCompiler(
     val cacheKeyPrefix = CacheKeySpec.withPrefix("gradle-script-kotlin")
 
     private
-    val cacheProperties = mapOf("version" to "6")
+    val cacheProperties = mapOf("version" to "5")
 
     fun compileBuildscriptBlockOf(
         scriptPath: String,
-        buildscript: String,
-        classPath: ClassPath,
-        parentClassLoader: ClassLoader): CompiledScript {
+        classPath: ClassPath): CompiledScript {
 
+        val scriptDeps = KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
         val scriptFileName = scriptFileNameFor(scriptPath)
-        return compileScript(cacheKeyPrefix + scriptFileName + buildscript, classPath, parentClassLoader) { cacheDir ->
+        return compileScript(cacheKeyPrefix + scriptFileName + "buildscript", classPath) { cacheDir ->
             ScriptCompilationSpec(
                 KotlinBuildscriptBlock::class,
+                scriptDeps,
                 scriptPath,
-                cacheFileFor(buildscript, cacheDir, scriptFileName),
-                scriptFileName + " buildscript block")
+                File(scriptPath),
+                scriptFileName + " buildscript block",
+                sourceSections = listOf("buildscript"))
         }
     }
 
@@ -77,37 +76,35 @@ class CachingKotlinCompiler(
 
     fun compilePluginsBlockOf(
         scriptPath: String,
-        lineNumberedPluginsBlock: Pair<Int, String>,
-        classPath: ClassPath,
-        parentClassLoader: ClassLoader): CompiledPluginsBlock {
+        classPath: ClassPath): CompiledPluginsBlock {
 
-        val (lineNumber, plugins) = lineNumberedPluginsBlock
-        val scriptFileName = scriptFileNameFor(scriptPath)
-        val compiledScript =
-            compileScript(cacheKeyPrefix + scriptFileName + plugins, classPath, parentClassLoader) { cacheDir ->
-                ScriptCompilationSpec(
-                    KotlinPluginsBlock::class,
-                    scriptPath,
-                    cacheFileFor(plugins, cacheDir, scriptFileName),
-                    scriptFileName + " plugins block")
-            }
-        return CompiledPluginsBlock(lineNumber, compiledScript)
+        val scriptDeps = KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
+        val scriptFileName = scriptPath
+        val compiledScript = compileScript(cacheKeyPrefix + scriptFileName + "plugins", classPath) {
+            ScriptCompilationSpec(
+                KotlinPluginsBlock::class,
+                scriptDeps,
+                scriptPath,
+                File(scriptPath),
+                scriptFileName + " plugins block",
+                sourceSections = listOf("plugins"))}
+        return CompiledPluginsBlock(0, compiledScript)
     }
 
     data class CompiledPluginsBlock(val lineNumber: Int, val compiledScript: CompiledScript)
 
     fun compileBuildScript(
         scriptPath: String,
-        script: String,
-        classPath: ClassPath,
-        parentClassLoader: ClassLoader): CompiledScript {
+        classPath: ClassPath): CompiledScript {
 
-        val scriptFileName = scriptFileNameFor(scriptPath)
-        return compileScript(cacheKeyPrefix + scriptFileName + script, classPath, parentClassLoader) { cacheDir ->
+        val scriptFileName = scriptPath
+        val scriptDeps = KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
+        return compileScript(cacheKeyPrefix + scriptFileName, classPath) {
             ScriptCompilationSpec(
                 KotlinBuildScript::class,
+                scriptDeps,
                 scriptPath,
-                cacheFileFor(script, cacheDir, scriptFileName),
+                File(scriptPath),
                 scriptFileName)
         }
     }
@@ -120,43 +117,46 @@ class CachingKotlinCompiler(
     fun compileScript(
         cacheKeySpec: CacheKeySpec,
         classPath: ClassPath,
-        parentClassLoader: ClassLoader,
         compilationSpecFor: (File) -> ScriptCompilationSpec): CompiledScript {
 
-        val cacheDir = cacheDirFor(cacheKeySpec + parentClassLoader + classPath) {
-            val scriptClass =
-                compileScriptTo(classesDirOf(baseDir), compilationSpecFor(baseDir), classPath, parentClassLoader)
-            writeClassNameTo(baseDir, scriptClass.name)
+        val cacheDir = cacheDirFor(cacheKeySpec + classPath) {
+            val outputClassFiles =
+                compileScriptTo(classesDirOf(baseDir), compilationSpecFor(baseDir), classPath)
+            writeClassNameTo(baseDir, outputClassFiles.first().nameWithoutExtension) // TODO: find a way to make it robust
         }
         return CompiledScript(classesDirOf(cacheDir), readClassNameFrom(cacheDir))
     }
 
     data class ScriptCompilationSpec(
         val scriptTemplate: KClass<out Any>,
+        val scriptDependencies: KotlinScriptExternalDependencies?,
         val originalPath: String,
         val scriptFile: File,
-        val description: String)
+        val description: String,
+        val additionalSourceFiles: List<File> = emptyList(),
+        val sourceSections: List<String> = emptyList())
 
     private
     fun compileScriptTo(
         outputDir: File,
         spec: ScriptCompilationSpec,
-        classPath: ClassPath,
-        parentClassLoader: ClassLoader): Class<*> =
+        classPath: ClassPath): List<File> =
 
         spec.run {
             withProgressLoggingFor(description) {
                 logger.debug("Kotlin compilation classpath for {}: {}", description, classPath)
-                compileKotlinScriptToDirectory(
+                compilerClient.compileKotlinScriptToDirectory(
                     outputDir,
                     scriptFile,
-                    scriptDefinitionFromTemplate(scriptTemplate),
+                    scriptTemplate.qualifiedName!!,
+                    scriptDependencies,
                     classPath.asFiles,
-                    parentClassLoader,
                     messageCollectorFor(logger) { path ->
                         if (path == scriptFile.path) originalPath
                         else path
-                    })
+                    },
+                    compilerClient.compilerPluginsClasspath,
+                    sourceSections.takeIf { it.isNotEmpty() })
             }
         }
 
@@ -179,28 +179,6 @@ class CachingKotlinCompiler(
     fun classesDirOf(cacheDir: File) = File(cacheDir, "classes")
 
     private
-    fun cacheFileFor(text: String, cacheDir: File, fileName: String) =
-        File(cacheDir, fileName).apply {
-            writeText(text)
-        }
-
-    private
-    fun scriptDefinitionFromTemplate(template: KClass<out Any>) =
-
-        object : KotlinScriptDefinition(template) {
-
-            override fun <TF : Any> getDependenciesFor(
-                file: TF,
-                project: Project,
-                previousDependencies: KotlinScriptExternalDependencies?): KotlinScriptExternalDependencies? =
-
-                object : KotlinScriptExternalDependencies {
-                    override val imports: Iterable<String>
-                        get() = implicitImports.list
-                }
-        }
-
-    private
     fun <T> withProgressLoggingFor(description: String, action: () -> T): T {
         val operation = progressLoggerFactory
             .newOperation(this::class.java)
@@ -212,3 +190,4 @@ class CachingKotlinCompiler(
         }
     }
 }
+

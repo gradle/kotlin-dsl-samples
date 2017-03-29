@@ -16,6 +16,7 @@
 
 package org.gradle.script.lang.kotlin.codegen
 
+import org.gradle.script.lang.kotlin.support.CompilerClient
 import org.gradle.script.lang.kotlin.support.loggerFor
 import org.gradle.script.lang.kotlin.support.compileToDirectory
 import org.gradle.script.lang.kotlin.support.zipTo
@@ -24,8 +25,8 @@ import java.io.File
 
 
 internal
-fun generateApiExtensionsJar(outputFile: File, gradleJars: Collection<File>, onProgress: () -> Unit) {
-    ApiExtensionsJarGenerator(onProgress = onProgress).generate(outputFile, gradleJars)
+fun generateApiExtensionsJar(compilerClient: CompilerClient, outputFile: File, gradleJars: Collection<File>, onProgress: () -> Unit) {
+    ApiExtensionsJarGenerator(StandardKotlinFileCompiler(compilerClient), onProgress = onProgress).generate(outputFile, gradleJars)
 }
 
 
@@ -37,7 +38,7 @@ interface KotlinFileCompiler {
 
 internal
 class ApiExtensionsJarGenerator(
-    val compiler: KotlinFileCompiler = StandardKotlinFileCompiler,
+    val compiler: KotlinFileCompiler,
     val onProgress: () -> Unit = {}) {
 
     fun generate(outputFile: File, gradleJars: Collection<File> = emptyList()) {
@@ -83,9 +84,9 @@ class ApiExtensionsJarGenerator(
 
 
 internal
-object StandardKotlinFileCompiler : KotlinFileCompiler {
+class StandardKotlinFileCompiler(val compilerClient: CompilerClient) : KotlinFileCompiler {
     override fun compileToDirectory(outputDirectory: File, sourceFiles: Collection<File>, classPath: Collection<File>) {
-        compileToDirectory(
+        compilerClient.compileToDirectory(
             outputDirectory,
             sourceFiles,
             loggerFor<StandardKotlinFileCompiler>(),

@@ -30,6 +30,7 @@ import org.gradle.api.internal.initialization.ClassLoaderScope
 
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
+import org.gradle.script.lang.kotlin.support.CompilerClient
 import org.gradle.script.lang.kotlin.support.exportClassPathFromHierarchyOf
 import org.gradle.script.lang.kotlin.support.serviceOf
 
@@ -67,6 +68,7 @@ typealias JarsProvider = () -> Collection<File>
 class KotlinScriptClassPathProvider(
     val classPathRegistry: ClassPathRegistry,
     val gradleApiJarsProvider: JarsProvider,
+    val compilerClient: CompilerClient,
     val jarCache: JarCache,
     val progressMonitorProvider: JarGenerationProgressMonitorProvider) {
 
@@ -101,7 +103,7 @@ class KotlinScriptClassPathProvider(
     private
     fun gradleScriptKotlinExtensions(): File =
         produceFrom("script-kotlin-extensions") { outputFile, onProgress ->
-            generateApiExtensionsJar(outputFile, gradleJars, onProgress)
+            generateApiExtensionsJar(compilerClient, outputFile, gradleJars, onProgress)
         }
 
     private

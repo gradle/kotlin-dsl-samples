@@ -22,9 +22,10 @@ import org.gradle.script.lang.kotlin.concurrent.future
 
 import org.gradle.tooling.ProgressListener
 
-import org.jetbrains.kotlin.script.KotlinScriptExternalDependencies
-import org.jetbrains.kotlin.script.ScriptContents
-import org.jetbrains.kotlin.script.ScriptDependenciesResolver
+import kotlin.script.dependencies.KotlinScriptExternalDependencies
+import kotlin.script.dependencies.ScriptContents
+import kotlin.script.dependencies.ScriptDependenciesResolver
+import kotlin.script.dependencies.asFuture
 
 import java.io.File
 
@@ -48,18 +49,33 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
         previousDependencies: KotlinScriptExternalDependencies?) = future {
 
         try {
-            val action = ResolverCoordinator.selectNextActionFor(script, environment, previousDependencies)
-            when (action) {
-                is ResolverAction.ReturnPrevious -> {
-                    log(ResolvedToPrevious(script.file, environment, previousDependencies))
-                    previousDependencies
-                }
-                is ResolverAction.RequestNew     -> {
-                    assembleDependenciesFrom(script.file, environment!!, action.buildscriptBlockHash)
+
+            // TODO: more robust conversion
+            val givenClasspath = environment?.get("classpath")?.toString()?.split(File.pathSeparator)?.mapNotNull { File(it).takeIf { it.exists() } }?.takeIf { it.isNotEmpty() }
+            val givenImports = environment?.get("imports")?.toString()?.split(";")?.takeIf { it.isNotEmpty() }
+            if (givenClasspath != null || givenImports != null) {
+                KotlinBuildScriptDependencies(
+                    givenClasspath ?: emptyList(),
+                    emptyList(),
+                    givenImports ?: emptyList(),
+                    null
+                )
+            }
+            else {
+                val action = ResolverCoordinator.selectNextActionFor(script, environment, previousDependencies)
+                when (action) {
+                    is ResolverAction.ReturnPrevious -> {
+                        log(ResolvedToPrevious(script.file, environment, previousDependencies))
+
+                        previousDependencies
+                    }
+                    is ResolverAction.RequestNew -> {
+                        assembleDependenciesFrom(script.file, environment ?: emptyMap(), action.buildscriptBlockHash)
+                    }
                 }
             }
         } catch (e: Exception) {
-            log(ResolutionFailure(script.file, e))
+            log(ResolutionFailure( script.file, e))
             previousDependencies
         }
     }

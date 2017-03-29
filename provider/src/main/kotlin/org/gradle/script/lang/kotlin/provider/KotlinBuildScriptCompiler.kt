@@ -32,10 +32,7 @@ import org.gradle.plugin.use.internal.PluginRequestCollector
 import org.gradle.plugin.management.internal.PluginRequests
 import org.gradle.script.lang.kotlin.accessors.accessorsClassPathFor
 
-import org.gradle.script.lang.kotlin.support.compilerMessageFor
 import org.gradle.script.lang.kotlin.support.userHome
-
-import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtilRt.convertLineSeparators
 
 import java.io.File
 
@@ -59,7 +56,7 @@ class KotlinBuildScriptCompiler(
 
     val scriptResource = scriptSource.resource!!
     val scriptPath = scriptSource.fileName!!
-    val script = convertLineSeparators(scriptResource.text!!)
+    val script = scriptResource.text!!
 
     val buildscriptBlockCompilationClassPath: ClassPath = classPathProvider.compilationClassPathOf(targetScope.parent)
 
@@ -84,19 +81,17 @@ class KotlinBuildScriptCompiler(
     private
     fun compileTopLevelScript(): (Project) -> Unit {
         return { target ->
-            withUnexpectedBlockHandling {
+
                 executeBuildscriptBlockOn(target)
                 prepareAndExecuteScriptBodyOn(target)
-            }
+
         }
     }
 
     private
     fun compileScriptPlugin(): (Project) -> Unit {
         return { target ->
-            withUnexpectedBlockHandling {
-                prepareAndExecuteScriptBodyOn(target)
-            }
+            prepareAndExecuteScriptBodyOn(target)
         }
     }
 
@@ -109,7 +104,7 @@ class KotlinBuildScriptCompiler(
     private
     fun executeScriptBodyOn(project: Project) {
         val accessorsClassPath = accessorsClassPathFor(project)
-        val compiledScript = compileScriptFile(compilationClassPath + accessorsClassPath)
+        val compiledScript = compileScriptFile(project, compilationClassPath + accessorsClassPath)
         val scriptScope = scriptClassLoaderScopeWith(accessorsClassPath)
         executeCompiledScript(compiledScript, scriptScope, project)
     }
@@ -125,10 +120,10 @@ class KotlinBuildScriptCompiler(
 
     private
     fun executeBuildscriptBlockOn(target: Project) {
-        extractBuildscriptBlockFrom(script)?.let { buildscriptRange ->
-            val compiledScript = compileBuildscriptBlock(buildscriptRange)
+
+            val compiledScript = compileBuildscriptBlock()
             executeCompiledScript(compiledScript, baseScope.createChild("buildscript"), target)
-        }
+
     }
 
     private
@@ -162,10 +157,8 @@ class KotlinBuildScriptCompiler(
 
     private
     fun executePluginsBlockOn(pluginRequestCollector: PluginRequestCollector) {
-        extractPluginsBlockFrom(script)?.let { pluginsRange ->
-            val compiledPluginsBlock = compilePluginsBlock(pluginsRange)
-            executeCompiledPluginsBlockOn(pluginRequestCollector, compiledPluginsBlock)
-        }
+        val compiledPluginsBlock = compilePluginsBlock()
+        executeCompiledPluginsBlockOn(pluginRequestCollector, compiledPluginsBlock)
     }
 
     private
@@ -185,12 +178,9 @@ class KotlinBuildScriptCompiler(
         }
     }
 
-    private
-    fun extractPluginsBlockFrom(script: String) =
-        extractTopLevelSectionFrom(script, "plugins")
 
-    private
-    fun applyPluginsTo(target: Project, pluginRequests: PluginRequests) {
+
+    private fun applyPluginsTo(target: Project, pluginRequests: PluginRequests) {
         pluginRequestApplicator.applyPlugins(
             pluginRequests, scriptHandler, pluginManagerOf(target), targetScope)
     }
@@ -200,28 +190,22 @@ class KotlinBuildScriptCompiler(
         (target as ProjectInternal).pluginManager
 
     private
-    fun compileBuildscriptBlock(buildscriptRange: IntRange) =
+    fun compileBuildscriptBlock() =
         kotlinCompiler.compileBuildscriptBlockOf(
             scriptPath,
-            script.linePreservingSubstring(buildscriptRange),
-            buildscriptBlockCompilationClassPath,
-            baseScope.exportClassLoader)
+            buildscriptBlockCompilationClassPath)
 
     private
-    fun compilePluginsBlock(pluginsRange: IntRange) =
+    fun compilePluginsBlock() =
         kotlinCompiler.compilePluginsBlockOf(
             scriptPath,
-            script.linePreservingSubstring_(pluginsRange),
-            pluginsBlockCompilationClassPath,
-            baseScope.exportClassLoader)
+            pluginsBlockCompilationClassPath)
 
     private
-    fun compileScriptFile(classPath: ClassPath) =
+    fun compileScriptFile(project: Project, classPath: ClassPath) =
         kotlinCompiler.compileBuildScript(
             scriptPath,
-            script,
-            classPath,
-            targetScope.exportClassLoader)
+            classPath)
 
     private
     fun classFrom(compiledScript: CachingKotlinCompiler.CompiledScript, scope: ClassLoaderScope): Class<*> =
@@ -260,23 +244,9 @@ class KotlinBuildScriptCompiler(
         scriptClass.getConstructor(T::class.java).newInstance(target)
     }
 
-    private inline
-    fun withUnexpectedBlockHandling(action: () -> Unit) {
-        try {
-            action()
-        } catch (unexpectedBlock: UnexpectedBlock) {
-            val (line, column) = script.lineAndColumnFromRange(unexpectedBlock.location)
-            val message = compilerMessageFor(scriptPath, line, column, unexpectedBlockMessage(unexpectedBlock))
-            throw IllegalStateException(message, unexpectedBlock)
-        }
-    }
 
-    private
-    fun unexpectedBlockMessage(block: UnexpectedBlock) =
-        "Unexpected `${block.identifier}` block found. Only one `${block.identifier}` block is allowed per script."
 
-    private
-    fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
+    private fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
         try {
             logClassLoaderHierarchyOf(scriptClass, target)
         } catch (e: Exception) {
