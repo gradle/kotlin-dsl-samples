@@ -16,8 +16,16 @@ allprojects {
     }
 }
 
-// Configure all KotlinCompile tasks on each sub-project
+// Apply and configure the Kotlin Gradle plugin on each sub-project
 subprojects {
+
+    apply {
+        plugin("kotlin")
+    }
+
+    dependencies {
+        compile(kotlinModule("stdlib"))
+    }
 
     tasks.withType<KotlinCompile> {
         println("Configuring $name in project ${project.name}...")

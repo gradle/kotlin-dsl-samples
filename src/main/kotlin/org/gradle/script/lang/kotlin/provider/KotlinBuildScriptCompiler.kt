@@ -59,9 +59,9 @@ class KotlinBuildScriptCompiler(
     val gradleApiExtensions: ClassPath,
     gradleScriptKotlinJars: ClassPath) {
 
-    val scriptResource = scriptSource.resource!!
-    val scriptFile = scriptResource.file!!
-    val script = convertLineSeparators(scriptResource.text!!)
+    val scriptFilePath = scriptSource.fileName!!
+    val scriptFile = File(scriptFilePath)
+    val script = convertLineSeparators(scriptSource.resource!!.text!!)
 
     /**
      * ClassPath inherited from parent projects (including buildSrc)
@@ -193,6 +193,7 @@ class KotlinBuildScriptCompiler(
     private fun compileScriptFile(additionalSourceFiles: List<File>) =
         kotlinCompiler.compileBuildScript(
             scriptFile,
+            script,
             additionalSourceFiles,
             compilationClassPath,
             targetScope.exportClassLoader)
@@ -240,7 +241,7 @@ class KotlinBuildScriptCompiler(
             action()
         } catch (unexpectedBlock: UnexpectedBlock) {
             val (line, column) = script.lineAndColumnFromRange(unexpectedBlock.location)
-            val message = compilerMessageFor(scriptFile.path, line, column, unexpectedBlockMessage(unexpectedBlock))
+            val message = compilerMessageFor(scriptFilePath, line, column, unexpectedBlockMessage(unexpectedBlock))
             throw IllegalStateException(message, unexpectedBlock)
         }
     }
