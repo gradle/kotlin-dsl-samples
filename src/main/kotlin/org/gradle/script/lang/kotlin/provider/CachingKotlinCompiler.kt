@@ -69,7 +69,7 @@ class CachingKotlinCompiler(
         return compileScript(cacheKeyPrefix + scriptFileName + buildscript, classPath, parentClassLoader) { cacheDir ->
             ScriptCompilationSpec(
                 KotlinBuildscriptBlock::class,
-                scriptFile,
+                scriptFile.path,
                 cacheFileFor(buildscript, cacheDir, scriptFileName),
                 scriptFileName + " buildscript block")
         }
@@ -88,7 +88,7 @@ class CachingKotlinCompiler(
         val compiledScript = compileScript(cacheKeyPrefix + scriptFileName + plugins, classPath, parentClassLoader) { cacheDir ->
             ScriptCompilationSpec(
                 KotlinPluginsBlock::class,
-                scriptFile,
+                scriptFile.path,
                 cacheFileFor(plugins, cacheDir, scriptFileName),
                 scriptFileName + " plugins block")
         }
@@ -99,16 +99,17 @@ class CachingKotlinCompiler(
 
     fun compileBuildScript(
         scriptFile: File,
+        script: String,
         additionalSourceFiles: List<File>,
         classPath: ClassPath,
         parentClassLoader: ClassLoader): CompiledScript {
 
         val scriptFileName = scriptFile.name
-        return compileScript(cacheKeyPrefix + scriptFileName + scriptFile, classPath, parentClassLoader) {
+        return compileScript(cacheKeyPrefix + scriptFileName + script, classPath, parentClassLoader) { cacheDir ->
             ScriptCompilationSpec(
                 KotlinBuildScript::class,
-                scriptFile,
-                scriptFile,
+                scriptFile.path,
+                cacheFileFor(script, cacheDir, scriptFileName),
                 scriptFileName,
                 additionalSourceFiles)
         }
@@ -156,7 +157,7 @@ class CachingKotlinCompiler(
 
     data class ScriptCompilationSpec(
         val scriptTemplate: KClass<out Any>,
-        val originalFile: File,
+        val originalFilePath: String,
         val scriptFile: File,
         val description: String,
         val additionalSourceFiles: List<File> = emptyList())
@@ -179,7 +180,7 @@ class CachingKotlinCompiler(
                     classPath.asFiles,
                     parentClassLoader,
                     messageCollectorFor(logger) { path ->
-                        if (path == scriptFile.path) originalFile.path
+                        if (path == scriptFile.path) originalFilePath
                         else path
                     })
             }
