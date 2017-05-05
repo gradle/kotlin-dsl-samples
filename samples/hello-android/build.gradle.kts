@@ -56,3 +56,9 @@ fun DefaultProductFlavor.setMinSdkVersion(value: Int) = setMinSdkVersion(value.a
 fun DefaultProductFlavor.setTargetSdkVersion(value: Int) = setTargetSdkVersion(value.asApiVersion())
 
 fun Int.asApiVersion(): ApiVersion = DefaultApiVersion.create(this)
+
+fun KotlinDependencyHandler.debugCompile(dependencyNotation: String) = dependencies { "debugCompile"(dependencyNotation) }
+
+fun KotlinDependencyHandler.androidTestCompile(dependencyNotation: String) = dependencies { "androidTestCompile"(dependencyNotation) }
+
+fun KotlinDependencyHandler.releaseCompile(dependencyNotation: String) = dependencies { "releaseCompile"(dependencyNotation) }
