@@ -27,11 +27,11 @@ import org.gradle.script.lang.kotlin.support.serviceOf
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 
-class KotlinBuildScriptModelBuilderRegistrationAction : ProjectConfigureAction {
+class KotlinScriptingToolingModelBuildersRegistrationAction : ProjectConfigureAction {
 
-    override fun execute(project: ProjectInternal) {
-        project
-            .serviceOf<ToolingModelBuilderRegistry>()
-            .register(KotlinBuildScriptModelBuilder)
-    }
+    override fun execute(project: ProjectInternal) =
+        project.serviceOf<ToolingModelBuilderRegistry>().run {
+            register(KotlinBuildScriptModelBuilder)
+            register(KotlinScriptTemplateClassPathModelBuilder)
+        }
 }
