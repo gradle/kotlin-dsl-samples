@@ -44,7 +44,7 @@ fun extractTopLevelSectionFrom(script: String, identifier: String): IntRange? {
         "CR characters are not supported by the Kotlin lexer. Convert the line separators before attempting this operation."
     }
     KotlinLexer().run {
-        start(script)
+        start(script.replace(Regex.fromLiteral("\r"), ""))
         while (tokenType != null) {
             nextTopLevelSection(identifier)?.let {
                 advance()
