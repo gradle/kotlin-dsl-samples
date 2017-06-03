@@ -1,7 +1,7 @@
 Gradle Script Kotlin
 ====================
 
-[![status](https://builds.gradle.org/app/rest/builds/buildType:GradleScriptKotlin_Master/statusIcon)](https://builds.gradle.org/viewType.html?buildTypeId=GradleScriptKotlin_Master)
+[![status](https://builds.gradle.org/app/rest/builds/buildType:GradleScriptKotlin_Master/statusIcon.svg)](https://builds.gradle.org/viewType.html?buildTypeId=GradleScriptKotlin_Master)
 [![license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
 
 Welcome! _Gradle Script Kotlin_ provides support for writing [Gradle](http://gradle.org) build scripts using JetBrains' [Kotlin](http://kotlinlang.org) language. It aims to provide Gradle users with a rich, flexible and statically-typed approach to developing build logic in conjunction with the best IDE and tooling experience possible.
