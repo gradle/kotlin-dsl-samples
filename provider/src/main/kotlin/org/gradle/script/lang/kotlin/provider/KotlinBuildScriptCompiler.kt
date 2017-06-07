@@ -86,10 +86,8 @@ class KotlinBuildScriptCompiler(
     private
     fun compileTopLevelScript(): (Project) -> Unit {
         return { target ->
-
-                executeBuildscriptBlockOn(target)
-                prepareAndExecuteScriptBodyOn(target)
-
+            executeBuildscriptBlockOn(target)
+            prepareAndExecuteScriptBodyOn(target)
         }
     }
 
@@ -109,7 +107,7 @@ class KotlinBuildScriptCompiler(
     private
     fun executeScriptBodyOn(project: Project) {
         val accessorsClassPath = accessorsClassPathFor(project)
-        val compiledScript = compileScriptFile(project, compilationClassPath + accessorsClassPath)
+        val compiledScript = compileScriptFile(compilationClassPath + accessorsClassPath)
         val scriptScope = scriptClassLoaderScopeWith(accessorsClassPath)
         executeCompiledScript(compiledScript, scriptScope, project)
     }
@@ -125,10 +123,8 @@ class KotlinBuildScriptCompiler(
 
     private
     fun executeBuildscriptBlockOn(target: Project) {
-
-            val compiledScript = compileBuildscriptBlock()
-            executeCompiledScript(compiledScript, baseScope.createChild("buildscript"), target)
-
+        val compiledScript = compileBuildscriptBlock()
+        executeCompiledScript(compiledScript, baseScope.createChild("buildscript"), target)
     }
 
     private
@@ -183,9 +179,8 @@ class KotlinBuildScriptCompiler(
         }
     }
 
-
-
-    private fun applyPluginsTo(target: Project, pluginRequests: PluginRequests) {
+    private
+    fun applyPluginsTo(target: Project, pluginRequests: PluginRequests) {
         pluginRequestApplicator.applyPlugins(
             pluginRequests, scriptHandler, pluginManagerOf(target), targetScope)
     }
@@ -207,7 +202,7 @@ class KotlinBuildScriptCompiler(
             pluginsBlockCompilationClassPath)
 
     private
-    fun compileScriptFile(project: Project, classPath: ClassPath) =
+    fun compileScriptFile(classPath: ClassPath) =
         kotlinCompiler.compileBuildScript(
             scriptPath,
             classPath)
@@ -249,9 +244,8 @@ class KotlinBuildScriptCompiler(
         scriptClass.getConstructor(T::class.java).newInstance(target)
     }
 
-
-
-    private fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
+    private
+    fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
         try {
             logClassLoaderHierarchyOf(scriptClass, target)
         } catch (e: Exception) {
