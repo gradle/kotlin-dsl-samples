@@ -27,18 +27,19 @@ import org.gradle.groovy.scripts.ScriptSource
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
 
+import org.gradle.plugin.management.internal.PluginRequests
 import org.gradle.plugin.use.internal.PluginRequestApplicator
 import org.gradle.plugin.use.internal.PluginRequestCollector
-import org.gradle.plugin.management.internal.PluginRequests
-import org.gradle.script.lang.kotlin.accessors.accessorsClassPathFor
 
+import org.gradle.script.lang.kotlin.accessors.accessorsClassPathFor
 import org.gradle.script.lang.kotlin.support.userHome
 
 import java.io.File
 
-import java.lang.Error
-import java.lang.Exception
 import java.lang.reflect.InvocationTargetException
+
+import java.nio.file.Files.notExists
+import java.nio.file.Paths
 
 import java.util.*
 
@@ -68,6 +69,7 @@ class KotlinBuildScriptCompiler(
 
     fun compile(): (Project) -> Unit =
         when {
+            notExists(Paths.get(scriptPath)) -> emptyScript()
             topLevelScript -> compileTopLevelScript()
             else -> compileScriptPlugin()
         }
@@ -77,6 +79,9 @@ class KotlinBuildScriptCompiler(
         ignoringErrors { prepareTargetClassLoaderScopeOf(target) }
         ignoringErrors { executeScriptBodyOn(target) }
     }
+
+    private
+    fun emptyScript(): (Project) -> Unit = {}
 
     private
     fun compileTopLevelScript(): (Project) -> Unit {
