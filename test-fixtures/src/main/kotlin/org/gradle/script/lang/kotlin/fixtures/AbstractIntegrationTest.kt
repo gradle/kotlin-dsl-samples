@@ -106,8 +106,7 @@ open class AbstractIntegrationTest {
 
     protected
     fun build(vararg arguments: String): BuildResult =
-        gradleRunner()
-            .withArguments(*arguments, "--stacktrace", "--info", "--recompile-scripts")
+        gradleRunnerForArguments(arguments)
             .build()
 
     protected
@@ -133,7 +132,7 @@ open class AbstractIntegrationTest {
 fun gradleRunnerFor(projectDir: File): GradleRunner = GradleRunner.create().run {
     withGradleInstallation(customInstallation())
     withProjectDir(projectDir)
-    withDebug(true)
+    withDebug(false)
     if (isCI) withArguments("-Dkotlin-daemon.verbose=true")
     return this
 }
