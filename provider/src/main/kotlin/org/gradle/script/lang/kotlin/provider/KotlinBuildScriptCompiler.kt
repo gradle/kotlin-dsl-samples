@@ -27,18 +27,19 @@ import org.gradle.groovy.scripts.ScriptSource
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
 
+import org.gradle.plugin.management.internal.PluginRequests
 import org.gradle.plugin.use.internal.PluginRequestApplicator
 import org.gradle.plugin.use.internal.PluginRequestCollector
-import org.gradle.plugin.management.internal.PluginRequests
-import org.gradle.script.lang.kotlin.accessors.accessorsClassPathFor
 
+import org.gradle.script.lang.kotlin.accessors.accessorsClassPathFor
 import org.gradle.script.lang.kotlin.support.userHome
 
 import java.io.File
 
-import java.lang.Error
-import java.lang.Exception
 import java.lang.reflect.InvocationTargetException
+
+import java.nio.file.Files.notExists
+import java.nio.file.Paths
 
 import java.util.*
 
@@ -68,6 +69,7 @@ class KotlinBuildScriptCompiler(
 
     fun compile(): (Project) -> Unit =
         when {
+            notExists(Paths.get(scriptPath)) -> emptyScript()
             topLevelScript -> compileTopLevelScript()
             else -> compileScriptPlugin()
         }
@@ -79,12 +81,13 @@ class KotlinBuildScriptCompiler(
     }
 
     private
+    fun emptyScript(): (Project) -> Unit = {}
+
+    private
     fun compileTopLevelScript(): (Project) -> Unit {
         return { target ->
-
-                executeBuildscriptBlockOn(target)
-                prepareAndExecuteScriptBodyOn(target)
-
+            executeBuildscriptBlockOn(target)
+            prepareAndExecuteScriptBodyOn(target)
         }
     }
 
@@ -104,7 +107,7 @@ class KotlinBuildScriptCompiler(
     private
     fun executeScriptBodyOn(project: Project) {
         val accessorsClassPath = accessorsClassPathFor(project)
-        val compiledScript = compileScriptFile(project, compilationClassPath + accessorsClassPath)
+        val compiledScript = compileScriptFile(compilationClassPath + accessorsClassPath)
         val scriptScope = scriptClassLoaderScopeWith(accessorsClassPath)
         executeCompiledScript(compiledScript, scriptScope, project)
     }
@@ -120,10 +123,8 @@ class KotlinBuildScriptCompiler(
 
     private
     fun executeBuildscriptBlockOn(target: Project) {
-
-            val compiledScript = compileBuildscriptBlock()
-            executeCompiledScript(compiledScript, baseScope.createChild("buildscript"), target)
-
+        val compiledScript = compileBuildscriptBlock()
+        executeCompiledScript(compiledScript, baseScope.createChild("buildscript"), target)
     }
 
     private
@@ -178,9 +179,8 @@ class KotlinBuildScriptCompiler(
         }
     }
 
-
-
-    private fun applyPluginsTo(target: Project, pluginRequests: PluginRequests) {
+    private
+    fun applyPluginsTo(target: Project, pluginRequests: PluginRequests) {
         pluginRequestApplicator.applyPlugins(
             pluginRequests, scriptHandler, pluginManagerOf(target), targetScope)
     }
@@ -202,7 +202,7 @@ class KotlinBuildScriptCompiler(
             pluginsBlockCompilationClassPath)
 
     private
-    fun compileScriptFile(project: Project, classPath: ClassPath) =
+    fun compileScriptFile(classPath: ClassPath) =
         kotlinCompiler.compileBuildScript(
             scriptPath,
             classPath)
@@ -244,9 +244,8 @@ class KotlinBuildScriptCompiler(
         scriptClass.getConstructor(T::class.java).newInstance(target)
     }
 
-
-
-    private fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
+    private
+    fun tryToLogClassLoaderHierarchyOf(scriptClass: Class<*>, target: Project) {
         try {
             logClassLoaderHierarchyOf(scriptClass, target)
         } catch (e: Exception) {

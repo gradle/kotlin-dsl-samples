@@ -59,14 +59,14 @@ class CachingKotlinCompiler(
         scriptPath: String,
         classPath: ClassPath): CompiledScript {
 
-        val scriptDeps = KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
         val scriptFileName = scriptFileNameFor(scriptPath)
-        return compileScript(cacheKeyPrefix + scriptFileName + "buildscript", classPath) { cacheDir ->
+        val scriptFile = File(scriptPath)
+        return compileScript(cacheKeyPrefix + scriptFile + "buildscript", classPath) {
             ScriptCompilationSpec(
                 KotlinBuildscriptBlock::class,
-                scriptDeps,
+                implicitImportDependencies(),
                 scriptPath,
-                File(scriptPath),
+                scriptFile,
                 scriptFileName + " buildscript block",
                 sourceSections = listOf("buildscript"))
         }
@@ -78,14 +78,14 @@ class CachingKotlinCompiler(
         scriptPath: String,
         classPath: ClassPath): CompiledPluginsBlock {
 
-        val scriptDeps = KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
         val scriptFileName = scriptPath
-        val compiledScript = compileScript(cacheKeyPrefix + scriptFileName + "plugins", classPath) {
+        val scriptFile = File(scriptPath)
+        val compiledScript = compileScript(cacheKeyPrefix + scriptFile + "plugins", classPath) {
             ScriptCompilationSpec(
                 KotlinPluginsBlock::class,
-                scriptDeps,
+                implicitImportDependencies(),
                 scriptPath,
-                File(scriptPath),
+                scriptFile,
                 scriptFileName + " plugins block",
                 sourceSections = listOf("plugins"))}
         return CompiledPluginsBlock(0, compiledScript)
@@ -97,17 +97,20 @@ class CachingKotlinCompiler(
         scriptPath: String,
         classPath: ClassPath): CompiledScript {
 
-        val scriptFileName = scriptPath
-        val scriptDeps = KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
-        return compileScript(cacheKeyPrefix + scriptFileName, classPath) {
+        val scriptFile = File(scriptPath)
+        return compileScript(cacheKeyPrefix + scriptFile, classPath) {
             ScriptCompilationSpec(
                 KotlinBuildScript::class,
-                scriptDeps,
+                implicitImportDependencies(),
                 scriptPath,
-                File(scriptPath),
-                scriptFileName)
+                scriptFile,
+                scriptPath)
         }
     }
+
+    private
+    fun implicitImportDependencies() =
+        KotlinBuildScriptDependencies(emptyList(), emptyList(), implicitImports.list, null)
 
     private
     fun scriptFileNameFor(scriptPath: String) =

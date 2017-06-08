@@ -3,7 +3,10 @@ package org.gradle.script.lang.kotlin.integration
 import org.gradle.script.lang.kotlin.embeddedKotlinVersion
 import org.gradle.script.lang.kotlin.fixtures.AbstractIntegrationTest
 import org.gradle.script.lang.kotlin.fixtures.DeepThought
+import org.gradle.script.lang.kotlin.fixtures.containsMultiLineString
 import org.gradle.script.lang.kotlin.fixtures.rootProjectDir
+
+import org.hamcrest.CoreMatchers.allOf
 
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.MatcherAssert.assertThat
@@ -263,29 +266,31 @@ class GradleScriptKotlinIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `given a script with more than one buildscript block, it throws exception with offending block line number`() {
+    fun `multiple buildscript blocks are allowed`() {
 
-        withBuildScript(""" // line 1
-            buildscript {}  // line 2
-            buildscript {}  // line 3
+        withBuildScript("""
+            buildscript { println("buildscript #1") }
+            buildscript { println("buildscript #2") }
         """)
 
         assertThat(
-            buildFailureOutput(),
-            containsString("build.gradle.kts:3:13: Unexpected `buildscript` block found. Only one `buildscript` block is allowed per script."))
+            build().output,
+            containsMultiLineString("buildscript #1\nbuildscript #2"))
     }
 
     @Test
-    fun `given a script with more than one plugins block, it throws exception with offending block line number`() {
+    fun `multiple plugins blocks are allowed`() {
 
-        withBuildScript(""" // line 1
-            plugins {}      // line 2
-            plugins {}      // line 3
+        withBuildScript("""
+            plugins { idea }
+            plugins { eclipse }
         """)
 
         assertThat(
-            buildFailureOutput(),
-            containsString("build.gradle.kts:3:13: Unexpected `plugins` block found. Only one `plugins` block is allowed per script."))
+            build("tasks").output,
+            allOf(
+                containsString("idea - Generates IDEA project files"),
+                containsString("eclipse - Generates all Eclipse files")))
     }
 
     @Test
