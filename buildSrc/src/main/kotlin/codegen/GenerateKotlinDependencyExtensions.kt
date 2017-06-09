@@ -48,6 +48,11 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.ArtifactRepository
 
 /**
+ * The version of gradle-script-kotlin (currently _${project.version}_).
+ */
+val gradleScriptKotlinVersion = "${project.version}"
+
+/**
  * The version of the Kotlin compiler embedded in gradle-script-kotlin (currently _${embeddedKotlinVersion}_).
  */
 val embeddedKotlinVersion = "$embeddedKotlinVersion"
