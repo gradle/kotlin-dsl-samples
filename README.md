@@ -1,6 +1,7 @@
 Gradle Script Kotlin
 ====================
 
+[![Build Status](https://travis-ci.org/gradle/gradle-script-kotlin.svg?branch=master)](https://travis-ci.org/gradle/gradle-script-kotlin)
 [![status](https://builds.gradle.org/app/rest/builds/buildType:GradleScriptKotlin_Master/statusIcon)](https://builds.gradle.org/viewType.html?buildTypeId=GradleScriptKotlin_Master)
 [![license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
 
