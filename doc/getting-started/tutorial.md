@@ -8,7 +8,7 @@ In this tutorial all the basics of using the Gradle Kotlin DSL (GKD) will be cov
 - Using and configuring Gradle plugins
 - Adding repositories
 
-Every Gradle project that uses GKD must include a build file called **build.gradle.kts** in the root directory of the project, and [Gradle wrapper](https://docs.gradle.org/3.5/userguide/gradle_wrapper.html) version **4.0-rc-1**.
+Every Gradle project that uses GKD must include a build file called **build.gradle.kts** in the root directory of the project, and [Gradle wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) version **4.1**. Some *Kotlinic* (idiomatic Kotlin - aka **"The Kotlin way"**) examples are shown in the tutorial.
 
 
 ## Project Information
@@ -132,7 +132,7 @@ tasks {
 
 ### Creating A Custom Task
 
-When creating a custom Gradle task it needs to be given a unique name, and if its based on a task type (eg Jar) the class object representing the type, eg:
+When creating a custom Gradle task it needs to be given a unique name, and if its based on a task type (eg Jar) the class object (a **KClass**) representing the type, eg:
 
 ```kotlin
 // ...
@@ -145,5 +145,15 @@ tasks {
         classifier = "javadoc"
         from(dokka.outputDirectory)
     }
+}
+```
+
+Alternatively a custom Gradle task can be created explicitly (more readble, yet slightly more verbose) which is *Kotlinic*, eg:
+
+```kotlin
+val createDokkaJar = task<Jar>("createDokkaJar") {
+    dependsOn("dokka")
+    classifier = "javadoc"
+    from(dokka.outputDirectory)
 }
 ```
