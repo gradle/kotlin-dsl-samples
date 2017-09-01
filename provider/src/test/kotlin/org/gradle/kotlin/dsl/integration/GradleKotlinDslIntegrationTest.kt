@@ -355,4 +355,3 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
     val fixturesRepository: File
         get() = File(rootProjectDir, "fixtures/repository").absoluteFile
 }
-

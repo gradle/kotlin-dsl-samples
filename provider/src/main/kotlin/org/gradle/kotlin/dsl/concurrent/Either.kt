@@ -44,4 +44,3 @@ fun <L, R> left(value: L): Either<L, R> = Either.Left<L, R>(value)
  */
 internal
 fun <L, R> right(value: R): Either<L, R> = Either.Right<L, R>(value)
-

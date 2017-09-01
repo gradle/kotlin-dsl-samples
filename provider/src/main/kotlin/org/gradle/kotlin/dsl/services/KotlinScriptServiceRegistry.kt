@@ -35,4 +35,3 @@ class KotlinScriptServiceRegistry : AbstractPluginServiceRegistry() {
         registration.addProvider(org.gradle.kotlin.dsl.support.GradleUserHomeServices)
     }
 }
-

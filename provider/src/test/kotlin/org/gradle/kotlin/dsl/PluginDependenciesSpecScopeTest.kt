@@ -73,4 +73,3 @@ fun plugins(block: PluginDependenciesSpecScope.() -> Unit) =
 fun plugin(id: String, version: String? = null, isApply: Boolean = true) = Plugin(id, version, isApply)
 
 data class Plugin(val id: String, val version: String?, val isApply: Boolean)
-

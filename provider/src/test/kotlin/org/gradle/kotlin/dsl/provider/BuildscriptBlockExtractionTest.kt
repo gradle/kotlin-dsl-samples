@@ -105,4 +105,3 @@ class BuildscriptBlockExtractionTest {
         assertNull(extractBuildscriptBlockFrom(script))
     }
 }
-

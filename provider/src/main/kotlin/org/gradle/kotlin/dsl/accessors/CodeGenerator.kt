@@ -255,4 +255,3 @@ fun isKotlinIdentifier(candidate: String): Boolean =
             && tokenEnd == candidate.length
             && tokenType == KtTokens.IDENTIFIER
     }
-

@@ -225,4 +225,3 @@ class EmbeddedKotlinPluginTest : AbstractPluginTest() {
             "$configuration(\"org.jetbrains.kotlin:kotlin-$it:${version ?: embeddedKotlinVersion}\")"
         }.joinToString("\n")
 }
-

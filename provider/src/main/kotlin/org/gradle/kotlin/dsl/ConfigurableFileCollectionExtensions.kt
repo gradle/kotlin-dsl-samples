@@ -35,4 +35,3 @@ operator fun ConfigurableFileCollection.getValue(receiver: Any?, property: KProp
  */
 operator fun ConfigurableFileCollection.setValue(receiver: Any?, property: KProperty<*>, value: Iterable<*>) =
     setFrom(value)
-

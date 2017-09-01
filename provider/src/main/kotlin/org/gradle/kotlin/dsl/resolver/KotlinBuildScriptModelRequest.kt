@@ -101,4 +101,3 @@ fun applyGradleInstallationTo(connector: org.gradle.tooling.GradleConnector, req
             GradleInstallation.Wrapper -> connector.useBuildDistribution()
         }
     }
-

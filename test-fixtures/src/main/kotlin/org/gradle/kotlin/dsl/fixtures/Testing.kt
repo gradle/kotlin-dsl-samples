@@ -29,4 +29,3 @@ fun <reified T> assertInstanceOf(o: Any): T {
     assertThat(o, instanceOf(T::class.java))
     return o as T
 }
-

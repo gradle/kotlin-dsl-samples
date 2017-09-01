@@ -44,4 +44,3 @@ fun <T> Continuation<T>.asResultHandler(): ResultHandler<T> =
         override fun onFailure(failure: GradleConnectionException) =
             resumeWithException(failure)
     }
-

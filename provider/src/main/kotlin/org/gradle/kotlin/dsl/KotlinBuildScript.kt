@@ -48,4 +48,3 @@ abstract class KotlinBuildScript(project: Project) : Project by project {
     @Suppress("unused")
     fun plugins(@Suppress("unused_parameter") block: PluginDependenciesSpecScope.() -> Unit) = Unit
 }
-

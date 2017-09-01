@@ -58,4 +58,3 @@ fun <ConventionType : Any, ReturnType> Any.withConvention(conventionType: KClass
         is HasConvention -> convention.getPlugin(conventionType).run(function)
         else -> throw IllegalStateException("Object `$this` doesn't support conventions!")
     }
-

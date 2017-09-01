@@ -52,4 +52,3 @@ fun zipTo(outputStream: OutputStream, entries: Sequence<Pair<String, ByteArray>>
         }
     }
 }
-

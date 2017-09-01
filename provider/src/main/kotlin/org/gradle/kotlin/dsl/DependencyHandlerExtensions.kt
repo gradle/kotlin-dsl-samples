@@ -261,4 +261,3 @@ fun <T : ModuleDependency> DependencyHandler.add(
  */
 fun <T : ModuleDependency> T.exclude(group: String? = null, module: String? = null): T =
     uncheckedCast(exclude(excludeMapFor(group, module)))
-
