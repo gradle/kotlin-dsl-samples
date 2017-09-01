@@ -36,10 +36,14 @@ allprojects {
         val ktLintVersion = "0.9.0"
         kotlinGradle {
             ktlint(ktLintVersion)
+            endWithNewline()
+            trimTrailingWhitespace()
         }
         plugins.withId("kotlin") {
             kotlin {
                 ktlint(ktLintVersion)
+                endWithNewline()
+                trimTrailingWhitespace()
             }
         }
     }
