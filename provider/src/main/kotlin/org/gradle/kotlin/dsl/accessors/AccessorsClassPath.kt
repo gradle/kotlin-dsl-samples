@@ -113,8 +113,7 @@ sealed class InaccessibilityReason {
     data class NonAvailable(val type: String) : InaccessibilityReason()
     data class Synthetic(val type: String) : InaccessibilityReason()
 
-    val explanation
-        get() = when (this) {
+    val explanation get() = when (this) {
             is NonPublic -> "`$type` is not public"
             is NonAvailable -> "`$type` is not available"
             is Synthetic -> "`$type` is synthetic"
