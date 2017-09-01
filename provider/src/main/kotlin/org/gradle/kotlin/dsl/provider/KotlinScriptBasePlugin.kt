@@ -25,7 +25,7 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.task
 
 class KotlinScriptBasePlugin : Plugin<Project> {
-    override fun apply(project: Project) =
+    override fun apply(project: Project) : Unit = // ktlint-disable
         project.run {
             rootProject.apply<KotlinScriptRootPlugin>()
             task<PrintAccessors>("kotlinDslAccessorsReport")
