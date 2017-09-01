@@ -18,7 +18,6 @@ package org.gradle.kotlin.dsl
 
 import org.gradle.api.DomainObjectCollection
 
-
 /**
  * Returns a collection containing the objects in this collection of the given type. Equivalent to calling
  * {@code withType(type).all(configureAction)}
@@ -32,7 +31,6 @@ import org.gradle.api.DomainObjectCollection
 inline
 fun <reified S : Any> DomainObjectCollection<in S>.withType(crossinline configuration: S.() -> Unit) =
     withType(S::class.java, { it.configuration() })
-
 
 /**
  * Returns a collection containing the objects in this collection of the given type. The

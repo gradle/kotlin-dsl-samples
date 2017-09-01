@@ -1,4 +1,5 @@
-import build.*
+import build.withParallelTests
+import build.withTestWorkersMemoryLimits
 
 apply<plugins.KotlinLibrary>()
 

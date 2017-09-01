@@ -13,7 +13,6 @@ import org.gradle.api.publish.PublishingExtension
 import org.junit.Assert.fail
 import org.junit.Test
 
-
 class ProjectExtensionsTest {
 
     @Test

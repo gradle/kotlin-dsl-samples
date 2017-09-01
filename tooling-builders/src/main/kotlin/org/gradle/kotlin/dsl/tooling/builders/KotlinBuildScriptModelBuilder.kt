@@ -37,7 +37,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilder
 import java.io.File
 import java.io.Serializable
 
-
 internal
 object KotlinBuildScriptModelBuilder : ToolingModelBuilder {
 
@@ -51,7 +50,7 @@ object KotlinBuildScriptModelBuilder : ToolingModelBuilder {
                 when (it) {
                     is ScriptModelRequest.ForProjectScript ->
                         it.enclosingProject to projectScriptClassPathOf(it.enclosingProject)
-                    is ScriptModelRequest.ForScriptPlugin  ->
+                    is ScriptModelRequest.ForScriptPlugin ->
                         project to scriptPluginClassPathOf(project)
                 }
             }
@@ -138,7 +137,6 @@ object KotlinBuildScriptModelBuilder : ToolingModelBuilder {
             .asFiles
             .filter { it.name == "buildSrc.jar" }
 }
-
 
 internal
 data class StandardKotlinBuildScriptModel(

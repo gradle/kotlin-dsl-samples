@@ -24,7 +24,6 @@ import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.kotlin.dsl.cache.ScriptCache
 import org.gradle.kotlin.dsl.support.ImplicitImports
 
-
 internal
 object BuildServices {
 

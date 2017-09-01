@@ -20,7 +20,6 @@ import org.gradle.api.plugins.ExtensionAware
 
 import org.gradle.kotlin.dsl.extra
 
-
 internal inline
 fun <reified T : Any> ExtensionAware.getOrCreateSingletonProperty(crossinline create: () -> T): T =
     extra.run {

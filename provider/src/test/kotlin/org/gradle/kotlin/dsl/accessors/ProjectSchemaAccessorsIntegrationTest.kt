@@ -1,18 +1,17 @@
 package org.gradle.kotlin.dsl.accessors
 
-import org.gradle.kotlin.dsl.integration.kotlinBuildScriptModelFor
-
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.fileByName
 import org.gradle.kotlin.dsl.fixtures.matching
-
-import org.hamcrest.CoreMatchers.*
+import org.gradle.kotlin.dsl.integration.kotlinBuildScriptModelFor
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
-
 import org.junit.Test
-
 import java.io.File
-
 
 class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
 
@@ -79,10 +78,8 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
 
         """)
 
-
         println(
             build("kotlinDslAccessorsSnapshot").output)
-
 
         buildFile.appendText("""
 
@@ -144,7 +141,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
             repositories { jcenter() }
         """)
 
-        withFile("c/build.gradle.kts","""
+        withFile("c/build.gradle.kts", """
             plugins { `java-library` }
 
             dependencies {

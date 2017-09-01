@@ -25,7 +25,6 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.safeCast
 
-
 /**
  * Allows the container to be configured, creating missing objects as they are referenced.
  *
@@ -39,7 +38,6 @@ operator fun <T : Any, C : NamedDomainObjectContainer<T>> C.invoke(
     apply {
         configuration(NamedDomainObjectContainerScope(this))
     }
-
 
 /**
  * Receiver for [NamedDomainObjectContainer] configuration blocks.
@@ -107,13 +105,11 @@ class NamedDomainObjectContainerScope<T : Any>(
             ?: throw IllegalArgumentException("Container '$container' is not polymorphic.")
 }
 
-
 /**
  * Provides a property delegate that creates elements of the default collection type.
  */
 val <T : Any> NamedDomainObjectContainer<T>.creating
     get() = NamedDomainObjectContainerDelegateProvider(this, {})
-
 
 /**
  * Provides a property delegate that creates elements of the default collection type with the given [configuration].
@@ -122,7 +118,6 @@ val <T : Any> NamedDomainObjectContainer<T>.creating
  */
 fun <T : Any> NamedDomainObjectContainer<T>.creating(configuration: T.() -> Unit) =
     NamedDomainObjectContainerDelegateProvider(this, configuration)
-
 
 /**
  * A property delegate that creates elements in the given [NamedDomainObjectContainer].
@@ -139,13 +134,11 @@ class NamedDomainObjectContainerDelegateProvider<T : Any>(
         }
 }
 
-
 /**
  * Provides a property delegate that creates elements of the given [type].
  */
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(type: KClass<U>) =
     creating(type.java, {})
-
 
 /**
  * Provides a property delegate that creates elements of the given [type] with the given [configuration].
@@ -153,14 +146,12 @@ fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(type: KClass<U
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(type: KClass<U>, configuration: U.() -> Unit) =
     creating(type.java, configuration)
 
-
 /**
  * Provides a property delegate that creates elements of the given [type] expressed as a [java.lang.Class]
  * with the given [configuration].
  */
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(type: Class<U>, configuration: U.() -> Unit) =
     PolymorphicDomainObjectContainerDelegateProvider(this, type, configuration)
-
 
 /**
  * A property delegate that creates elements of the given [type] with the given [configuration] in the given [container].
@@ -177,20 +168,17 @@ class PolymorphicDomainObjectContainerDelegateProvider<T : Any, U : T>(
         } as PolymorphicDomainObjectContainer<U>
 }
 
-
 /**
  * Provides a property delegate that gets elements of the given [type] and applies the given [configuration].
  */
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.getting(type: KClass<U>, configuration: U.() -> Unit) =
     PolymorphicDomainObjectContainerGettingDelegateProvider(this, type, configuration)
 
-
 /**
  * Provides a property delegate that gets elements of the given [type].
  */
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.getting(type: KClass<U>) =
     PolymorphicDomainObjectContainerGettingDelegate(this, type)
-
 
 /**
  * A property delegate that gets elements of the given [type] in the given [container].
@@ -202,7 +190,6 @@ class PolymorphicDomainObjectContainerGettingDelegate<T : Any, U : T>(
     operator fun getValue(receiver: Any?, property: kotlin.reflect.KProperty<*>): U =
         container.getByName(property.name, type)
 }
-
 
 /**
  * A property delegate that gets elements of the given [type] from the given [container]
@@ -219,7 +206,6 @@ class PolymorphicDomainObjectContainerGettingDelegateProvider<T : Any, U : T>(
             getByName(property.name, type).configuration()
         } as PolymorphicDomainObjectContainer<U>
 }
-
 
 private
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.getByName(name: String, type: KClass<U>): U =

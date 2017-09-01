@@ -16,24 +16,20 @@
 
 package org.gradle.kotlin.dsl.codegen
 
-import org.gradle.kotlin.dsl.support.loggerFor
 import org.gradle.kotlin.dsl.support.compileToDirectory
+import org.gradle.kotlin.dsl.support.loggerFor
 import org.gradle.kotlin.dsl.support.zipTo
-
 import java.io.File
-
 
 internal
 fun generateApiExtensionsJar(outputFile: File, gradleJars: Collection<File>, onProgress: () -> Unit) {
     ApiExtensionsJarGenerator(onProgress = onProgress).generate(outputFile, gradleJars)
 }
 
-
 internal
 interface KotlinFileCompiler {
     fun compileToDirectory(outputDirectory: File, sourceFiles: Collection<File>, classPath: Collection<File>)
 }
-
 
 internal
 class ApiExtensionsJarGenerator(
@@ -80,7 +76,6 @@ class ApiExtensionsJarGenerator(
     private
     val packageDir = packageName.replace('.', '/')
 }
-
 
 internal
 object StandardKotlinFileCompiler : KotlinFileCompiler {

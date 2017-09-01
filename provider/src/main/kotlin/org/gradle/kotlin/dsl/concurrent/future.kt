@@ -26,7 +26,6 @@ import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 import kotlin.coroutines.experimental.startCoroutine
 
-
 /**
  * Starts and exposes the given suspending [computation] as a [Future] value.
  *
@@ -37,7 +36,6 @@ fun <T> future(context: CoroutineContext = EmptyCoroutineContext, computation: s
     FutureContinuation<T>(context).also { k ->
         computation.startCoroutine(completion = k)
     }
-
 
 private
 class FutureContinuation<T>(override val context: CoroutineContext) : Future<T>, Continuation<T> {

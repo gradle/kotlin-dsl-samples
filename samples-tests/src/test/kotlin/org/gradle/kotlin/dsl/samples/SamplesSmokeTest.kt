@@ -12,7 +12,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.io.File
 
-
 @RunWith(Parameterized::class)
 class SamplesSmokeTest(val sampleDir: File) : AbstractIntegrationTest() {
 

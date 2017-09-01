@@ -4,7 +4,6 @@ import org.hamcrest.CoreMatchers.containsString
 import org.junit.Assert.assertThat
 import org.junit.Test
 
-
 class MultiKotlinProjectSampleTest : AbstractSampleTest("multi-kotlin-project") {
 
     @Test

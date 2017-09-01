@@ -1,4 +1,8 @@
-import build.*
+import build.withParallelTests
+import build.futureKotlin
+import build.kotlin
+import build.kotlinVersion
+import build.kotlinRepo
 
 import codegen.GenerateKotlinDependencyExtensions
 
@@ -24,7 +28,6 @@ dependencies {
     testCompile(project(":test-fixtures"))
 }
 
-
 // --- Enable automatic generation of API extensions -------------------
 val apiExtensionsOutputDir = file("src/generated/kotlin")
 
@@ -49,7 +52,6 @@ compileKotlin.dependsOn(generateExtensions)
 
 val clean: Delete by tasks
 clean.delete(apiExtensionsOutputDir)
-
 
 // -- Testing ----------------------------------------------------------
 val prepareIntegrationTestFixtures by rootProject.tasks

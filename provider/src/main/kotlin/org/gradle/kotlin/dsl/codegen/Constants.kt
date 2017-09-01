@@ -16,7 +16,6 @@
 
 package org.gradle.kotlin.dsl.codegen
 
-
 internal
 val fileHeader: String
     get() = """$licenseHeader
@@ -24,10 +23,8 @@ val fileHeader: String
 package $packageName
 """
 
-
 internal
 const val packageName = "org.gradle.kotlin.dsl"
-
 
 internal
 const val licenseHeader = """/*

@@ -16,11 +16,9 @@
 
 package org.gradle.kotlin.dsl.support
 
+import org.gradle.api.Project
 import org.gradle.kotlin.dsl.KotlinBuildScript
 import org.gradle.kotlin.dsl.ScriptHandlerScope
-
-import org.gradle.api.Project
-
 
 /**
  * Base class for `buildscript` block evaluation.

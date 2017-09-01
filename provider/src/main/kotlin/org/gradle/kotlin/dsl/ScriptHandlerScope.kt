@@ -22,7 +22,6 @@ import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.initialization.dsl.ScriptHandler
 import org.gradle.api.initialization.dsl.ScriptHandler.CLASSPATH_CONFIGURATION
 
-
 /**
  * Receiver for the `buildscript` block.
  */

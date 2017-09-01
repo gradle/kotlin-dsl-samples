@@ -48,7 +48,6 @@ import java.io.File
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
-
 /**
  * Sets the the default tasks of this project. These are used when no tasks names are provided when
  * starting the build.
@@ -58,7 +57,6 @@ inline
 fun Project.defaultTasks(vararg tasks: Task) {
     defaultTasks(*tasks.map { it.name }.toTypedArray())
 }
-
 
 /**
  * Applies zero or more plugins or scripts.
@@ -70,7 +68,6 @@ fun Project.defaultTasks(vararg tasks: Task) {
 inline
 fun Project.apply(crossinline block: ObjectConfigurationAction.() -> Unit) =
     apply({ it.block() })
-
 
 /**
  * Applies the given plugin. Does nothing if the plugin has already been applied.
@@ -85,7 +82,6 @@ inline
 fun <reified T : Plugin<Project>> Project.apply() =
     pluginManager.apply(T::class.java)
 
-
 /**
  * Executes the given configuration block against the [plugin convention]
  * [Convention.getPlugin] or extension of the specified type.
@@ -99,7 +95,6 @@ fun <reified T : Any> Project.configure(noinline configuration: T.() -> Unit) =
     convention.findPlugin(T::class.java)?.let(configuration)
         ?: convention.configure(T::class.java, configuration)
 
-
 /**
  * Returns the plugin convention or extension of the specified type.
  */
@@ -107,10 +102,8 @@ inline
 fun <reified T : Any> Project.the() =
     the(T::class)
 
-
 fun <T : Any> Project.the(extensionType: KClass<T>) =
     convention.findPlugin(extensionType.java) ?: convention.getByType(extensionType.java)
-
 
 /**
  * Creates a [Task] with the given [name] and [type], configures it with the given [configuration] action,
@@ -119,7 +112,6 @@ fun <T : Any> Project.the(extensionType: KClass<T>) =
 inline
 fun <reified type : Task> Project.task(name: String, noinline configuration: type.() -> Unit) =
     task(name, type::class, configuration)
-
 
 /**
  * Creates a [Task] with the given [name] and [type], and adds it to this project tasks container.
@@ -132,10 +124,8 @@ inline
 fun <reified type : Task> Project.task(name: String) =
     tasks.create(name, type::class.java)
 
-
 fun <T : Task> Project.task(name: String, type: KClass<T>, configuration: T.() -> Unit) =
     createTask(name, type, configuration)
-
 
 /**
  * Creates a [Task] with the given [name ] and [DefaultTask] type, configures it with the given [configuration] action,
@@ -144,10 +134,8 @@ fun <T : Task> Project.task(name: String, type: KClass<T>, configuration: T.() -
 fun Project.task(name: String, configuration: Task.() -> Unit): DefaultTask =
     createTask(name, DefaultTask::class, configuration)
 
-
 fun <T : Task> Project.createTask(name: String, type: KClass<T>, configuration: T.() -> Unit): T =
     tasks.create(name, type.java, configuration)
-
 
 /**
  * Configures the repositories for this project.
@@ -160,10 +148,8 @@ fun <T : Task> Project.createTask(name: String, type: KClass<T>, configuration: 
 fun Project.repositories(configuration: RepositoryHandler.() -> Unit) =
     repositories.configuration()
 
-
 fun ScriptHandler.repositories(configuration: RepositoryHandler.() -> Unit) =
     repositories.configuration()
-
 
 /**
  * Configures the dependencies for this project.
@@ -176,13 +162,11 @@ fun ScriptHandler.repositories(configuration: RepositoryHandler.() -> Unit) =
 fun Project.dependencies(configuration: DependencyHandlerScope.() -> Unit) =
     DependencyHandlerScope(dependencies).configuration()
 
-
 /**
  * Locates a [Project] property using [Project.findProperty].
  */
 operator fun Project.getValue(any: Any, property: KProperty<*>): Any? =
     findProperty(property.name)
-
 
 /**
  * Creates a [PropertyState] that holds values of the given type [T].
@@ -193,7 +177,6 @@ operator fun Project.getValue(any: Any, property: KProperty<*>): Any? =
 inline
 fun <reified T> Project.property(): PropertyState<T> =
     property(T::class.java)
-
 
 /**
  * Creates a dependency on the API of the current version of the Gradle Kotlin DSL.
@@ -208,11 +191,9 @@ fun Project.gradleKotlinDsl(): Dependency =
             gradleKotlinDslOf(project),
             "gradleKotlinDsl") as FileCollectionInternal)
 
-
 @Deprecated("Will be removed in 1.0", ReplaceWith("gradleKotlinDsl()"))
 fun Project.gradleScriptKotlinApi(): Dependency =
     gradleKotlinDsl()
-
 
 private
 fun fileCollectionOf(files: Collection<File>, name: String): FileCollection =

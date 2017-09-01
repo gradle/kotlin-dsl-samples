@@ -11,10 +11,8 @@ import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestName
 import java.io.File
 
-
 internal
 val isCI by lazy { !System.getenv("CI").isNullOrEmpty() }
-
 
 open class AbstractIntegrationTest {
 
@@ -120,7 +118,6 @@ open class AbstractIntegrationTest {
         gradleRunnerFor(projectRoot, *arguments)
 }
 
-
 private
 fun gradleRunnerFor(projectDir: File, vararg arguments: String): GradleRunner = GradleRunner.create().run {
     withGradleInstallation(customInstallation())
@@ -132,10 +129,8 @@ fun gradleRunnerFor(projectDir: File, vararg arguments: String): GradleRunner = 
     return this
 }
 
-
 fun customDaemonRegistry() =
     File(customInstallationBuildDir, "daemon-registry")
-
 
 fun customInstallation() =
     customInstallationBuildDir.listFiles()?.let {
@@ -144,22 +139,17 @@ fun customInstallation() =
                 "Expected 1 custom installation but found ${it.size}. Run `./gradlew clean customInstallation`.")
     } ?: throw IllegalStateException("Custom installation not found. Run `./gradlew customInstallation`.")
 
-
 val rootProjectDir = File("..").canonicalFile!!
 
-
 val customInstallationBuildDir = File(rootProjectDir, "build/custom")
-
 
 inline
 fun <T> withDaemonRegistry(registryBase: File, block: () -> T) =
     withSystemProperty("org.gradle.daemon.registry.base", registryBase.absolutePath, block)
 
-
 inline
 fun <T> withDaemonIdleTimeout(seconds: Int, block: () -> T) =
     withSystemProperty("org.gradle.daemon.idletimeout", (seconds * 1000).toString(), block)
-
 
 inline
 fun <T> withSystemProperty(key: String, value: String, block: () -> T): T {
@@ -171,7 +161,6 @@ fun <T> withSystemProperty(key: String, value: String, block: () -> T): T {
         setOrClearProperty(key, originalValue)
     }
 }
-
 
 fun setOrClearProperty(key: String, value: String?) {
     when (value) {

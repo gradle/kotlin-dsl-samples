@@ -29,7 +29,6 @@ import org.gradle.internal.Cast.uncheckedCast
 import org.gradle.kotlin.dsl.support.excludeMapFor
 import org.gradle.kotlin.dsl.support.mapOfNonNullValuesOf
 
-
 /**
  * Creates a dependency on a module without adding it to a configuration.
  *
@@ -61,7 +60,6 @@ fun DependencyHandler.create(
             "classifier" to classifier,
             "ext" to ext)) as ExternalModuleDependency
 
-
 /**
  * Creates a dependency on a client module without adding it to a configuration.
  *
@@ -92,7 +90,6 @@ fun DependencyHandler.module(
             "configuration" to configuration,
             "classifier" to classifier,
             "ext" to ext)) as ClientModule
-
 
 /**
  * Creates a dependency on a client module without adding it to a configuration.
@@ -128,7 +125,6 @@ fun DependencyHandler.module(
                 "ext" to ext)) as ClientModule,
         clientModuleConfiguration)
 
-
 /**
  * Creates a dependency on a client module without adding it to a configuration.
  *
@@ -142,7 +138,6 @@ fun DependencyHandler.module(
 
     configureClientModule(module(notation) as ClientModule, clientModuleConfiguration)
 
-
 private inline
 fun DependencyHandler.configureClientModule(
     module: ClientModule,
@@ -150,7 +145,6 @@ fun DependencyHandler.configureClientModule(
     module.apply {
         ClientModuleScope(this@configureClientModule, this@apply).clientModuleConfiguration()
     }
-
 
 /**
  * Receiver for [ClientModule] configuration blocks.
@@ -160,12 +154,12 @@ class ClientModuleScope(
     val clientModule: ClientModule) : ClientModule by clientModule {
 
     fun module(group: String,
-               name: String,
-               version: String? = null,
-               configuration: String? = null,
-               classifier: String? = null,
-               ext: String? = null,
-               setup: ClientModuleScope.() -> Unit) {
+        name: String,
+        version: String? = null,
+        configuration: String? = null,
+        classifier: String? = null,
+        ext: String? = null,
+        setup: ClientModuleScope.() -> Unit) {
         clientModule.addDependency(
             dependencyHandler.module(group, name, version, configuration, classifier, ext, setup))
     }
@@ -192,7 +186,6 @@ class ClientModuleScope(
         (dependencyHandler.create(notation) as ExternalModuleDependency).apply(dependencyConfiguration)
 }
 
-
 /**
  * Creates a dependency on a project without adding it to a configuration.
  *
@@ -209,7 +202,6 @@ fun DependencyHandler.project(
             if (configuration != null) mapOf("path" to path, "configuration" to configuration)
             else mapOf("path" to path)))
 
-
 /**
  * Adds a dependency to the given configuration, and configures the dependency using the given expression.
  *
@@ -225,7 +217,6 @@ fun DependencyHandler.add(
     dependencyConfiguration: ExternalModuleDependency.() -> Unit): ExternalModuleDependency =
 
     add(configuration, create(dependencyNotation) as ExternalModuleDependency, dependencyConfiguration)
-
 
 /**
  * Adds a dependency to the given configuration, and configures the dependency using the given expression.
@@ -245,7 +236,6 @@ fun <T : ModuleDependency> DependencyHandler.add(
         dependencyConfiguration()
         add(configuration, this)
     }
-
 
 /**
  * Adds an exclude rule to exclude transitive dependencies of this dependency.

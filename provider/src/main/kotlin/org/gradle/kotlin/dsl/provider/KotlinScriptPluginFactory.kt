@@ -20,17 +20,12 @@ import org.gradle.api.Project
 import org.gradle.api.initialization.dsl.ScriptHandler
 import org.gradle.api.internal.initialization.ClassLoaderScope
 import org.gradle.api.internal.initialization.ScriptHandlerInternal
-
 import org.gradle.configuration.ScriptPlugin
 import org.gradle.configuration.ScriptPluginFactory
-
 import org.gradle.groovy.scripts.ScriptSource
-
-import org.gradle.plugin.use.internal.PluginRequestApplicator
 import org.gradle.kotlin.dsl.support.EmbeddedKotlinProvider
-
+import org.gradle.plugin.use.internal.PluginRequestApplicator
 import javax.inject.Inject
-
 
 class KotlinScriptPluginFactory @Inject internal constructor(
     val classPathProvider: KotlinScriptClassPathProvider,

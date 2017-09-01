@@ -5,20 +5,15 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import org.gradle.api.internal.initialization.AbstractClassLoaderScope
-
 import org.gradle.internal.classpath.DefaultClassPath
-
-import org.gradle.kotlin.dsl.fixtures.TestWithTempFiles
 import org.gradle.kotlin.dsl.fixtures.DeepThought
+import org.gradle.kotlin.dsl.fixtures.TestWithTempFiles
 import org.gradle.kotlin.dsl.fixtures.classEntriesFor
 import org.gradle.kotlin.dsl.support.zipTo
-
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItem
 import org.hamcrest.MatcherAssert.assertThat
-
 import org.junit.Test
-
 import java.lang.ClassLoader.getSystemClassLoader
 
 class ClassLoaderHierarchyTest : TestWithTempFiles() {

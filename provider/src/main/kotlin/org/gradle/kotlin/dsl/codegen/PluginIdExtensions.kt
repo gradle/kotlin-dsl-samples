@@ -24,22 +24,22 @@ import java.io.File
 import java.util.Properties
 import java.util.jar.JarFile
 
-
 internal
 fun writeBuiltinPluginIdExtensionsTo(file: File, gradleJars: Iterable<File>) {
-    file.bufferedWriter().use { it.apply {
-        write(fileHeader)
-        write("\n")
-        write("import ${PluginDependenciesSpec::class.qualifiedName}\n")
-        write("import ${PluginDependencySpec::class.qualifiedName}\n")
-        pluginIdExtensionDeclarationsFor(gradleJars).forEach {
+    file.bufferedWriter().use {
+        it.apply {
+            write(fileHeader)
             write("\n")
-            write(it)
-            write("\n")
+            write("import ${PluginDependenciesSpec::class.qualifiedName}\n")
+            write("import ${PluginDependencySpec::class.qualifiedName}\n")
+            pluginIdExtensionDeclarationsFor(gradleJars).forEach {
+                write("\n")
+                write(it)
+                write("\n")
+            }
         }
-    }}
+    }
 }
-
 
 private
 fun pluginIdExtensionDeclarationsFor(jars: Iterable<File>): Sequence<String> {
@@ -62,7 +62,6 @@ fun pluginIdExtensionDeclarationsFor(jars: Iterable<File>): Sequence<String> {
         }
 }
 
-
 private
 data class PluginExtension(
     val memberName: String,
@@ -70,14 +69,12 @@ data class PluginExtension(
     val website: String?,
     val implementationClass: String)
 
-
 private
 fun pluginExtensionsFrom(jars: Iterable<File>): Sequence<PluginExtension> =
     jars
         .asSequence()
         .filter { it.name.startsWith("gradle-") }
         .flatMap(::pluginExtensionsFrom)
-
 
 private
 fun pluginExtensionsFrom(file: File): Sequence<PluginExtension> =
@@ -89,7 +86,6 @@ fun pluginExtensionsFrom(file: File): Sequence<PluginExtension> =
             // One plugin extension for the simple id, e.g., "application"
             PluginExtension(simpleId, id, website, implementationClass)
         }
-
 
 internal
 object UserGuideLink {
@@ -241,10 +237,8 @@ object UserGuideLink {
             "wrapper" to "wrapper_plugin.html")
 }
 
-
 private
 data class PluginEntry(val pluginId: String, val implementationClass: String)
-
 
 private
 fun pluginEntriesFrom(jar: File): List<PluginEntry> =

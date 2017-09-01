@@ -6,7 +6,6 @@ import org.junit.Assert.assertThat
 import org.junit.Test
 import java.io.File
 
-
 class ProviderPropertiesSampleTest : AbstractSampleTest("provider-properties") {
 
     @Test

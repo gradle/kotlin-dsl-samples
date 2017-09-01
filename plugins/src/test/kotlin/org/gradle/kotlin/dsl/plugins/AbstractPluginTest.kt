@@ -7,7 +7,7 @@ import org.gradle.util.TextUtil.normaliseFileSeparators
 import org.junit.Before
 
 import java.io.File
-import java.util.*
+import java.util.Properties
 
 open class AbstractPluginTest : AbstractIntegrationTest() {
 

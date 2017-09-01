@@ -5,7 +5,6 @@ import org.junit.Before
 
 import java.io.File
 
-
 abstract class AbstractSampleTest(val sampleName: String) : AbstractIntegrationTest() {
 
     @Before

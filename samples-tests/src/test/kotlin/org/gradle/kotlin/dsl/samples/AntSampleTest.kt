@@ -3,7 +3,6 @@ package org.gradle.kotlin.dsl.samples
 import org.junit.Test
 import java.io.File
 
-
 class AntSampleTest : AbstractSampleTest("ant") {
 
     @Test

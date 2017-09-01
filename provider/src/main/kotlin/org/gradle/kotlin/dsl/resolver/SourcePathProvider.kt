@@ -22,7 +22,6 @@ import org.gradle.kotlin.dsl.support.filter
 
 import java.io.File
 
-
 object SourcePathProvider {
 
     fun sourcePathFor(
@@ -54,7 +53,6 @@ object SourcePathProvider {
     private
     fun subDirsOf(dir: File): Collection<File> =
         if (dir.isDirectory)
-            dir.listFiles().filter { it.isDirectory }
-        else
+            dir.listFiles().filter { it.isDirectory } else
             emptyList()
 }

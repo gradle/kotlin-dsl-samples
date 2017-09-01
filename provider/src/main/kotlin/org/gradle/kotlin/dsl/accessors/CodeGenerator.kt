@@ -19,7 +19,6 @@ package org.gradle.kotlin.dsl.accessors
 import org.jetbrains.kotlin.lexer.KotlinLexer
 import org.jetbrains.kotlin.lexer.KtTokens
 
-
 internal
 fun ProjectSchema<TypeAccessibility>.forEachAccessor(action: (String) -> Unit) {
     extensions.forEach { (name, type) ->
@@ -39,11 +38,10 @@ private
 fun extensionAccessorFor(name: String, typeAccess: TypeAccessibility): String? =
     codeForExtension(name) {
         when (typeAccess) {
-            is TypeAccessibility.Accessible   -> accessibleExtensionAccessorFor(name, typeAccess.type)
+            is TypeAccessibility.Accessible -> accessibleExtensionAccessorFor(name, typeAccess.type)
             is TypeAccessibility.Inaccessible -> inaccessibleExtensionAccessorFor(name, typeAccess)
         }
     }
-
 
 private
 fun accessibleExtensionAccessorFor(name: String, type: String): String =
@@ -61,7 +59,6 @@ fun accessibleExtensionAccessorFor(name: String, type: String): String =
             extensions.configure("$name", configure)
 
     """
-
 
 private
 fun inaccessibleExtensionAccessorFor(name: String, typeAccess: TypeAccessibility.Inaccessible): String =
@@ -84,16 +81,14 @@ fun inaccessibleExtensionAccessorFor(name: String, typeAccess: TypeAccessibility
 
     """
 
-
 private
 fun conventionAccessorFor(name: String, typeAccess: TypeAccessibility): String? =
     codeForExtension(name) {
         when (typeAccess) {
-            is TypeAccessibility.Accessible   -> accessibleConventionAccessorFor(name, typeAccess.type)
+            is TypeAccessibility.Accessible -> accessibleConventionAccessorFor(name, typeAccess.type)
             is TypeAccessibility.Inaccessible -> inaccessibleConventionAccessorFor(name, typeAccess)
         }
     }
-
 
 private
 fun accessibleConventionAccessorFor(name: String, type: String): String =
@@ -111,7 +106,6 @@ fun accessibleConventionAccessorFor(name: String, type: String): String =
             configure(`$name`)
 
     """
-
 
 private
 fun inaccessibleConventionAccessorFor(name: String, typeAccess: TypeAccessibility.Inaccessible): String =
@@ -133,7 +127,6 @@ fun inaccessibleConventionAccessorFor(name: String, typeAccess: TypeAccessibilit
             configure(`$name`)
 
     """
-
 
 private
 fun configurationAccessorFor(name: String): String? =
@@ -235,29 +228,24 @@ fun configurationAccessorFor(name: String): String? =
         """
     }
 
-
 private
 fun documentInaccessibilityReasons(name: String, typeAccess: TypeAccessibility.Inaccessible): String =
     "`$name` is not accessible in a type safe way because:\n${typeAccess.reasons.map { reason ->
         "         * - ${reason.explanation}"
     }.joinToString("\n")}"
 
-
 private inline
 fun codeForExtension(extensionName: String, code: () -> String): String? =
     if (isLegalExtensionName(extensionName)) code().replaceIndent()
     else null
-
 
 internal
 fun isLegalExtensionName(name: String): Boolean =
     isKotlinIdentifier("`$name`")
         && name.indexOfAny(invalidNameChars) < 0
 
-
 private
 val invalidNameChars = charArrayOf('.', '/', '\\')
-
 
 private
 fun isKotlinIdentifier(candidate: String): Boolean =

@@ -17,25 +17,21 @@
 package org.gradle.kotlin.dsl.provider
 
 import groovy.json.JsonOutput.toJson
-
 import org.gradle.api.internal.initialization.AbstractClassLoaderScope
 import org.gradle.api.internal.initialization.ClassLoaderScope
-
 import org.gradle.internal.classloader.ClassLoaderVisitor
-
 import org.gradle.kotlin.dsl.support.foldHierarchy
-
 import java.net.URL
-
-import java.util.*
-
+import java.util.ArrayDeque
+import java.util.ArrayList
+import java.util.IdentityHashMap
+import java.util.LinkedHashSet
 
 /**
  * A formatter for strings that might contain file system paths.
  */
 internal
 typealias PathStringFormatter = (String) -> String
-
 
 internal
 fun classLoaderHierarchyJsonFor(
@@ -48,10 +44,8 @@ fun classLoaderHierarchyJsonFor(
         hierarchyOf(targetScope),
         pathFormatter)
 
-
 private
 typealias ClassLoaderId = String
-
 
 private
 class ClassLoaderNode(
@@ -59,7 +53,6 @@ class ClassLoaderNode(
     val label: String,
     val classPath: MutableSet<URL> = LinkedHashSet(),
     val parents: MutableSet<ClassLoaderId> = LinkedHashSet())
-
 
 private
 fun classLoaderHierarchyJsonFor(
@@ -89,13 +82,11 @@ fun classLoaderHierarchyJsonFor(
         ))
 }
 
-
 private
 fun hierarchyOf(initialScope: ClassLoaderScope): List<ClassLoaderScope> =
     initialScope.foldHierarchy(arrayListOf<ClassLoaderScope>()) { result, scope ->
         result.apply { add(scope) }
     }
-
 
 private
 fun hierarchyOf(classLoader: ClassLoader): ArrayList<ClassLoaderNode> {
@@ -135,7 +126,6 @@ fun hierarchyOf(classLoader: ClassLoader): ArrayList<ClassLoaderNode> {
     visitor.visit(classLoader)
     return classLoaders
 }
-
 
 private
 fun idOf(classLoader: ClassLoader): String =

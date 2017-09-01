@@ -19,11 +19,8 @@ package org.gradle.kotlin.dsl
 import groovy.lang.Closure
 import groovy.lang.GroovyObject
 import groovy.lang.MetaClass
-
-import org.gradle.internal.Cast.uncheckedCast
-
 import org.codehaus.groovy.runtime.InvokerHelper.getMetaClass
-
+import org.gradle.internal.Cast.uncheckedCast
 
 /**
  * Adapts a Kotlin function to a single argument Groovy [Closure].
@@ -35,7 +32,6 @@ import org.codehaus.groovy.runtime.InvokerHelper.getMetaClass
  */
 fun <T : Any> Any.closureOf(action: T.() -> Unit): Closure<Any?> =
     KotlinClosure1(action, this, this)
-
 
 /**
  * Adapts a Kotlin function to a Groovy [Closure] that operates on the
@@ -52,7 +48,6 @@ fun <T> Any.delegateClosureOf(action: T.() -> Unit) =
         fun doCall() = uncheckedCast<T>(delegate).action()
     }
 
-
 /**
  * Adapts a parameterless Kotlin function to a parameterless Groovy [Closure].
  *
@@ -64,14 +59,13 @@ fun <T> Any.delegateClosureOf(action: T.() -> Unit) =
  * @see Closure
  */
 open class KotlinClosure0<V : Any>(
-    val function : () -> V?,
+    val function: () -> V?,
     owner: Any? = null,
     thisObject: Any? = null) : groovy.lang.Closure<V?>(owner, thisObject) {
 
     @Suppress("unused") // to be called dynamically by Groovy
     fun doCall(): V? = function()
 }
-
 
 /**
  * Adapts an unary Kotlin function to an unary Groovy [Closure].
@@ -92,7 +86,6 @@ class KotlinClosure1<in T : Any, V : Any>(
     @Suppress("unused") // to be called dynamically by Groovy
     fun doCall(it: T): V? = it.function()
 }
-
 
 /**
  * Adapts a binary Kotlin function to a binary Groovy [Closure].
@@ -115,13 +108,11 @@ class KotlinClosure2<in T : Any, in U : Any, V : Any>(
     fun doCall(t: T, u: U): V? = function(t, u)
 }
 
-
 operator fun <T> Closure<T>.invoke(): T = call()
 
 operator fun <T> Closure<T>.invoke(x: Any?): T = call(x)
 
 operator fun <T> Closure<T>.invoke(vararg xs: Any?): T = call(*xs)
-
 
 /**
  * Executes the given [builder] against this object's [GroovyBuilderScope].
@@ -131,7 +122,6 @@ operator fun <T> Closure<T>.invoke(vararg xs: Any?): T = call(*xs)
 inline
 fun <T> Any.withGroovyBuilder(builder: GroovyBuilderScope.() -> T): T =
     GroovyBuilderScope.of(this).builder()
-
 
 /**
  * Provides a dynamic dispatching DSL with Groovy semantics for better integration with
@@ -164,7 +154,7 @@ interface GroovyBuilderScope : GroovyObject {
         fun of(value: Any): GroovyBuilderScope =
             when (value) {
                 is GroovyObject -> GroovyBuilderScopeForGroovyObject(value)
-                else            -> GroovyBuilderScopeForRegularObject(value)
+                else -> GroovyBuilderScopeForRegularObject(value)
             }
     }
 
@@ -190,14 +180,12 @@ interface GroovyBuilderScope : GroovyObject {
         }
 }
 
-
 private
 class GroovyBuilderScopeForGroovyObject(private val receiver: GroovyObject) : GroovyBuilderScope, GroovyObject by receiver {
 
     override fun String.invoke(vararg arguments: Any?): Any? =
         receiver.invokeMethod(this, arguments)
 }
-
 
 private
 class GroovyBuilderScopeForRegularObject(private val receiver: Any) : GroovyBuilderScope {

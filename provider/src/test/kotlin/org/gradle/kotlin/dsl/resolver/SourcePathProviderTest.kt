@@ -1,14 +1,10 @@
 package org.gradle.kotlin.dsl.resolver
 
 import org.gradle.internal.classpath.ClassPath
-
-import org.gradle.kotlin.dsl.resolver.SourcePathProvider.sourcePathFor
-
 import org.gradle.kotlin.dsl.fixtures.FolderBasedTest
-
+import org.gradle.kotlin.dsl.resolver.SourcePathProvider.sourcePathFor
 import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.MatcherAssert.assertThat
-
 import org.junit.Test
 
 class SourcePathProviderTest : FolderBasedTest() {

@@ -21,40 +21,31 @@ import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.common.messages.MessageUtil
-
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinToJVMBytecodeCompiler.compileBunchOfSources
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinToJVMBytecodeCompiler.compileScript
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoot
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
-
 import org.jetbrains.kotlin.codegen.CompilationException
-
 import org.jetbrains.kotlin.com.intellij.openapi.Disposable
 import org.jetbrains.kotlin.com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer.dispose
 import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer.newDisposable
-
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
-import org.jetbrains.kotlin.config.JVMConfigurationKeys.*
+import org.jetbrains.kotlin.config.JVMConfigurationKeys.OUTPUT_DIRECTORY
+import org.jetbrains.kotlin.config.JVMConfigurationKeys.OUTPUT_JAR
+import org.jetbrains.kotlin.config.JVMConfigurationKeys.RETAIN_OUTPUT_IN_MEMORY
 import org.jetbrains.kotlin.config.addKotlinSourceRoots
-
 import org.jetbrains.kotlin.extensions.StorageComponentContainerContributor.Companion.registerExtension
-
 import org.jetbrains.kotlin.samWithReceiver.CliSamWithReceiverComponentContributor
-
 import org.jetbrains.kotlin.script.KotlinScriptDefinition
-
 import org.jetbrains.kotlin.utils.PathUtil
-
 import org.slf4j.Logger
-
 import java.io.File
-
 
 internal
 fun compileKotlinScriptToDirectory(
@@ -86,7 +77,6 @@ fun compileKotlinScriptToDirectory(
     }
 }
 
-
 private
 object HasImplicitReceiverCompilerPlugin {
 
@@ -99,7 +89,6 @@ object HasImplicitReceiverCompilerPlugin {
             listOf("org.gradle.api.HasImplicitReceiver"))
 }
 
-
 internal
 fun compileToJar(
     outputJar: File,
@@ -109,7 +98,6 @@ fun compileToJar(
 
     compileTo(OUTPUT_JAR, outputJar, sourceFiles, logger, classPath)
 
-
 internal
 fun compileToDirectory(
     outputDirectory: File,
@@ -118,7 +106,6 @@ fun compileToDirectory(
     classPath: Iterable<File> = emptyList()): Boolean =
 
     compileTo(OUTPUT_DIRECTORY, outputDirectory, sourceFiles, logger, classPath)
-
 
 private
 fun compileTo(
@@ -142,11 +129,9 @@ fun compileTo(
     }
 }
 
-
 private
 val kotlinStdlibJar: File
     get() = PathUtil.getResourcePathForClass(Unit::class.java)
-
 
 private inline
 fun <T> withRootDisposable(action: (Disposable) -> T): T {
@@ -158,7 +143,6 @@ fun <T> withRootDisposable(action: (Disposable) -> T): T {
     }
 }
 
-
 private inline
 fun <T> withMessageCollectorFor(log: Logger, action: (MessageCollector) -> T): T {
     val messageCollector = messageCollectorFor(log)
@@ -166,7 +150,6 @@ fun <T> withMessageCollectorFor(log: Logger, action: (MessageCollector) -> T): T
         return action(messageCollector)
     }
 }
-
 
 private inline
 fun <T> withCompilationExceptionHandler(messageCollector: MessageCollector, action: () -> T): T {
@@ -182,7 +165,6 @@ fun <T> withCompilationExceptionHandler(messageCollector: MessageCollector, acti
     }
 }
 
-
 private
 fun compilerConfigurationFor(messageCollector: MessageCollector, sourceFiles: Iterable<File>): CompilerConfiguration =
     CompilerConfiguration().apply {
@@ -191,23 +173,19 @@ fun compilerConfigurationFor(messageCollector: MessageCollector, sourceFiles: It
         put<MessageCollector>(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, messageCollector)
     }
 
-
 private
 fun CompilerConfiguration.setModuleName(name: String) {
     put(CommonConfigurationKeys.MODULE_NAME, name)
 }
-
 
 private
 fun CompilerConfiguration.addScriptDefinition(scriptDef: KotlinScriptDefinition) {
     add(JVMConfigurationKeys.SCRIPT_DEFINITIONS, scriptDef)
 }
 
-
 private
 fun kotlinCoreEnvironmentFor(configuration: CompilerConfiguration, rootDisposable: Disposable) =
     KotlinCoreEnvironment.createForProduction(rootDisposable, configuration, EnvironmentConfigFiles.JVM_CONFIG_FILES)
-
 
 internal
 fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it }): MessageCollector =
@@ -218,7 +196,9 @@ fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it 
 
         override fun hasErrors() = errors > 0
 
-        override fun clear() { errors = 0 }
+        override fun clear() {
+            errors = 0
+        }
 
         override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageLocation?) {
 
@@ -248,7 +228,6 @@ fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it 
             }
         }
     }
-
 
 internal
 fun compilerMessageFor(path: String, line: Int, column: Int, message: String) =

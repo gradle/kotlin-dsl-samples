@@ -18,18 +18,15 @@ package org.gradle.kotlin.dsl.provider
 
 import kotlin.coroutines.experimental.buildSequence
 
-
 internal
 fun CharSequence.linePreservingSubstring(range: IntRange): String =
     linePreservingSubstring_(range).second
-
 
 internal
 fun CharSequence.linePreservingSubstring_(range: IntRange): Pair<Int, String> {
     val lineCount = take(range.start).count { it == '\n' }
     return lineCount to "\n".repeat(lineCount) + substring(range)
 }
-
 
 /**
  * Computes the 1-based line and column numbers from the given [range].
@@ -42,7 +39,6 @@ fun CharSequence.lineAndColumnFromRange(range: IntRange): Pair<Int, Int> {
     val lastNewLineIndex = prefix.lastIndexOf('\n')
     return (lineCountBefore + 1) to (range.start - lastNewLineIndex)
 }
-
 
 internal
 fun CharSequence.splitIncluding(delimiter: Char) = buildSequence {

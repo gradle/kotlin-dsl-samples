@@ -2,28 +2,26 @@ package org.gradle.kotlin.dsl.integration
 
 import org.gradle.kotlin.dsl.concurrent.future
 import org.gradle.kotlin.dsl.embeddedKotlinVersion
-
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.DeepThought
 import org.gradle.kotlin.dsl.fixtures.customDaemonRegistry
 import org.gradle.kotlin.dsl.fixtures.customInstallation
+import org.gradle.kotlin.dsl.fixtures.matching
 import org.gradle.kotlin.dsl.fixtures.withDaemonIdleTimeout
 import org.gradle.kotlin.dsl.fixtures.withDaemonRegistry
-import org.gradle.kotlin.dsl.fixtures.matching
-
 import org.gradle.kotlin.dsl.resolver.GradleInstallation
 import org.gradle.kotlin.dsl.resolver.KotlinBuildScriptModelRequest
 import org.gradle.kotlin.dsl.resolver.fetchKotlinBuildScriptModelFor
 import org.gradle.kotlin.dsl.tooling.models.KotlinBuildScriptModel
-
 import org.gradle.util.TextUtil.normaliseFileSeparators
-
-import org.hamcrest.CoreMatchers.*
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.hasItems
+import org.hamcrest.CoreMatchers.not
 import org.hamcrest.Matcher
 import org.hamcrest.MatcherAssert.assertThat
-
 import org.junit.Test
-
 import java.io.File
 
 class KotlinBuildScriptModelIntegrationTest : AbstractIntegrationTest() {
@@ -95,8 +93,8 @@ class KotlinBuildScriptModelIntegrationTest : AbstractIntegrationTest() {
             withClassJar("libs/$fixture.jar", DeepThought::class.java)
 
         val parentJar = withFixture("parent")
-        val fooJar    = withFixture("foo")
-        val barJar    = withFixture("bar")
+        val fooJar = withFixture("foo")
+        val barJar = withFixture("bar")
 
         fun String.withBuildscriptDependencyOn(fixture: File) =
             withFile(this, """
@@ -106,8 +104,8 @@ class KotlinBuildScriptModelIntegrationTest : AbstractIntegrationTest() {
             """)
 
         val parentBuildScript = "build.gradle".withBuildscriptDependencyOn(parentJar)
-        val fooBuildScript    = "foo/build.gradle.kts".withBuildscriptDependencyOn(fooJar)
-        val barBuildScript    = "bar/build.gradle.kts".withBuildscriptDependencyOn(barJar)
+        val fooBuildScript = "foo/build.gradle.kts".withBuildscriptDependencyOn(fooJar)
+        val barBuildScript = "bar/build.gradle.kts".withBuildscriptDependencyOn(barJar)
 
         assertClassPathFor(
             parentBuildScript,
@@ -184,7 +182,7 @@ class KotlinBuildScriptModelIntegrationTest : AbstractIntegrationTest() {
 
         assertSourcePathIncludesKotlinPluginSourcesGiven(
             rootProjectScript = "",
-            subProjectScript ="""
+            subProjectScript = """
                 buildscript {
                     dependencies { classpath(kotlin("gradle-plugin")) }
                     repositories { jcenter() }
@@ -292,16 +290,13 @@ class KotlinBuildScriptModelIntegrationTest : AbstractIntegrationTest() {
         canonicalClassPathFor(projectRoot)
 }
 
-
 internal
 fun canonicalClassPathFor(projectDir: File, scriptFile: File? = null) =
     classPathFor(projectDir, scriptFile).map(File::getCanonicalFile)
 
-
 private
 fun classPathFor(projectDir: File, scriptFile: File?) =
     kotlinBuildScriptModelFor(projectDir, scriptFile).classPath
-
 
 internal
 fun kotlinBuildScriptModelFor(projectDir: File, scriptFile: File? = null): KotlinBuildScriptModel =

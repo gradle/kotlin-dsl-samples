@@ -17,18 +17,18 @@
 package org.gradle.kotlin.dsl.provider
 
 import org.jetbrains.kotlin.lexer.KotlinLexer
-import org.jetbrains.kotlin.lexer.KtTokens.*
-
+import org.jetbrains.kotlin.lexer.KtTokens.IDENTIFIER
+import org.jetbrains.kotlin.lexer.KtTokens.LBRACE
+import org.jetbrains.kotlin.lexer.KtTokens.RBRACE
+import org.jetbrains.kotlin.lexer.KtTokens.WHITE_SPACE_OR_COMMENT_BIT_SET
 
 internal
 class UnexpectedBlock(val identifier: String, val location: IntRange)
     : RuntimeException("Unexpected block found.")
 
-
 internal
 fun extractBuildscriptBlockFrom(script: String) =
     extractTopLevelSectionFrom(script, "buildscript")
-
 
 /**
  * Extract a top-level section from the given [script]. The section must be in the form:
@@ -56,14 +56,12 @@ fun extractTopLevelSectionFrom(script: String, identifier: String): IntRange? {
     }
 }
 
-
 private
 fun KotlinLexer.expectNoMore(identifier: String) {
     nextTopLevelSection(identifier)?.let {
         throw UnexpectedBlock(identifier, it)
     }
 }
-
 
 private
 fun KotlinLexer.nextTopLevelSection(identifier: String): IntRange? =
@@ -77,14 +75,12 @@ fun KotlinLexer.nextTopLevelSection(identifier: String): IntRange? =
         } else null
     }
 
-
 private
 fun KotlinLexer.skipWhiteSpaceAndComments() {
     while (tokenType in WHITE_SPACE_OR_COMMENT_BIT_SET) {
         advance()
     }
 }
-
 
 private
 fun KotlinLexer.findTopLevelIdentifier(identifier: String): Int? {
@@ -102,7 +98,6 @@ fun KotlinLexer.findTopLevelIdentifier(identifier: String): Int? {
     }
     return null
 }
-
 
 private
 fun KotlinLexer.findBlockEnd(): Int? {

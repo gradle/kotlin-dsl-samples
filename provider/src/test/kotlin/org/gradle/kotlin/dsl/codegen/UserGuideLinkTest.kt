@@ -6,7 +6,6 @@ import org.hamcrest.MatcherAssert.assertThat
 
 import org.junit.Test
 
-
 class UserGuideLinkTest {
 
     @Test

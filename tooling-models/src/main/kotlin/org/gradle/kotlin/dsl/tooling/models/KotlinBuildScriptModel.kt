@@ -17,7 +17,6 @@ package org.gradle.kotlin.dsl.tooling.models
 
 import java.io.File
 
-
 interface KotlinBuildScriptModel {
 
     val classPath: List<File>

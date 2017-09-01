@@ -99,11 +99,10 @@ artifactory {
 
 fun buildTagFor(version: String): String =
     when (version.substringAfterLast('-')) {
-        "SNAPSHOT"                  -> "snapshot"
+        "SNAPSHOT" -> "snapshot"
         in Regex("""M\d+[a-z]*$""") -> "milestone"
-        else                        -> "release"
+        else -> "release"
     }
-
 
 // -- Integration testing ----------------------------------------------
 val prepareIntegrationTestFixtures by task<GradleBuild> {
@@ -140,13 +139,11 @@ val customInstallation by task<Copy> {
     into("$customInstallationDir/lib")
 }
 
-
 // -- Performance testing ----------------------------------------------
 val benchmark by task<integration.Benchmark> {
     dependsOn(customInstallation)
     latestInstallation = customInstallationDir
 }
-
 
 // --- Utility functions -----------------------------------------------
 operator fun Regex.contains(s: String) = matches(s)

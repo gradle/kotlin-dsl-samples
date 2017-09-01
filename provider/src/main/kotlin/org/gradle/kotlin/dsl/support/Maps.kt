@@ -16,13 +16,11 @@
 
 package org.gradle.kotlin.dsl.support
 
-
 internal
 fun excludeMapFor(group: String?, module: String?): Map<String, String> =
     mapOfNonNullValuesOf(
         "group" to group,
         "module" to module)
-
 
 internal
 fun mapOfNonNullValuesOf(vararg entries: Pair<String, String?>): Map<String, String> =

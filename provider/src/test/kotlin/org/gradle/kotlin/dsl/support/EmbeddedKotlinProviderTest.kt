@@ -3,7 +3,6 @@ package org.gradle.kotlin.dsl.support
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.Assert.assertThat
 
-
 class EmbeddedKotlinProviderTest : org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest() {
 
     @org.junit.Test
@@ -11,7 +10,7 @@ class EmbeddedKotlinProviderTest : org.gradle.kotlin.dsl.fixtures.AbstractIntegr
 
         val result = build("buildEnvironment")
 
-        assertThat(result.output, containsString("No dependencies"));
+        assertThat(result.output, containsString("No dependencies"))
     }
 
     @org.junit.Test

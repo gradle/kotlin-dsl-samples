@@ -17,7 +17,8 @@ class LineAndColumnFromRangeTest(val given: LineAndColumnFromRangeTest.Given) {
         const val text = "line 1\nline 2\nline 3"
 
         @Parameterized.Parameters(name = "{0}")
-        @JvmStatic fun testCases(): Iterable<LineAndColumnFromRangeTest.Given> =
+        @JvmStatic
+        fun testCases(): Iterable<LineAndColumnFromRangeTest.Given> =
             listOf(
                 LineAndColumnFromRangeTest.Given(0..0, 1 to 1),
                 LineAndColumnFromRangeTest.Given(1..1, 1 to 2),

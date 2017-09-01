@@ -16,7 +16,6 @@
 
 package org.gradle.kotlin.dsl.concurrent
 
-
 /**
  * Represents values with two possibilities.
  */
@@ -34,18 +33,15 @@ sealed class Either<out L, out R> {
     }
 }
 
-
 /**
  * Constructs a [Either.Left] value.
  */
 internal
 fun <L, R> left(value: L): Either<L, R> = Either.Left<L, R>(value)
 
-
 /**
  * Constructs a [Either.Right] value.
  */
 internal
 fun <L, R> right(value: R): Either<L, R> = Either.Right<L, R>(value)
-
 

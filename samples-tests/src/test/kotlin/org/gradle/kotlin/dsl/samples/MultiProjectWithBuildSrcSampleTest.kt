@@ -5,7 +5,6 @@ import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
 import org.junit.Assert.assertThat
 import org.junit.Test
 
-
 class MultiProjectWithBuildSrcSampleTest : AbstractSampleTest("multi-project-with-buildSrc") {
 
     @Test
