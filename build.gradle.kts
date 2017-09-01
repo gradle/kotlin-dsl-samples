@@ -21,12 +21,28 @@ buildscript {
 
 plugins {
     base
+    id("com.diffplug.gradle.spotless") version "3.5.1"
     id("com.jfrog.artifactory") version "4.1.1"
 }
 
 allprojects {
+    apply {
+        plugin("com.diffplug.gradle.spotless")
+    }
     group = "org.gradle"
     version = "0.12.0-SNAPSHOT"
+
+    spotless {
+        val ktLintVersion = "0.9.0"
+        kotlinGradle {
+            ktlint(ktLintVersion)
+        }
+        plugins.withId("kotlin") {
+            kotlin {
+                ktlint(ktLintVersion)
+            }
+        }
+    }
 }
 
 val publishedPluginsVersion by extra { "0.11.2" }
