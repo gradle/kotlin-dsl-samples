@@ -20,7 +20,6 @@ import org.junit.Test
 
 import java.io.File
 
-
 class KotlinBuildScriptTemplateModelIntegrationTest : AbstractIntegrationTest() {
 
     @Test
@@ -35,7 +34,6 @@ class KotlinBuildScriptTemplateModelIntegrationTest : AbstractIntegrationTest() 
             KotlinBuildScript::class.qualifiedName!!,
             KotlinBuildScriptDependenciesResolver::class.qualifiedName!!)
     }
-
 
     private
     fun fetchKotlinScriptTemplateClassPathModelFor(projectDir: File) =
@@ -53,7 +51,6 @@ class KotlinBuildScriptTemplateModelIntegrationTest : AbstractIntegrationTest() 
                 }
             }
         }
-
 
     private
     fun loadClassesFrom(classPath: List<File>, vararg classNames: String) {

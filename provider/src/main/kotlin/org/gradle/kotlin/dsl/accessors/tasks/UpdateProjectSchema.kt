@@ -22,11 +22,11 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-
-import org.gradle.kotlin.dsl.accessors.*
+import org.gradle.kotlin.dsl.accessors.PROJECT_SCHEMA_RESOURCE_PATH
+import org.gradle.kotlin.dsl.accessors.multiProjectKotlinStringSchemaFor
+import org.gradle.kotlin.dsl.accessors.toJson
 
 import java.io.File
-
 
 open class UpdateProjectSchema : DefaultTask() {
 

@@ -20,7 +20,6 @@ import org.gradle.api.file.ConfigurableFileCollection
 
 import kotlin.reflect.KProperty
 
-
 /**
  * Property delegate for [ConfigurableFileCollection] instances.
  *
@@ -29,7 +28,6 @@ import kotlin.reflect.KProperty
 operator fun ConfigurableFileCollection.getValue(receiver: Any?, property: KProperty<*>): ConfigurableFileCollection =
     this
 
-
 /**
  * Property delegate for [ConfigurableFileCollection] instances.
  *
@@ -37,4 +35,3 @@ operator fun ConfigurableFileCollection.getValue(receiver: Any?, property: KProp
  */
 operator fun ConfigurableFileCollection.setValue(receiver: Any?, property: KProperty<*>, value: Iterable<*>) =
     setFrom(value)
-

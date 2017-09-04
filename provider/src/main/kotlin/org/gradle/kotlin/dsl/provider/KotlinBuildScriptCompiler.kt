@@ -21,31 +21,21 @@ import org.gradle.api.internal.initialization.ClassLoaderScope
 import org.gradle.api.internal.initialization.ScriptHandlerInternal
 import org.gradle.api.internal.plugins.PluginManagerInternal
 import org.gradle.api.internal.project.ProjectInternal
-
 import org.gradle.groovy.scripts.ScriptSource
-
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
-
-import org.gradle.plugin.use.internal.PluginRequestApplicator
-import org.gradle.plugin.use.internal.PluginRequestCollector
-import org.gradle.plugin.management.internal.PluginRequests
-
 import org.gradle.kotlin.dsl.accessors.accessorsClassPathFor
 import org.gradle.kotlin.dsl.get
-
-import org.gradle.kotlin.dsl.support.compilerMessageFor
 import org.gradle.kotlin.dsl.support.EmbeddedKotlinProvider
+import org.gradle.kotlin.dsl.support.compilerMessageFor
 import org.gradle.kotlin.dsl.support.userHome
-
+import org.gradle.plugin.management.internal.PluginRequests
+import org.gradle.plugin.use.internal.PluginRequestApplicator
+import org.gradle.plugin.use.internal.PluginRequestCollector
 import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtilRt.convertLineSeparators
-
 import java.io.File
-
 import java.lang.reflect.InvocationTargetException
-
-import java.util.*
-
+import java.util.ArrayList
 
 internal
 class KotlinBuildScriptCompiler(
@@ -201,7 +191,7 @@ class KotlinBuildScriptCompiler(
         withContextClassLoader(pluginsBlockClass.classLoader) {
             try {
                 instantiate(pluginsBlockClass, pluginDependenciesSpec)
-            } catch(e: InvocationTargetException) {
+            } catch (e: InvocationTargetException) {
                 throw e.targetException
             }
         }
@@ -269,7 +259,7 @@ class KotlinBuildScriptCompiler(
     fun executeScriptOf(scriptClass: Class<*>, target: Project) {
         try {
             instantiate(scriptClass, target)
-        } catch(e: InvocationTargetException) {
+        } catch (e: InvocationTargetException) {
             if (e.cause is Error) {
                 tryToLogClassLoaderHierarchyOf(scriptClass, target)
             }
@@ -353,16 +343,14 @@ class KotlinBuildScriptCompiler(
 
 }
 
-
 private inline
 fun ignoringErrors(block: () -> Unit) {
     try {
         block()
-    } catch(e: Exception) {
+    } catch (e: Exception) {
         e.printStackTrace()
     }
 }
-
 
 private inline
 fun withContextClassLoader(classLoader: ClassLoader, block: () -> Unit) {

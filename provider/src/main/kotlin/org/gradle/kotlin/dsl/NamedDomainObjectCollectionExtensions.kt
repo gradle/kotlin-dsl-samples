@@ -23,7 +23,6 @@ import org.gradle.kotlin.dsl.support.illegalElementType
 
 import kotlin.reflect.KProperty
 
-
 /**
  * Idiomatic way of referring to an existing element in a collection
  * via a delegate property.
@@ -31,8 +30,8 @@ import kotlin.reflect.KProperty
  * `tasks { val jar by getting }`
  */
 inline
-val <T : Any, U : NamedDomainObjectCollection<in T>> U.getting: U get() = this
-
+val <T : Any, U : NamedDomainObjectCollection<in T>> U.getting: U
+    get() = this
 
 /**
  * Idiomatic way of referring and configuring an existing element in a collection
@@ -43,7 +42,6 @@ val <T : Any, U : NamedDomainObjectCollection<in T>> U.getting: U get() = this
 fun <T : Any, U : NamedDomainObjectCollection<T>> U.getting(configuration: T.() -> Unit) =
     NamedDomainObjectCollectionDelegateProvider(this, configuration)
 
-
 class NamedDomainObjectCollectionDelegateProvider<T>(
     val collection: NamedDomainObjectCollection<T>,
     val configuration: T.() -> Unit) {
@@ -53,7 +51,6 @@ class NamedDomainObjectCollectionDelegateProvider<T>(
             getByName(property.name).apply(configuration)
         }
 }
-
 
 /**
  * Locates an object by name, failing if there is no such object.
@@ -66,7 +63,6 @@ class NamedDomainObjectCollectionDelegateProvider<T>(
  */
 operator fun <T : Any> NamedDomainObjectCollection<T>.get(name: String): T =
     getByName(name)
-
 
 /**
  * Allows a [NamedDomainObjectCollection] to be used as a property delegate.

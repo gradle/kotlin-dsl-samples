@@ -7,7 +7,6 @@ import org.junit.Test
 
 import java.io.File
 
-
 class DomainObjectsSampleTest : AbstractSampleTest("domain-objects") {
 
     @Test

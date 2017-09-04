@@ -5,14 +5,14 @@ import org.hamcrest.CoreMatchers.containsString
 import org.junit.Assert.assertThat
 import org.junit.Test
 
-
 class ModularitySampleTest : AbstractSampleTest("modularity") {
 
     @Test
     fun `modularity`() {
         assertThat(
             build("foo", "bar").output,
-            allOf(containsString("Foo!"),
-                  containsString("Bar!")))
+            allOf(
+                containsString("Foo!"),
+                containsString("Bar!")))
     }
 }

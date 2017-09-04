@@ -58,7 +58,6 @@ class PluginDependenciesSpecScopeTest {
     }
 }
 
-
 fun expecting(vararg expected: Plugin, block: PluginDependenciesSpec.() -> Unit) {
     assertThat(
         plugins(block).map { Plugin(it.id.id, it.version, it.isApply) },
@@ -74,4 +73,3 @@ fun plugins(block: PluginDependenciesSpecScope.() -> Unit) =
 fun plugin(id: String, version: String? = null, isApply: Boolean = true) = Plugin(id, version, isApply)
 
 data class Plugin(val id: String, val version: String?, val isApply: Boolean)
-

@@ -21,12 +21,32 @@ buildscript {
 
 plugins {
     base
+    id("com.diffplug.gradle.spotless") version "3.5.1"
     id("com.jfrog.artifactory") version "4.1.1"
 }
 
 allprojects {
+    apply {
+        plugin("com.diffplug.gradle.spotless")
+    }
     group = "org.gradle"
     version = "0.12.0-SNAPSHOT"
+
+    spotless {
+        val ktLintVersion = "0.9.0"
+        kotlinGradle {
+            ktlint(ktLintVersion)
+            endWithNewline()
+            trimTrailingWhitespace()
+        }
+        plugins.withId("kotlin") {
+            kotlin {
+                ktlint(ktLintVersion)
+                endWithNewline()
+                trimTrailingWhitespace()
+            }
+        }
+    }
 }
 
 val publishedPluginsVersion by extra { "0.11.2" }
@@ -83,11 +103,10 @@ artifactory {
 
 fun buildTagFor(version: String): String =
     when (version.substringAfterLast('-')) {
-        "SNAPSHOT"                  -> "snapshot"
+        "SNAPSHOT" -> "snapshot"
         in Regex("""M\d+[a-z]*$""") -> "milestone"
-        else                        -> "release"
+        else -> "release"
     }
-
 
 // -- Integration testing ----------------------------------------------
 val prepareIntegrationTestFixtures by task<GradleBuild> {
@@ -124,13 +143,11 @@ val customInstallation by task<Copy> {
     into("$customInstallationDir/lib")
 }
 
-
 // -- Performance testing ----------------------------------------------
 val benchmark by task<integration.Benchmark> {
     dependsOn(customInstallation)
     latestInstallation = customInstallationDir
 }
-
 
 // --- Utility functions -----------------------------------------------
 operator fun Regex.contains(s: String) = matches(s)

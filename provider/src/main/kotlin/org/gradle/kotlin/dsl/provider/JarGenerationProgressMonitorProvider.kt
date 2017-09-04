@@ -16,12 +16,10 @@
 
 package org.gradle.kotlin.dsl.provider
 
-import org.gradle.kotlin.dsl.support.ProgressMonitor
-
 import org.gradle.internal.logging.progress.ProgressLogger
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
 import org.gradle.internal.progress.PercentageProgressFormatter
-
+import org.gradle.kotlin.dsl.support.ProgressMonitor
 import java.io.File
 
 interface JarGenerationProgressMonitorProvider {
@@ -39,6 +37,7 @@ class StandardJarGenerationProgressMonitorProvider(
             override fun onProgress() {
                 progressLogger.progress(progressFormatter.incrementAndGetProgress())
             }
+
             override fun close() {
                 progressLogger.completed()
             }

@@ -24,7 +24,6 @@ import org.gradle.kotlin.dsl.support.EmbeddedKotlinProvider
 
 import javax.inject.Inject
 
-
 /**
  * The `embedded-kotlin` plugin.
  *

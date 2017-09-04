@@ -26,7 +26,6 @@ import org.hamcrest.CoreMatchers.equalTo
 import org.junit.Assert.assertThat
 import org.junit.Test
 
-
 class EmbeddedKotlinPluginTest : AbstractPluginTest() {
 
     @Test
@@ -226,4 +225,3 @@ class EmbeddedKotlinPluginTest : AbstractPluginTest() {
             "$configuration(\"org.jetbrains.kotlin:kotlin-$it:${version ?: embeddedKotlinVersion}\")"
         }.joinToString("\n")
 }
-

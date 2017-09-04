@@ -19,7 +19,6 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 
-
 /**
  * Adds and configures a Maven repository.
  *
@@ -34,7 +33,6 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository
  */
 fun RepositoryHandler.maven(url: Any) =
     maven { it.setUrl(url) }
-
 
 /**
  * Adds and configures a Maven repository.
@@ -55,7 +53,6 @@ fun RepositoryHandler.maven(url: Any, action: MavenArtifactRepository.() -> Unit
         it.action()
     }
 
-
 /**
  * Adds and configures an Ivy repository.
  *
@@ -70,7 +67,6 @@ fun RepositoryHandler.maven(url: Any, action: MavenArtifactRepository.() -> Unit
  */
 fun RepositoryHandler.ivy(url: Any) =
     ivy { it.setUrl(url) }
-
 
 /**
  * Adds and configures an Ivy repository.

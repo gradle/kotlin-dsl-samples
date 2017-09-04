@@ -15,18 +15,14 @@
  */
 package org.gradle.kotlin.dsl.tooling.builders
 
-import org.gradle.tooling.provider.model.ToolingModelBuilder
-import org.gradle.kotlin.dsl.tooling.models.KotlinBuildScriptTemplateModel
-
 import org.gradle.api.Project
-
 import org.gradle.api.internal.classpath.ModuleRegistry
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.kotlin.dsl.support.serviceOf
-
+import org.gradle.kotlin.dsl.tooling.models.KotlinBuildScriptTemplateModel
+import org.gradle.tooling.provider.model.ToolingModelBuilder
 import java.io.File
 import java.io.Serializable
-
 
 internal
 object KotlinBuildScriptTemplateModelBuilder : ToolingModelBuilder {
@@ -47,7 +43,6 @@ object KotlinBuildScriptTemplateModelBuilder : ToolingModelBuilder {
                     .asFiles)
         }
 }
-
 
 internal
 data class StandardKotlinBuildScriptTemplateModel(

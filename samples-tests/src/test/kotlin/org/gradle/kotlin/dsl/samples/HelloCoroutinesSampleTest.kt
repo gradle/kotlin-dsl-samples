@@ -5,7 +5,6 @@ import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
 import org.junit.Assert.assertThat
 import org.junit.Test
 
-
 class HelloCoroutinesSampleTest : AbstractSampleTest("hello-coroutines") {
 
     @Test

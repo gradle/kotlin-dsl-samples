@@ -5,7 +5,6 @@ import org.junit.Assert.assertTrue
 
 import java.io.File
 
-
 class GradlePluginSampleTest : AbstractSampleTest("gradle-plugin") {
 
     @Test

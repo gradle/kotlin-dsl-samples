@@ -24,7 +24,6 @@ import org.gradle.cache.internal.CacheKeyBuilder.CacheKeySpec
 
 import java.io.File
 
-
 internal
 class ScriptCache(
 
@@ -49,16 +48,14 @@ class ScriptCache(
             .apply { if (recompileScripts) withValidator { false } }
             .withInitializer(initializer)
             .open().run {
-                close()
-                baseDir
-            }
+            close()
+            baseDir
+        }
 
     private
     fun cacheKeyFor(spec: CacheKeySpec) = cacheKeyBuilder.build(spec)
 }
 
-
 internal
 operator fun CacheKeySpec.plus(files: List<File>) =
     files.fold(this, CacheKeySpec::plus)
-

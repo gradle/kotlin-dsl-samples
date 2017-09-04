@@ -16,14 +16,10 @@
 
 package org.gradle.kotlin.dsl.provider
 
-import org.gradle.kotlin.dsl.support.loggerFor
-
 import org.gradle.api.Project
-
 import org.gradle.configuration.ScriptPlugin
-
 import org.gradle.groovy.scripts.ScriptSource
-
+import org.gradle.kotlin.dsl.support.loggerFor
 import java.lang.IllegalArgumentException
 
 class KotlinScriptPlugin(

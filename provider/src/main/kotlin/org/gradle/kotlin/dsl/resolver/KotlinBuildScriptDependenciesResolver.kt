@@ -16,28 +16,19 @@
 
 package org.gradle.kotlin.dsl.resolver
 
-import org.gradle.kotlin.dsl.tooling.models.KotlinBuildScriptModel
-
 import org.gradle.kotlin.dsl.concurrent.future
-
+import org.gradle.kotlin.dsl.tooling.models.KotlinBuildScriptModel
 import org.gradle.tooling.ProgressListener
-
 import java.io.File
-
 import java.net.URI
-
 import java.security.MessageDigest
-
 import java.util.Arrays.equals
-
 import kotlin.script.dependencies.KotlinScriptExternalDependencies
 import kotlin.script.dependencies.ScriptContents
 import kotlin.script.dependencies.ScriptDependenciesResolver
 
-
 internal
 typealias Environment = Map<String, Any?>
-
 
 class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
 
@@ -54,7 +45,7 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
                     log(ResolvedToPrevious(script.file, environment, previousDependencies))
                     previousDependencies
                 }
-                is ResolverAction.RequestNew     -> {
+                is ResolverAction.RequestNew -> {
                     assembleDependenciesFrom(script.file, environment!!, action.buildscriptBlockHash)
                 }
             }
@@ -136,7 +127,6 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
         ResolverEventLogger.log(event)
 }
 
-
 /**
  * The resolver can either return the previous result
  * or request new dependency information from Gradle.
@@ -146,7 +136,6 @@ sealed class ResolverAction {
     object ReturnPrevious : ResolverAction()
     class RequestNew(val buildscriptBlockHash: ByteArray?) : ResolverAction()
 }
-
 
 internal
 object ResolverCoordinator {
@@ -203,10 +192,8 @@ object ResolverCoordinator {
     }
 }
 
-
 internal
 typealias ScriptSectionTokensProvider = (CharSequence, String) -> Sequence<CharSequence>
-
 
 internal
 class KotlinBuildScriptDependencies(
@@ -214,7 +201,6 @@ class KotlinBuildScriptDependencies(
     override val sources: Iterable<File>,
     override val imports: Iterable<String>,
     val buildscriptBlockHash: ByteArray?) : KotlinScriptExternalDependencies
-
 
 internal
 fun projectRootOf(scriptFile: File, importedProjectRoot: File): File {
@@ -224,12 +210,12 @@ fun projectRootOf(scriptFile: File, importedProjectRoot: File): File {
     tailrec fun test(dir: File): File =
         when {
             dir == importedProjectRoot -> importedProjectRoot
-            isProjectRoot(dir)         -> dir
-            else                       -> {
+            isProjectRoot(dir) -> dir
+            else -> {
                 val parentDir = dir.parentFile
                 when (parentDir) {
                     null, dir -> scriptFile.parentFile // external project
-                    else      -> test(parentDir)
+                    else -> test(parentDir)
                 }
             }
         }

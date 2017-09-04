@@ -1,0 +1,3 @@
+# Make sure that windows checks out kotlin files with the right line endings for spotless linting
+*.kts text eol=lf
+*.kt text eol=lf

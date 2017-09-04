@@ -7,7 +7,6 @@ import org.junit.Assert.assertThat
 
 import org.junit.Test
 
-
 class CodeQualitySampleTest : AbstractSampleTest("code-quality") {
 
     @Test

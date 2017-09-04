@@ -18,31 +18,23 @@ package org.gradle.kotlin.dsl.accessors
 
 import org.gradle.api.Project
 import org.gradle.api.internal.project.ProjectInternal
-
 import org.gradle.cache.internal.CacheKeyBuilder.CacheKeySpec
-
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
-
 import org.gradle.kotlin.dsl.cache.ScriptCache
 import org.gradle.kotlin.dsl.codegen.fileHeader
 import org.gradle.kotlin.dsl.support.compileToJar
 import org.gradle.kotlin.dsl.support.loggerFor
 import org.gradle.kotlin.dsl.support.serviceOf
-
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
-
 import org.jetbrains.org.objectweb.asm.ClassReader
 import org.jetbrains.org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.jetbrains.org.objectweb.asm.Opcodes.ACC_SYNTHETIC
-
 import java.io.BufferedWriter
 import java.io.Closeable
 import java.io.File
-
-import java.util.*
+import java.util.AbstractMap
 import java.util.jar.JarFile
-
 
 fun accessorsClassPathFor(project: Project, classPath: ClassPath) =
     project.getOrCreateSingletonProperty {
@@ -50,9 +42,7 @@ fun accessorsClassPathFor(project: Project, classPath: ClassPath) =
             ?: AccessorsClassPath(ClassPath.EMPTY, ClassPath.EMPTY)
     }
 
-
 data class AccessorsClassPath(val bin: ClassPath, val src: ClassPath)
-
 
 private
 fun buildAccessorsClassPathFor(project: Project, classPath: ClassPath) =
@@ -67,11 +57,9 @@ fun buildAccessorsClassPathFor(project: Project, classPath: ClassPath) =
             DefaultClassPath(accessorsSourceDir(cacheDir)))
     }
 
-
 private
 fun configuredProjectSchemaOf(project: Project) =
     aotProjectSchemaOf(project) ?: jitProjectSchemaOf(project)
-
 
 private
 fun aotProjectSchemaOf(project: Project) =
@@ -80,7 +68,6 @@ fun aotProjectSchemaOf(project: Project) =
         .getOrCreateSingletonProperty { multiProjectSchemaSnapshotOf(project) }
         .schema
         ?.let { it[project.path] }
-
 
 private
 fun jitProjectSchemaOf(project: Project) =
@@ -91,10 +78,8 @@ fun jitProjectSchemaOf(project: Project) =
         schemaFor(project).withKotlinTypeStrings()
     }
 
-
 private
 fun scriptCacheOf(project: Project) = project.serviceOf<ScriptCache>()
-
 
 private
 fun buildAccessorsJarFor(projectSchema: ProjectSchema<String>, classPath: ClassPath, outputDir: File) {
@@ -115,13 +100,11 @@ fun buildAccessorsJarFor(projectSchema: ProjectSchema<String>, classPath: ClassP
     })
 }
 
-
 internal
 sealed class TypeAccessibility {
     data class Accessible(val type: String) : TypeAccessibility()
     data class Inaccessible(val type: String, val reasons: List<InaccessibilityReason>) : TypeAccessibility()
 }
-
 
 internal
 sealed class InaccessibilityReason {
@@ -131,12 +114,11 @@ sealed class InaccessibilityReason {
     data class Synthetic(val type: String) : InaccessibilityReason()
 
     val explanation get() = when (this) {
-        is NonPublic    -> "`$type` is not public"
-        is NonAvailable -> "`$type` is not available"
-        is Synthetic    -> "`$type` is synthetic"
-    }
+            is NonPublic -> "`$type` is not public"
+            is NonAvailable -> "`$type` is not available"
+            is Synthetic -> "`$type` is synthetic"
+        }
 }
-
 
 internal
 fun availableProjectSchemaFor(projectSchema: ProjectSchema<String>, classPath: ClassPath) =
@@ -144,10 +126,8 @@ fun availableProjectSchemaFor(projectSchema: ProjectSchema<String>, classPath: C
         projectSchema.map(accessibilityProvider::accessibilityForType)
     }
 
-
 private
 typealias ClassFileIndex = (String) -> ByteArray?
-
 
 internal
 class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
@@ -180,9 +160,9 @@ class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
         val classBytes = classBytesFor(className) ?: return nonAvailable(className)
         val access = classAccessFrom(classBytes)
         return when {
-            ACC_PUBLIC !in access   -> nonPublic(className)
+            ACC_PUBLIC !in access -> nonPublic(className)
             ACC_SYNTHETIC in access -> synthetic(className)
-            else                    -> null
+            else -> null
         }
     }
 
@@ -195,9 +175,9 @@ class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
     private
     fun classFileIndexFor(jarOrDir: File): ClassFileIndex =
         when {
-            jarOrDir.isFile      -> jarIndexFor(jarOrDir)
+            jarOrDir.isFile -> jarIndexFor(jarOrDir)
             jarOrDir.isDirectory -> directoryIndexFor(jarOrDir)
-            else                 -> { _ -> null }
+            else -> { _ -> null }
         }
 
     private
@@ -236,53 +216,42 @@ class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
         ClassReader(classBytes).access
 }
 
-
 private
 operator fun Int.contains(flag: Int) =
     and(flag) == flag
-
 
 internal
 fun nonAvailable(type: String): InaccessibilityReason =
     InaccessibilityReason.NonAvailable(type)
 
-
 internal
 fun nonPublic(type: String): InaccessibilityReason =
     InaccessibilityReason.NonPublic(type)
-
 
 internal
 fun synthetic(type: String): InaccessibilityReason =
     InaccessibilityReason.Synthetic(type)
 
-
 internal
 fun accessible(type: String): TypeAccessibility =
     TypeAccessibility.Accessible(type)
-
 
 internal
 fun inaccessible(type: String, vararg reasons: InaccessibilityReason) =
     inaccessible(type, reasons.toList())
 
-
 internal
 fun inaccessible(type: String, reasons: List<InaccessibilityReason>): TypeAccessibility =
     TypeAccessibility.Inaccessible(type, reasons)
 
-
 private
 val logger by lazy { loggerFor<AccessorsClassPath>() }
-
 
 private
 fun accessorsSourceDir(baseDir: File) = File(baseDir, "src")
 
-
 private
 fun accessorsJar(baseDir: File) = File(baseDir, "gradle-kotlin-dsl-accessors.jar")
-
 
 private
 fun multiProjectSchemaSnapshotOf(project: Project) =
@@ -291,10 +260,8 @@ fun multiProjectSchemaSnapshotOf(project: Project) =
             loadMultiProjectSchemaFrom(it)
         })
 
-
 private
 data class MultiProjectSchemaSnapshot(val schema: Map<String, ProjectSchema<String>>?)
-
 
 private
 fun projectSchemaSnapshotFileOf(project: Project): File? =
@@ -303,38 +270,32 @@ fun projectSchemaSnapshotFileOf(project: Project): File? =
         .file(PROJECT_SCHEMA_RESOURCE_PATH)
         .takeIf { it.isFile }
 
-
 private
 fun classLoaderScopeOf(project: Project) =
     (project as ProjectInternal).classLoaderScope
-
 
 private
 fun cacheKeyFor(projectSchema: ProjectSchema<String>): CacheKeySpec =
     CacheKeySpec.withPrefix("gradle-kotlin-dsl-accessors") + projectSchema.toCacheKeyString()
 
-
 private
 fun ProjectSchema<String>.toCacheKeyString(): String =
     (extensions.entries.asSequence()
-     + conventions.entries.asSequence()
-     + mapEntry("configurations", configurations.sorted().joinToString(",")))
+        + conventions.entries.asSequence()
+        + mapEntry("configurations", configurations.sorted().joinToString(",")))
         .map { "${it.key}=${it.value}" }
         .sorted()
         .joinToString(separator = ":")
 
-
 private
 fun <K, V> mapEntry(key: K, value: V) =
     AbstractMap.SimpleEntry(key, value)
-
 
 private
 fun enabledJitAccessors(project: Project) =
     project.findProperty("org.gradle.kotlin.dsl.accessors")?.let {
         it != "false" && it != "off"
     } ?: true
-
 
 private
 fun writeAccessorsTo(outputFile: File, projectSchema: ProjectSchema<TypeAccessibility>): File =
@@ -344,7 +305,6 @@ fun writeAccessorsTo(outputFile: File, projectSchema: ProjectSchema<TypeAccessib
             writeAccessorsFor(projectSchema, writer)
         }
     }
-
 
 private
 fun writeAccessorsFor(projectSchema: ProjectSchema<TypeAccessibility>, writer: BufferedWriter) {
@@ -366,7 +326,6 @@ fun writeAccessorsFor(projectSchema: ProjectSchema<TypeAccessibility>, writer: B
         }
     }
 }
-
 
 /**
  * Location of the project schema snapshot taken by the _kotlinDslAccessorsSnapshot_ task relative to the root project.

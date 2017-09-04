@@ -17,7 +17,6 @@ import org.hamcrest.MatcherAssert.assertThat
 
 import org.junit.Test
 
-
 class NamedDomainObjectContainerExtensionsTest {
 
     data class DomainObject(var foo: String? = null, var bar: Boolean? = null)

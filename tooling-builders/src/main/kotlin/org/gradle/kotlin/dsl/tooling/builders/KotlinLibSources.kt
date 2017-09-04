@@ -42,7 +42,6 @@ import org.gradle.plugins.ide.internal.resolver.DefaultIdeDependencyResolver
 
 import kotlin.coroutines.experimental.buildSequence
 
-
 internal
 fun sourcePathFor(project: Project): ClassPath {
 
@@ -52,7 +51,7 @@ fun sourcePathFor(project: Project): ClassPath {
     for (buildscript in reversedBuildscriptHierarchyOf(project)) {
         val classpathDependencies = classpathDependenciesOf(buildscript).filter { it !in resolvedDependencies }
         if (resolvedDependencies.addAll(classpathDependencies)) {
-           sourcePath += resolveSourcesUsing(buildscript.dependencies, classpathDependencies.map { it.toModuleId() })
+            sourcePath += resolveSourcesUsing(buildscript.dependencies, classpathDependencies.map { it.toModuleId() })
         }
     }
 
@@ -63,22 +62,18 @@ fun sourcePathFor(project: Project): ClassPath {
     return sourcePath
 }
 
-
 private
 fun reversedBuildscriptHierarchyOf(project: Project) =
     reversedHierarchyOf(project).map { it.buildscript }
-
 
 private
 fun reversedHierarchyOf(project: Project) =
     project.hierarchy.toList().asReversed()
 
-
 private
 fun containsBuiltinKotlinModules(resolvedDependencies: HashSet<ModuleVersionIdentifier>) =
     resolvedDependencies.containsAll(
         builtinKotlinModules.map(::kotlinModuleVersionIdentifier))
-
 
 private
 fun classpathDependenciesOf(buildscript: ScriptHandler): List<ModuleVersionIdentifier> =
@@ -86,10 +81,8 @@ fun classpathDependenciesOf(buildscript: ScriptHandler): List<ModuleVersionIdent
         .getIdeRepoFileDependencies(buildscript.configurations[CLASSPATH_CONFIGURATION])
         .map { it.id }
 
-
 private
 fun ModuleVersionIdentifier.toModuleId() = moduleId(group, name, version)
-
 
 internal
 fun kotlinLibSourcesFor(project: Project): ClassPath =
@@ -98,7 +91,6 @@ fun kotlinLibSourcesFor(project: Project): ClassPath =
         .filter { it.buildscript.repositories.isNotEmpty() }
         .map { resolveKotlinLibSourcesUsing(it.buildscript.dependencies) }
         .find { !it.isEmpty } ?: ClassPath.EMPTY
-
 
 private
 fun resolveKotlinLibSourcesUsing(dependencyHandler: DependencyHandler): ClassPath =
@@ -117,26 +109,21 @@ fun resolveSourcesUsing(dependencyHandler: DependencyHandler, components: List<C
             .filterIsInstance<ResolvedArtifactResult>()
             .map { it.file })
 
-
 private
 val builtinKotlinModules = listOf("kotlin-stdlib", "kotlin-reflect")
-
 
 private
 val kotlinComponentIdentifiers by lazy {
     builtinKotlinModules.map(::kotlinComponent)
 }
 
-
 private
 fun kotlinComponent(module: String): ComponentIdentifier =
     moduleId("org.jetbrains.kotlin", module, embeddedKotlinVersion)
 
-
 private
 fun kotlinModuleVersionIdentifier(module: String): ModuleVersionIdentifier =
     DefaultModuleVersionIdentifier("org.jetbrains.kotlin", module, embeddedKotlinVersion)
-
 
 private
 fun moduleId(group: String, module: String, version: String) =
@@ -146,7 +133,6 @@ fun moduleId(group: String, module: String, version: String) =
         override fun getVersion() = version
         override fun getDisplayName() = "$group:$module:$version"
     }
-
 
 private
 val org.gradle.api.Project.hierarchy: Sequence<Project>

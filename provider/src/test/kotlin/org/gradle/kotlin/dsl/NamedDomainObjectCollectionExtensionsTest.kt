@@ -61,12 +61,14 @@ class NamedDomainObjectCollectionExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        container { // invoke syntax
+        container {
+            // invoke syntax
             val domainObject by getting
             assertThat(domainObject, sameInstance(element))
         }
 
-        container.apply { // regular syntax
+        container.apply {
+            // regular syntax
             val domainObject by getting
             assertThat(domainObject, sameInstance(element))
         }
@@ -80,12 +82,14 @@ class NamedDomainObjectCollectionExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        container { // invoke syntax
+        container {
+            // invoke syntax
             val domainObject: DomainObject by getting
             assertThat(domainObject, sameInstance(element))
         }
 
-        container.apply { // regular syntax
+        container.apply {
+            // regular syntax
             val domainObject: DomainObject by getting
             assertThat(domainObject, sameInstance(element))
         }
@@ -99,12 +103,14 @@ class NamedDomainObjectCollectionExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        container { // invoke syntax
+        container {
+            // invoke syntax
             val domainObject by getting(DomainObject::class)
             assertThat(domainObject, sameInstance(element))
         }
 
-        container.apply { // regular syntax
+        container.apply {
+            // regular syntax
             val domainObject by getting(DomainObject::class)
             assertThat(domainObject, sameInstance(element))
         }
@@ -118,13 +124,15 @@ class NamedDomainObjectCollectionExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        container { // invoke syntax
+        container {
+            // invoke syntax
             @Suppress("unused_variable")
             val domainObject by getting { foo = "foo" }
             assertThat(element.foo, equalTo("foo"))
         }
 
-        container.apply { // regular syntax
+        container.apply {
+            // regular syntax
             @Suppress("unused_variable")
             val domainObject by getting { foo = "bar" }
             assertThat(element.foo, equalTo("bar"))
@@ -139,13 +147,15 @@ class NamedDomainObjectCollectionExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        container { // invoke syntax
+        container {
+            // invoke syntax
             @Suppress("unused_variable")
             val domainObject by getting(DomainObject::class) { foo = "foo" }
             assertThat(element.foo, equalTo("foo"))
         }
 
-        container.apply { // regular syntax
+        container.apply {
+            // regular syntax
             @Suppress("unused_variable")
             val domainObject by getting(DomainObject::class) { foo = "bar" }
             assertThat(element.foo, equalTo("bar"))

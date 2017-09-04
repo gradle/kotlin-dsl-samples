@@ -20,7 +20,6 @@ import org.gradle.api.internal.HasConvention
 import org.gradle.api.plugins.Convention
 import kotlin.reflect.KClass
 
-
 /**
  * Looks for the convention plugin of a given name and casts it to the expected type [T].
  *
@@ -36,15 +35,12 @@ fun <reified T : Any> Convention.getPluginByName(name: String): T =
         (it as T?) ?: throw IllegalStateException("Convention '$name' of type '${it::class.java.name}' cannot be cast to '${T::class.java.name}'.")
     } ?: throw IllegalStateException("A convention named '$name' could not be found.")
 
-
 inline
 fun <reified T : Any> Convention.getPlugin() =
     getPlugin(T::class)
 
-
 fun <T : Any> Convention.getPlugin(conventionType: KClass<T>) =
     getPlugin(conventionType.java)
-
 
 /**
  * Evaluates the given [function] against the convention plugin of the given [conventionType].
@@ -62,4 +58,3 @@ fun <ConventionType : Any, ReturnType> Any.withConvention(conventionType: KClass
         is HasConvention -> convention.getPlugin(conventionType).run(function)
         else -> throw IllegalStateException("Object `$this` doesn't support conventions!")
     }
-

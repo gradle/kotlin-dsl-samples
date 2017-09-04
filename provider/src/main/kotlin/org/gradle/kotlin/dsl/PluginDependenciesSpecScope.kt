@@ -19,7 +19,6 @@ package org.gradle.kotlin.dsl
 import org.gradle.plugin.use.PluginDependenciesSpec
 import org.gradle.plugin.use.PluginDependencySpec
 
-
 /**
  * Receiver for the `plugins` block.
  *
@@ -31,14 +30,12 @@ import org.gradle.plugin.use.PluginDependencySpec
 @GradleDsl
 class PluginDependenciesSpecScope(plugins: PluginDependenciesSpec) : PluginDependenciesSpec by plugins
 
-
 /**
  * Specify the version of the plugin to depend on.
  *
  * Infix version of [PluginDependencySpec.version].
  */
 infix fun PluginDependencySpec.version(version: String?): PluginDependencySpec = version(version)
-
 
 /**
  * Specifies whether the plugin should be applied to the current project. Otherwise it is only put

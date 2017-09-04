@@ -31,10 +31,8 @@ import java.io.File
 
 import java.net.URI
 
-
 private
 val embeddedRepositoryCacheKeyVersion = 1
-
 
 private
 data class EmbeddedKotlinModule(
@@ -46,7 +44,6 @@ data class EmbeddedKotlinModule(
     val notation = "$group:$name:$version"
     val jarRepoPath = "${group.replace(".", "/")}/$name/$version/$name-$version.jar"
 }
-
 
 private
 val embeddedKotlinModules: List<EmbeddedKotlinModule> by lazy {
@@ -62,7 +59,6 @@ val embeddedKotlinModules: List<EmbeddedKotlinModule> by lazy {
         embeddedKotlin("reflect"),
         embeddedKotlin("compiler-embeddable"))
 }
-
 
 class EmbeddedKotlinProvider constructor(
     private val cacheRepository: CacheRepository,

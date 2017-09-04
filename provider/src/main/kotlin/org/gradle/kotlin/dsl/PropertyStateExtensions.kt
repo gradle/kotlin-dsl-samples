@@ -20,14 +20,12 @@ import org.gradle.api.provider.PropertyState
 
 import kotlin.reflect.KProperty
 
-
 /**
  * Property delegate for [PropertyState] instances.
  *
  * Example: `val someProperty by somePropertyState`
  */
 operator fun <T> PropertyState<T>.getValue(receiver: Any?, property: KProperty<*>): T = get()
-
 
 /**
  * Property delegate for [PropertyState] instances.

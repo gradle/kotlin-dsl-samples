@@ -24,7 +24,6 @@ import org.gradle.kotlin.dsl.plugins.embedded.EmbeddedKotlinPlugin
 import org.jetbrains.kotlin.samWithReceiver.gradle.SamWithReceiverExtension
 import org.jetbrains.kotlin.samWithReceiver.gradle.SamWithReceiverGradleSubplugin
 
-
 /**
  * The `kotlin-dsl` plugin.
  *

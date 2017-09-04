@@ -18,9 +18,6 @@ package org.gradle.kotlin.dsl.codegen
 
 import java.util.zip.ZipEntry
 
-
 internal
 val ZipEntry.isFile: Boolean
     get() = !isDirectory
-
-

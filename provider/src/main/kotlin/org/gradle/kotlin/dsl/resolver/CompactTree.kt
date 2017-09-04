@@ -20,16 +20,13 @@ import org.gradle.kotlin.dsl.provider.splitIncluding
 
 import java.io.File
 
-
 internal
 fun compactStringFor(files: Iterable<java.io.File>) =
     compactStringFor(files.map { it.path }, File.separatorChar)
 
-
 internal
 fun compactStringFor(paths: Iterable<String>, separator: Char) =
     CompactTree.Companion.of(paths.map { it.splitIncluding(separator).toList() }).toString()
-
 
 private
 sealed class CompactTree {
@@ -43,21 +40,21 @@ sealed class CompactTree {
                 .map { (label, remaining) ->
                     val subTree = CompactTree.Companion.of(remaining)
                     when (subTree) {
-                        is CompactTree.Empty  -> CompactTree.Label(label)
-                        is CompactTree.Label  -> CompactTree.Label(
+                        is CompactTree.Empty -> CompactTree.Label(label)
+                        is CompactTree.Label -> CompactTree.Label(
                             label + subTree.label)
                         is CompactTree.Branch -> CompactTree.Edge(
                             Label(label), subTree)
-                        is CompactTree.Edge   -> CompactTree.Edge(
+                        is CompactTree.Edge -> CompactTree.Edge(
                             Label(label + subTree.label), subTree.tree)
                     }
                 }.let {
-                    when (it.size) {
-                        0    -> CompactTree.Empty
-                        1    -> it.first()
-                        else -> CompactTree.Branch(it)
-                    }
+                when (it.size) {
+                    0 -> CompactTree.Empty
+                    1 -> it.first()
+                    else -> CompactTree.Branch(it)
                 }
+            }
     }
 
     object Empty : CompactTree() {

@@ -16,14 +16,10 @@
 package org.gradle.script.lang.kotlin
 
 import org.gradle.api.Project
-
-import org.gradle.kotlin.dsl.resolver.KotlinBuildScriptDependenciesResolver
-
 import org.gradle.kotlin.dsl.GradleDsl
-
+import org.gradle.kotlin.dsl.resolver.KotlinBuildScriptDependenciesResolver
 import kotlin.script.extensions.SamWithReceiverAnnotations
 import kotlin.script.templates.ScriptTemplateDefinition
-
 
 /**
  * Base class for Kotlin build scripts.

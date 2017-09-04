@@ -1,20 +1,15 @@
 package org.gradle.kotlin.dsl.provider
 
-import org.gradle.kotlin.dsl.support.ProgressMonitor
-
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
-
 import org.gradle.api.internal.artifacts.dsl.dependencies.DependencyFactory.ClassPathNotation.GRADLE_API
 import org.gradle.internal.classpath.ClassPath
-
 import org.gradle.kotlin.dsl.fixtures.TestWithTempFiles
-
+import org.gradle.kotlin.dsl.support.ProgressMonitor
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
-
 import org.junit.Test
 
 class KotlinScriptClassPathProviderTest : TestWithTempFiles() {

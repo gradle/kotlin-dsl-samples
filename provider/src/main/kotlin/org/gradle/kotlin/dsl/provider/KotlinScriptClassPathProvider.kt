@@ -37,32 +37,25 @@ import org.gradle.util.GFileUtils.moveFile
 
 import java.io.File
 
-
 fun gradleKotlinDslOf(project: Project): List<File> =
     kotlinScriptClassPathProviderOf(project).run {
         gradleKotlinDsl.asFiles
     }
 
-
 fun kotlinScriptClassPathProviderOf(project: Project) =
     project.serviceOf<KotlinScriptClassPathProvider>()
-
 
 internal
 typealias JarCache = (String, JarGenerator) -> File
 
-
 internal
 typealias JarGenerator = (File) -> Unit
-
 
 private
 typealias JarGeneratorWithProgress = (File, () -> Unit) -> Unit
 
-
 internal
 typealias JarsProvider = () -> Collection<File>
-
 
 class KotlinScriptClassPathProvider(
     val classPathRegistry: ClassPathRegistry,
@@ -141,20 +134,16 @@ class KotlinScriptClassPathProvider(
     }
 }
 
-
 internal
 fun gradleApiJarsProviderFor(dependencyFactory: DependencyFactory): JarsProvider =
     { (dependencyFactory.gradleApi() as SelfResolvingDependency).resolve() }
-
 
 private
 fun DependencyFactory.gradleApi(): Dependency =
     createDependency(gradleApiNotation)
 
-
 private
 val gradleApiNotation = DependencyFactory.ClassPathNotation.GRADLE_API
-
 
 private
 fun isKotlinJar(name: String): Boolean =

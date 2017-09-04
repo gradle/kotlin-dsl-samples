@@ -49,18 +49,14 @@ package org.gradle.kotlin.dsl
 
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.dsl.RepositoryHandler
-
 import org.gradle.api.artifacts.repositories.ArtifactRepository
-
 import org.gradle.plugin.use.PluginDependenciesSpec
 import org.gradle.plugin.use.PluginDependencySpec
-
 
 /**
  * The version of the Kotlin compiler embedded in gradle-kotlin-dsl (currently _${embeddedKotlinVersion}_).
  */
 val embeddedKotlinVersion = "$embeddedKotlinVersion"
-
 
 /**
  * Adds the remote repository containing the Kotlin libraries embedded in gradle-kotlin-dsl.
@@ -68,7 +64,6 @@ val embeddedKotlinVersion = "$embeddedKotlinVersion"
 @Deprecated("Will be removed in 1.0")
 fun RepositoryHandler.gradleScriptKotlin(): ArtifactRepository =
     maven { it.setUrl("$kotlinDslRepository") }
-
 
 /**
  * Builds the dependency notation for the named Kotlin [module] at the given [version].
@@ -79,11 +74,9 @@ fun RepositoryHandler.gradleScriptKotlin(): ArtifactRepository =
 fun DependencyHandler.kotlin(module: String, version: String? = null): Any =
     "org.jetbrains.kotlin:kotlin-${'$'}module:${'$'}{version ?: embeddedKotlinVersion}"
 
-
 @Deprecated("Will be removed in 1.0", ReplaceWith("kotlin(module, version)"))
 fun DependencyHandler.kotlinModule(module: String, version: String? = null): Any =
     kotlin(module, version)
-
 
 /**
  * Applies the given Kotlin plugin [module] at the (optional) given [version] ([embeddedKotlinVersion] by default).
@@ -97,7 +90,6 @@ fun DependencyHandler.kotlinModule(module: String, version: String? = null): Any
  */
 fun PluginDependenciesSpec.kotlin(module: String, version: String? = null): PluginDependencySpec =
     id("org.jetbrains.kotlin.${'$'}module") version (version ?: embeddedKotlinVersion)
-
 
 /**
  * The `embedded-kotlin` plugin.
@@ -122,7 +114,6 @@ val PluginDependenciesSpec.`embedded-kotlin`: PluginDependencySpec
  */
 val PluginDependenciesSpec.`kotlin-dsl`: PluginDependencySpec
     get() = id("org.gradle.kotlin.kotlin-dsl") version "$kotlinDslPluginsVersion"
-
 """)
     }
 }

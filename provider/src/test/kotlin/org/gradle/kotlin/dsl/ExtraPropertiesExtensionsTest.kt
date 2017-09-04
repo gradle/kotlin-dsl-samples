@@ -8,7 +8,6 @@ import org.gradle.api.plugins.ExtraPropertiesExtension
 
 import org.junit.Test
 
-
 class ExtraPropertiesExtensionsTest {
 
     @Test

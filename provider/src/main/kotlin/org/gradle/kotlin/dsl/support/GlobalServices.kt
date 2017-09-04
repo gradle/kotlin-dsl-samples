@@ -17,7 +17,6 @@ package org.gradle.kotlin.dsl.support
 
 import org.gradle.configuration.ImportsReader
 
-
 internal
 object GlobalServices {
 

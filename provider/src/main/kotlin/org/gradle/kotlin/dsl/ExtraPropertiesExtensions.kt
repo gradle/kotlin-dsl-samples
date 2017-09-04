@@ -24,7 +24,6 @@ import org.gradle.internal.Cast.uncheckedCast
 
 import kotlin.reflect.KProperty
 
-
 /**
  * The extra properties extension in this object's extension container.
  *
@@ -33,10 +32,8 @@ import kotlin.reflect.KProperty
 val ExtensionAware.extra: ExtraPropertiesExtension
     get() = extensions.extraProperties
 
-
 operator fun ExtraPropertiesExtension.setValue(receiver: Any?, property: KProperty<*>, value: Any) =
     set(property.name, value)
-
 
 operator fun <T> ExtraPropertiesExtension.getValue(receiver: Any?, property: KProperty<*>): T =
     /* We would like to be able to express optional properties via nullability of the return type
@@ -48,7 +45,6 @@ operator fun <T> ExtraPropertiesExtension.getValue(receiver: Any?, property: KPr
     */
     uncheckedCast(get(property.name))
 
-
 /**
  * Returns a property delegate provider that will initialize the extra property to the value provided
  * by [initialValueProvider].
@@ -59,7 +55,6 @@ inline
 operator fun <T : Any> ExtraPropertiesExtension.invoke(initialValueProvider: () -> T): ExtraPropertyDelegateProvider<T> =
     invoke(initialValueProvider())
 
-
 /**
  * Returns a property delegate provider that will initialize the extra property to the given [initialValue].
  *
@@ -67,7 +62,6 @@ operator fun <T : Any> ExtraPropertiesExtension.invoke(initialValueProvider: () 
  */
 operator fun <T : Any> ExtraPropertiesExtension.invoke(initialValue: T): ExtraPropertyDelegateProvider<T> =
     ExtraPropertyDelegateProvider(this, initialValue)
-
 
 class ExtraPropertyDelegateProvider<T : Any>(
     val extra: ExtraPropertiesExtension,
@@ -78,7 +72,6 @@ class ExtraPropertyDelegateProvider<T : Any>(
         return ExtraPropertyDelegate(extra)
     }
 }
-
 
 /**
  * Enables typed access to extra properties.

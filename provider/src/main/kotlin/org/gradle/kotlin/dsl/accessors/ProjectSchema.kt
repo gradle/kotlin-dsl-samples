@@ -26,7 +26,6 @@ import org.gradle.api.reflect.TypeOf.typeOf
 import java.io.File
 import java.io.Serializable
 
-
 internal
 data class ProjectSchema<out T>(
     val extensions: Map<String, T>,
@@ -40,16 +39,13 @@ data class ProjectSchema<out T>(
             configurations.toList())
 }
 
-
 internal
 fun multiProjectKotlinStringSchemaFor(root: Project): Map<String, ProjectSchema<String>> =
     multiProjectSchemaFor(root).mapValues { it.value.withKotlinTypeStrings() }
 
-
 internal
 fun multiProjectSchemaFor(root: Project): Map<String, ProjectSchema<TypeOf<*>>> =
     root.allprojects.map { it.path to schemaFor(it) }.toMap()
-
 
 internal
 fun schemaFor(project: Project): ProjectSchema<TypeOf<*>> =
@@ -57,7 +53,6 @@ fun schemaFor(project: Project): ProjectSchema<TypeOf<*>> =
         project.extensions.schema,
         project.convention.plugins,
         project.configurations.names.toList())
-
 
 internal
 fun accessibleProjectSchemaFrom(
@@ -74,21 +69,17 @@ fun accessibleProjectSchemaFrom(
         configurations = configurationNames
             .filter(::isPublic))
 
-
 internal
 fun isPublic(name: String): Boolean =
     !name.startsWith("_")
-
 
 internal
 fun toJson(multiProjectStringSchema: Map<String, ProjectSchema<String>>): String =
     toJson(multiProjectStringSchema)
 
-
 internal
 fun ProjectSchema<TypeOf<*>>.withKotlinTypeStrings() =
     map(::kotlinTypeStringFor)
-
 
 @Suppress("unchecked_cast")
 internal
@@ -99,7 +90,6 @@ fun loadMultiProjectSchemaFrom(file: File) =
             conventions = it.value["conventions"] as? Map<String, String> ?: emptyMap(),
             configurations = it.value["configurations"] as? List<String> ?: emptyList())
     }
-
 
 internal
 fun kotlinTypeStringFor(type: TypeOf<*>): String =
@@ -115,7 +105,6 @@ fun kotlinTypeStringFor(type: TypeOf<*>): String =
                 toString().let { primitiveTypeStrings[it] ?: it }
         }
     }
-
 
 private
 val primitiveTypeStrings =
@@ -138,7 +127,6 @@ val primitiveTypeStrings =
         "float" to "Float",
         "java.lang.Double" to "Double",
         "double" to "Double")
-
 
 internal
 val primitiveKotlinTypeNames = primitiveTypeStrings.values.toHashSet()

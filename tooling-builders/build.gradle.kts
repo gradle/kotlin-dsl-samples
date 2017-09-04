@@ -1,4 +1,4 @@
-import build.*
+import build.withParallelTests
 
 plugins {
     base

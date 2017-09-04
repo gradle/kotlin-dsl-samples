@@ -22,7 +22,6 @@ dependencies {
     testImplementation(project(":test-fixtures"))
 }
 
-
 // --- Plugins declaration ----------------------------------------------
 
 data class GradlePlugin(val displayName: String, val id: String, val implementationClass: String)

@@ -1,18 +1,16 @@
 package org.gradle.kotlin.dsl.accessors
 
 import org.gradle.internal.classpath.ClassPath
-
 import org.hamcrest.CoreMatchers.equalTo
-
-import org.junit.Assert.assertThat
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThat
 import org.junit.Test
-
-import org.objectweb.asm.Opcodes.*
-
+import org.objectweb.asm.Opcodes.ACC_PUBLIC
+import org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 
 @Suppress("unused")
 class PublicGenericType<T>
+
 class PublicComponentType
 private class PrivateComponentType
 

@@ -139,4 +139,3 @@ class GroovyInteroperabilityTest {
         verify(delegate).withKeywordArguments(expectedKeywordArguments)
     }
 }
-

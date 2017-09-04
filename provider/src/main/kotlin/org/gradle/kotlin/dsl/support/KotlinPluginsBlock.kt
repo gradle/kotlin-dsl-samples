@@ -18,7 +18,6 @@ package org.gradle.kotlin.dsl.support
 
 import org.gradle.plugin.use.PluginDependenciesSpec
 
-
 /**
  * Base class for `plugins` block evaluation.
  */

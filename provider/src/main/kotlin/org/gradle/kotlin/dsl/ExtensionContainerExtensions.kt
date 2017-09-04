@@ -21,7 +21,6 @@ import org.gradle.api.plugins.ExtensionContainer
 
 import kotlin.reflect.KProperty
 
-
 /**
  * Looks for the extension of a given name. If none found it will throw an exception.
  *
@@ -33,7 +32,6 @@ import kotlin.reflect.KProperty
  */
 operator fun ExtensionContainer.get(name: String): Any =
     getByName(name)
-
 
 /**
  * Looks for the extension of a given name and casts it to the expected type [T].
@@ -52,9 +50,8 @@ fun <reified T : Any> ExtensionContainer.getByName(name: String) =
     getByName(name).let {
         it as? T
             ?: throw IllegalStateException(
-                "Element '$name' of type '${it::class.java.name}' from container '$this' cannot be cast to '${T::class.qualifiedName}'.")
+            "Element '$name' of type '${it::class.java.name}' from container '$this' cannot be cast to '${T::class.qualifiedName}'.")
     }
-
 
 inline
 operator fun <reified T : Any> ExtensionContainer.getValue(thisRef: Any?, property: KProperty<*>): T =
