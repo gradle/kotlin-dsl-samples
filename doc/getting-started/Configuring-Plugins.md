@@ -61,7 +61,8 @@ the Gradle built-in `java-gradle-plugin` plugin that automate publication of sup
 usable with the `plugins {}` block.
 
 For example, the Android Gradle Plugin 2.x plugins are not published to the Gradle Plugin Portal and the metadata
-required to resolve plugin identifiers to resolvable artifacts is not published.
+required to resolve plugin identifiers to resolvable artifacts
+[is not published](https://issuetracker.google.com/issues/64551265).
 The following snippets will use the Android Gradle Plugin to demonstrate how to enable the use of the `plugins {}` block
 anyway.
 
