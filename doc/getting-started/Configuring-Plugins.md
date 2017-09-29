@@ -44,7 +44,7 @@ plugins {
     id("com.bmuschko.docker-java-application") version "3.1.0"
 }
 
-// Type-safe accessor for the extension contributed by the `java` plugin
+// Type-safe accessor for the extension contributed by the `application` plugin
 application {
     mainClassName = "samples.HelloWorld"
 }
