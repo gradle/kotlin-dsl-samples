@@ -12,6 +12,9 @@ both backward and forward compatibility.
 Our approach is to only do backwards-breaking Kotlin upgrades on a major Gradle release. We will always clearly document
 which Kotlin version we ship and announce upgrade plans before a major release. 
 
+> Until the Gradle Kotlin DSL v1.0 release our policy will be to ship with the latest stable Kotlin version available
+> at the time.
+
 Plugin authors who want to stay compatible with older Gradle versions need to limit their API usage to a subset that is
 compatible with these old versions. It’s not really different from any other new API in Gradle. E.g. if we introduce a
 new API for dependency resolution and a plugin wants to use that API, then they either need to drop support for older
