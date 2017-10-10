@@ -4,8 +4,8 @@ Gradle ships with Kotlin DSL support which uses embedded Kotlin compiler, plus f
 dependencies. For example, Gradle 4.3 ships with Kotlin 1.1.51, as well as `stdlib` and `reflect` with the same version.
 The `kotlin` package from those modules is visible through the Gradle classpath.
 
-For both backward and forward compatibility, the
-[compatibility guarantees](https://kotlinlang.org/docs/reference/compatibility.html) provided by Kotlin apply.
+The [compatibility guarantees](https://kotlinlang.org/docs/reference/compatibility.html) provided by Kotlin apply for
+both backward and forward compatibility.
 
 ### Backward compatibility
 
