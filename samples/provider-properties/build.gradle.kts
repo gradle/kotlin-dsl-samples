@@ -29,7 +29,7 @@ open class GreetingPlugin : Plugin<Project> {
 open class GreetingPluginExtension(project: Project) {
 
     private
-    val messageState = project.property<String>()
+    val messageState = project.objects.property<String>()
 
     var message by messageState
 
@@ -41,7 +41,7 @@ open class GreetingPluginExtension(project: Project) {
 open class Greeting : DefaultTask() {
 
     private
-    val messageState = project.property<String>()
+    val messageState = project.objects.property<String>()
 
     @get:Input
     var message by messageState
