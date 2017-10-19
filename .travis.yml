@@ -16,6 +16,8 @@ matrix:
       group: edge
       jdk: ibmjava8
 
+install: ./gradlew assemble --info --stacktrace --console=plain --max-workers=1 --no-daemon -Dkotlin.compiler.execution.strategy="in-process" -Dkotlin.colors.enabled=false
+
 script: ./gradlew :provider:check --info --stacktrace --console=plain --max-workers=1 --no-daemon -Dkotlin.compiler.execution.strategy="in-process" -Dkotlin.colors.enabled=false
 
 before_cache:
