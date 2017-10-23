@@ -453,6 +453,24 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
             containsString("Settings plugin applied!"))
     }
 
+    @Test
+    fun `settings script can use the gradle script api`() {
+        withSettings("""
+
+            logger.error("Error logging")
+
+            require(file("settings.gradle.kts").isFile, { "file(path)" })
+            require(uri("settings.gradle.kts").toString().endsWith("settings.gradle.kts"), { "uri(path)" })
+            require(fileTree(".").contains(file("settings.gradle.kts")), { "fileTree(path)" })
+            require(resources != null, { "resources" })
+
+        """)
+
+        assertThat(
+            build("help").output,
+            containsString("Error logging"))
+    }
+
     private
     fun assumeJavaLessThan9() {
         assumeTrue("Test disabled under JDK 9 and higher", JavaVersion.current() < JavaVersion.VERSION_1_9)
