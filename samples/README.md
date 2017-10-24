@@ -6,6 +6,7 @@ _See instructions below in order to [set up your dev environment](#set-up-dev-en
 The Gradle projects in this directory demonstrate typical use cases with and features available in the Gradle Kotlin DSL. They include:
 
  - [`ant`](./ant): demonstrates how to use Ant from Gradle via the Ant Groovy Builder
+ - [`build-cache`](./build-cache): demonstrates how to configure the Gradle build cache
  - [`build-scan`](./build-scan): demonstrates how to apply and configure the `org.gradle.build-scan` plugin
  - [`code-quality`](./code-quality): demonstrates how to configure Gradle code quality plugins
  - [`composite-builds`](./composite-builds): demonstrates how to use Composite Builds
@@ -31,6 +32,7 @@ The Gradle projects in this directory demonstrate typical use cases with and fea
  - [`project-properties`](./project-properties): demonstrates project property access via [delegated properties](https://kotlinlang.org/docs/reference/delegated-properties.html)
  - [`project-with-buildSrc`](./project-with-buildSrc): demonstrates a single-project build with custom build logic in `buildSrc`
  - [`provider-properties`](./provider-properties): demonstrates usage of lazily evaluated properties to [map extension properties to task properties](https://docs.gradle.org/4.0-milestone-2/userguide/custom_plugins.html#sec:mapping_extension_properties_to_task_properties)
+ - [`source-control`](./source-control): demonstrates how to use external source dependencies
  - [`task-dependencies`](./task-dependencies): demonstrates explicit configuration of task dependencies
 
 Set up dev environment
