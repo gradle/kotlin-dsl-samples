@@ -18,7 +18,7 @@ open class AbstractPluginTest : AbstractIntegrationTest() {
         withSettings("""
             pluginManagement {
                 repositories {
-                    maven { setUrl("$testRepository") }
+                    maven { url = uri("$testRepository") }
                     jcenter()
                 }
                 resolutionStrategy {
