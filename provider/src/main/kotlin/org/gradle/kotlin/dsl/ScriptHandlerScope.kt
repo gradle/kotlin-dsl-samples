@@ -21,12 +21,14 @@ import org.gradle.api.artifacts.dsl.DependencyHandler
 
 import org.gradle.api.initialization.dsl.ScriptHandler
 import org.gradle.api.initialization.dsl.ScriptHandler.CLASSPATH_CONFIGURATION
+import org.gradle.api.plugins.PluginAware
 
 
 /**
  * Receiver for the `buildscript` block.
  */
-class ScriptHandlerScope(scriptHandler: ScriptHandler) : ScriptHandler by scriptHandler {
+open class ScriptHandlerScope(scriptHandler: ScriptHandler, pluginAware: PluginAware) :
+    ScriptHandler by scriptHandler, PluginAware by pluginAware {
 
     /**
      * The dependencies of the script.

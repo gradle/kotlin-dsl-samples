@@ -35,7 +35,7 @@ abstract class KotlinBuildscriptBlock(project: Project) : KotlinBuildScript(proj
      * @see [Project.buildscript]
      */
     override fun buildscript(block: ScriptHandlerScope.() -> Unit) {
-        ScriptHandlerScope(project.buildscript).block()
+        ScriptHandlerScope(project.buildscript, project).block()
     }
 }
 
@@ -51,6 +51,6 @@ abstract class KotlinSettingsBuildscriptBlock(settings: Settings) : KotlinSettin
      * @see [Settings.buildscript]
      */
     override fun buildscript(block: ScriptHandlerScope.() -> Unit) {
-        ScriptHandlerScope(settings.buildscript).block()
+        ScriptHandlerScope(settings.buildscript, settings).block()
     }
 }
