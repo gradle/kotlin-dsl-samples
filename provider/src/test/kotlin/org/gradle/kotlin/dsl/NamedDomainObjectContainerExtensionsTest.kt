@@ -2,6 +2,7 @@ package org.gradle.kotlin.dsl
 
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.same
 import com.nhaarman.mockito_kotlin.verify
 
 import org.gradle.api.NamedDomainObjectContainer
@@ -58,6 +59,7 @@ class NamedDomainObjectContainerExtensionsTest {
     sealed class DomainObjectBase {
         data class Foo(var foo: String? = null) : DomainObjectBase()
         data class Bar(var bar: Boolean? = null) : DomainObjectBase()
+        data class Baz(var baz: Int? = null) : DomainObjectBase()
         data class Default(val isDefault: Boolean = true) : DomainObjectBase()
     }
 
@@ -66,10 +68,12 @@ class NamedDomainObjectContainerExtensionsTest {
 
         val alice = DomainObjectBase.Foo()
         val bob = DomainObjectBase.Bar()
+        val kelly = DomainObjectBase.Baz()
         val default: DomainObjectBase = DomainObjectBase.Default()
         val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
             on { maybeCreate("alice", DomainObjectBase.Foo::class.java) } doReturn alice
             on { maybeCreate("bob", DomainObjectBase.Bar::class.java) } doReturn bob
+            on { maybeCreate("kelly", DomainObjectBase.Baz::class.java) } doReturn kelly
             on { maybeCreate("jim") } doReturn default
             on { maybeCreate("steve") } doReturn default
         }
@@ -79,11 +83,15 @@ class NamedDomainObjectContainerExtensionsTest {
                 foo = "foo"
             }
             val b = "bob"(type = DomainObjectBase.Bar::class)
+            val k = "kelly"<DomainObjectBase.Baz> {}
+            val k2 = "kelly"<DomainObjectBase.Baz>()
             val j = "jim" {}
             val s = "steve"() // can invoke without a block, but must invoke
 
             assertThat(a, sameInstance(alice))
             assertThat(b, sameInstance(bob))
+            assertThat(k, sameInstance(kelly))
+            assertThat(k2, sameInstance(kelly))
             assertThat(j, sameInstance(default))
             assertThat(s, sameInstance(default))
         }
@@ -223,6 +231,22 @@ class NamedDomainObjectContainerExtensionsTest {
     }
 
     @Test
+    fun `can create element of specific type within configuration block via delegated property using reified method`() {
+
+        val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
+            on { create("domainObject", DomainObjectBase.Foo::class.java) } doReturn DomainObjectBase.Foo()
+        }
+
+        container {
+
+            @Suppress("unused_variable")
+            val domainObject by creating<DomainObjectBase.Foo>()
+        }
+
+        verify(container).create("domainObject", DomainObjectBase.Foo::class.java)
+    }
+
+    @Test
     fun `can create and configure element of specific type within configuration block via delegated property`() {
 
         val element = DomainObjectBase.Foo()
@@ -234,6 +258,28 @@ class NamedDomainObjectContainerExtensionsTest {
 
             @Suppress("unused_variable")
             val domainObject by creating(DomainObjectBase.Foo::class) {
+                foo = "domain-foo"
+            }
+        }
+
+        verify(container).create("domainObject", DomainObjectBase.Foo::class.java)
+        assertThat(
+            element.foo,
+            equalTo("domain-foo"))
+    }
+
+    @Test
+    fun `can create and configure element of specific type within configuration block via delegated property using reified method`() {
+
+        val element = DomainObjectBase.Foo()
+        val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
+            on { create("domainObject", DomainObjectBase.Foo::class.java) } doReturn element
+        }
+
+        container {
+
+            @Suppress("unused_variable")
+            val domainObject by creating<DomainObjectBase.Foo> {
                 foo = "domain-foo"
             }
         }

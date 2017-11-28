@@ -21,7 +21,9 @@ import java.util.regex.Pattern
 
 class NamedDomainObjectCollectionExtensionsTest {
 
-    data class DomainObject(var foo: String? = null)
+    interface SomeObject
+
+    data class DomainObject(var foo: String? = null) : SomeObject
 
     @Test
     fun `can access existing element via indexer`() {
@@ -95,7 +97,7 @@ class NamedDomainObjectCollectionExtensionsTest {
     fun `can access existing element by getting with type`() {
 
         val element = DomainObject()
-        val container = mock<PolymorphicDomainObjectContainer<Any>> {
+        val container = mock<PolymorphicDomainObjectContainer<SomeObject>> {
             on { getByName("domainObject") } doReturn element
         }
 
@@ -108,6 +110,21 @@ class NamedDomainObjectCollectionExtensionsTest {
             val domainObject by getting(DomainObject::class)
             assertThat(domainObject, sameInstance(element))
         }
+    }
+
+    @Test
+    fun `can access existing element by getting with reified type`() {
+        val element = DomainObject()
+        val container = mock<PolymorphicDomainObjectContainer<SomeObject>> {
+            on { getByName("domainObject") } doReturn element
+        }
+
+        container { // invoke syntax reified method
+            val domainObject by getting<DomainObject>()
+            assertThat(domainObject, sameInstance(element))
+        }
+
+        // regular syntax reified method won't have the same behaviour or compile time guarantees
     }
 
     @Test
@@ -150,6 +167,22 @@ class NamedDomainObjectCollectionExtensionsTest {
             val domainObject by getting(DomainObject::class) { foo = "bar" }
             assertThat(element.foo, equalTo("bar"))
         }
+    }
+
+    @Test
+    fun `can configure existing typed element by getting with reified type`() {
+        val element = DomainObject()
+        val container = mock<PolymorphicDomainObjectContainer<Any>> {
+            on { getByName("domainObject") } doReturn element
+        }
+
+        container { // invoke syntax reified method
+            @Suppress("unused_variable")
+            val domainObject by getting<DomainObject> { foo = "foo" }
+            assertThat(element.foo, equalTo("foo"))
+        }
+
+        // regular syntax reified method won't have the same behaviour or compile time guarantees
     }
 
     @Test
