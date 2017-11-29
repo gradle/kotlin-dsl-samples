@@ -126,7 +126,6 @@ class NamedDomainObjectContainerScope<T : Any>(
     fun <reified U : T> getting() =
         getting(U::class)
 
-
     /**
      * Provides a property delegate that gets elements of [T].
      */
@@ -139,6 +138,9 @@ class NamedDomainObjectContainerScope<T : Any>(
     fun <U : T> getting(type: KClass<U>, configuration: U.() -> Unit) =
         polymorphicDomainObjectContainer().getting(type, configuration)
 
+    /**
+     * Provides a property delegate that gets elements of the given type [U] and applies the given [configuration].
+     */
     inline
     fun <reified U : T> getting(noinline configuration: U.() -> Unit) =
         getting(U::class, configuration)
