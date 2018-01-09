@@ -18,6 +18,26 @@ package org.gradle.kotlin.dsl.support
 import org.gradle.api.initialization.Settings
 import org.gradle.api.internal.GradleInternal
 
+import org.gradle.internal.Cast.uncheckedCast
+
+import java.lang.reflect.InvocationTargetException
+
+import kotlin.reflect.KProperty
+
 inline
 fun <reified T : Any> Settings.serviceOf(): T =
     (gradle as GradleInternal).services[T::class.java]!!
+
+operator fun <T : String?> Settings.getValue(any: Any?, property: KProperty<*>): T {
+    if (property.returnType.isMarkedNullable) {
+        val exists = javaClass.getMethod("hasProperty", String::class.java).invoke(this, property.name) as Boolean
+        if (!exists)
+            return uncheckedCast(null)
+    }
+    val value = try {
+        javaClass.getMethod("getProperty", String::class.java).invoke(this, property.name)
+    } catch (e: InvocationTargetException) {
+        throw e.cause!!
+    }
+    return uncheckedCast(value as String)
+}

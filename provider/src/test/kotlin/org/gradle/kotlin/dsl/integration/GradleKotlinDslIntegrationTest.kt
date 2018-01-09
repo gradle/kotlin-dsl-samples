@@ -568,6 +568,43 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
             containsString("*true*"))
     }
 
+    @Test
+    fun `settings script can access gradle properties`() {
+
+        withFile("gradle.properties", "repoUrl=http://www.example.com/repo/")
+
+        withSettings("""
+            import org.gradle.kotlin.dsl.support.*
+
+            val repoUrl: String by settings
+            println("repoUrl=" + repoUrl)
+
+            val missingUrl: String? by settings
+            println("missingUrl=" + missingUrl)
+        """)
+
+        assertThat(
+            build("help").output,
+            allOf(
+                containsString("repoUrl=http://www.example.com/repo/"),
+                containsString("missingUrl=null")))
+    }
+
+    @Test
+    fun `binding gradle property to non-nullable variable fails build`() {
+
+        withSettings("""
+            import org.gradle.kotlin.dsl.support.*
+
+            val missingUrl: String by settings
+            println("missingUrl=" + missingUrl)
+        """)
+
+        assertThat(
+            buildAndFail("help").output,
+            containsString("Could not get unknown property 'missingUrl' for settings"))
+    }
+
     private
     fun assumeJavaLessThan9() {
         assumeTrue("Test disabled under JDK 9 and higher", JavaVersion.current() < JavaVersion.VERSION_1_9)
