@@ -250,6 +250,31 @@ class KotlinBuildScriptModelIntegrationTest : AbstractIntegrationTest() {
         assertExcludes(classPath, projectDependency)
     }
 
+    @Test
+    fun `can call apply from within buildscript block`() {
+        withFile("classes.jar")
+
+        val appliedFromFileName = "extraInfo.gradle.kts"
+        withFile(appliedFromFileName, """
+            val shouldIncludeClasses by extra { true }
+        """)
+
+        withBuildScript("""
+            buildscript {
+                apply { from("$appliedFromFileName") }
+                val shouldIncludeClasses : Boolean by extra
+                dependencies {
+                    if (shouldIncludeClasses) {
+                        classpath(files("classes.jar"))
+                    }
+                }
+            }
+        """)
+
+        assertClassPathContains(
+            existing("classes.jar"))
+    }
+
     private
     fun assertSourcePathIncludesGradleSourcesGiven(rootProjectScript: String, subProjectScript: String) {
 
