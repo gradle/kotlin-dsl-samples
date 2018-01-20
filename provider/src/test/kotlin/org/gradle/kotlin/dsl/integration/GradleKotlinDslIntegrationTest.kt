@@ -13,6 +13,8 @@ import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 
+import org.jetbrains.kotlin.preprocessor.convertLineSeparators
+
 import org.junit.Assert.assertNotEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -583,6 +585,26 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
         assertThat(
             build("-PprojectProperty=42").output,
             containsString("*42*"))
+    }
+
+    @Test
+    fun `script compilation error message`() {
+
+        val buildFile =
+            withBuildScript("foo")
+
+        assertThat(
+            buildFailureOutput().convertLineSeparators(),
+            containsString("""
+                FAILURE: Build failed with an exception.
+
+                * Where:
+                Build file '${buildFile.canonicalPath}' line: 1
+
+                * What went wrong:
+                Unresolved reference: foo
+            """.replaceIndent())
+        )
     }
 
     private
