@@ -245,7 +245,7 @@ class KotlinBuildScriptCompiler(
         try {
             kotlinCompiler.action()
         } catch (e: ScriptCompilationException) {
-            throw LocationAwareException(e, scriptSource, e.errors.first().lineNumber)
+            throw LocationAwareException(e, scriptSource, e.firstErrorLine)
         }
 
     private

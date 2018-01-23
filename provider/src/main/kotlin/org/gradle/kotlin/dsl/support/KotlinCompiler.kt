@@ -210,13 +210,29 @@ fun messageCollectorFor(log: Logger, pathTranslation: (String) -> String = { it 
 
 
 internal
-data class ScriptCompilationError(val message: String, val lineNumber: Int?)
+data class ScriptCompilationError(val message: String, val location: CompilerMessageLocation?)
 
 
 internal
 data class ScriptCompilationException(val errors: List<ScriptCompilationError>) : RuntimeException() {
     override val message: String?
-        get() = errors.first().message
+        get() =
+            if (errors.isEmpty()) "Script compilation failed, see the compiler logs above for more insights."
+            else {
+                val errorPlural = if (errors.size > 1) "errors" else "error"
+                val maxLineNumberLen = errors.mapNotNull { it.location?.line }.max().toString().length
+                (listOf("Script compilation $errorPlural:") + errors.map { error ->
+                    if (error.location != null) {
+                        "${error.location.line.toString().padStart(maxLineNumberLen, '0')}: ${error.location.lineContent}\n" +
+                            "${" ".repeat(maxLineNumberLen + 1 + error.location.column)}^- ${error.message}"
+                    } else {
+                        error.message
+                    }
+                }.map { it.prependIndent("  ") } + "${errors.size} $errorPlural").joinToString("\n\n")
+            }
+
+    val firstErrorLine get() =
+        errors.firstOrNull { it.location != null }?.location!!.line
 }
 
 
@@ -248,7 +264,7 @@ class LoggingMessageCollector(
 
         when (severity) {
             CompilerMessageSeverity.ERROR, CompilerMessageSeverity.EXCEPTION -> {
-                errors += ScriptCompilationError(message, location?.line)
+                errors += ScriptCompilationError(message, location)
                 log.error { taggedMsg() }
             }
             in CompilerMessageSeverity.VERBOSE -> log.trace { msg() }

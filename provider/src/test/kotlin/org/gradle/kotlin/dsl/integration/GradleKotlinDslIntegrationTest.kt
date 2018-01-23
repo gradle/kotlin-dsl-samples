@@ -602,9 +602,42 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
                 Build file '${buildFile.canonicalPath}' line: 1
 
                 * What went wrong:
-                Unresolved reference: foo
+                Script compilation error:
+
+                  1: foo
+                     ^- Unresolved reference: foo
+
+                1 error
             """.replaceIndent())
         )
+    }
+
+    @Test
+    fun `multiple script compilation errors message`() {
+        val buildFile = withBuildScript("println(foo)\n\n\n\n\nprintln(\"foo\").bar.bazar\n\n\n\nprintln(cathedral)")
+
+        assertThat(
+            buildFailureOutput().convertLineSeparators(),
+            containsString("""
+                FAILURE: Build failed with an exception.
+
+                * Where:
+                Build file '${buildFile.canonicalPath}' line: 1
+
+                * What went wrong:
+                Script compilation errors:
+
+                  01: println(foo)
+                              ^- Unresolved reference: foo
+
+                  06: println("foo").bar.bazar
+                                     ^- Unresolved reference: bar
+
+                  10: println(cathedral)
+                              ^- Unresolved reference: cathedral
+
+                3 errors
+            """.replaceIndent()))
     }
 
     private
