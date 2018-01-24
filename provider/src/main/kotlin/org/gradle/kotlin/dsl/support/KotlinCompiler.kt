@@ -221,8 +221,8 @@ data class ScriptCompilationException(val errors: List<ScriptCompilationError>) 
             val maxLineNumberLen = errors.mapNotNull { it.location?.line }.max().toString().length
             return (listOf("Script compilation $errorPlural:") + errors.map { error ->
                 if (error.location != null) {
-                    "${error.location.line.toString().padStart(maxLineNumberLen, '0')}: ${error.location.lineContent}\n" +
-                        "${" ".repeat(maxLineNumberLen + 1 + error.location.column)}^- ${error.message}"
+                    "Line ${error.location.line.toString().padStart(maxLineNumberLen, '0')}: ${error.location.lineContent}\n" +
+                        "${" ".repeat(5 + maxLineNumberLen + 1 + error.location.column)}^- ${error.message}"
                 } else {
                     error.message
                 }

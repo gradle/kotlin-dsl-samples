@@ -604,8 +604,8 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
                 * What went wrong:
                 Script compilation error:
 
-                  1: foo
-                     ^- Unresolved reference: foo
+                  Line 1: foo
+                          ^- Unresolved reference: foo
 
                 1 error
             """.replaceIndent())
@@ -627,14 +627,14 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
                 * What went wrong:
                 Script compilation errors:
 
-                  01: println(foo)
-                              ^- Unresolved reference: foo
+                  Line 01: println(foo)
+                                   ^- Unresolved reference: foo
 
-                  06: println("foo").bar.bazar
-                                     ^- Unresolved reference: bar
+                  Line 06: println("foo").bar.bazar
+                                          ^- Unresolved reference: bar
 
-                  10: println(cathedral)
-                              ^- Unresolved reference: cathedral
+                  Line 10: println(cathedral)
+                                   ^- Unresolved reference: cathedral
 
                 3 errors
             """.replaceIndent()))
