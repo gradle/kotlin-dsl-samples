@@ -241,9 +241,15 @@ class LoggingMessageCollector(
 
     val errors = arrayListOf<ScriptCompilationError>()
 
-    override fun hasErrors() = errors.isNotEmpty()
+    override fun hasErrors() =
+        synchronized(errors) {
+            errors.isNotEmpty()
+        }
 
-    override fun clear() { errors.clear() }
+    override fun clear() =
+        synchronized(errors) {
+            errors.clear()
+        }
 
     override fun report(severity: CompilerMessageSeverity, message: String, location: CompilerMessageLocation?) {
 
@@ -262,7 +268,7 @@ class LoggingMessageCollector(
 
         when (severity) {
             CompilerMessageSeverity.ERROR, CompilerMessageSeverity.EXCEPTION -> {
-                errors += ScriptCompilationError(message, location)
+                recordError(message, location)
                 log.error { taggedMsg() }
             }
             in CompilerMessageSeverity.VERBOSE -> log.trace { msg() }
@@ -272,6 +278,16 @@ class LoggingMessageCollector(
             else -> log.debug { taggedMsg() }
         }
     }
+
+    /**
+     * Safely record a script compilation error.
+     * There'are no guarantee that `MessageCollector`s are not invoked concurrently.
+     */
+    private
+    fun recordError(message: String, location: CompilerMessageLocation?) =
+        synchronized(errors) {
+            errors += ScriptCompilationError(message, location)
+        }
 }
 
 
