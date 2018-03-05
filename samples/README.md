@@ -20,6 +20,7 @@ The Gradle projects in this directory demonstrate typical use cases with and fea
  - [`hello-js`](./hello-js): demonstrates a Kotlin-based Gradle build script for a project that is itself written in Kotlin and targets JavaScript
  - [`hello-kotlin`](./hello-kotlin): demonstrates a Kotlin-based Gradle build script for a project that is itself written in Kotlin
  - [`hello-world`](./hello-world): demonstrates plugin application and configuration, dependency management, JUnit testing
+  - [`hello-spring-boot`](./hello-spring-boot): demonstrates a Kotlin-based Gradle build script for a Kotlin-based spring boot application
  - [`kotlin-friendly-groovy-plugin`](./kotlin-friendly-groovy-plugin): demonstrates a Groovy Gradle plugin and its use from Kotlin-based build scripts
  - [`maven-plugin`](./maven-plugin): demonstrates how to configure the Gradle `maven` plugin
  - [`maven-publish`](./maven-publish): demonstrates how to configure the Gradle `maven-publish` plugin
