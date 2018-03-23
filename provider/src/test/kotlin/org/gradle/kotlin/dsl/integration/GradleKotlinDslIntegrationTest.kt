@@ -5,6 +5,8 @@ import okhttp3.mockwebserver.MockWebServer
 
 import org.gradle.api.JavaVersion
 
+import org.gradle.api.internal.initialization.DefaultClassLoaderScope
+
 import org.gradle.kotlin.dsl.embeddedKotlinVersion
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.DeepThought
@@ -892,6 +894,28 @@ class GradleKotlinDslIntegrationTest : AbstractIntegrationTest() {
         """)
 
         build("help")
+    }
+
+    /**
+     * Assert that the Kotlin DSL provider don't force strict classloading
+     * by exercising a case where :b class loader scopes aren't locked when evaluating :b:c.
+     */
+    @Test
+    fun `allow for non-strict Gradle classloading`() {
+
+        val previous = System.getProperty(DefaultClassLoaderScope.STRICT_MODE_PROPERTY)
+        try {
+            System.setProperty(DefaultClassLoaderScope.STRICT_MODE_PROPERTY, "false")
+
+            withSettings("""include(":a", ":b:c")""")
+            withFile("a/build.gradle.kts", """evaluationDependsOn(":b:c")""")
+            withFile("b/c/build.gradle.kts", "plugins { base }")
+
+            build("help")
+
+        } finally {
+            System.setProperty(DefaultClassLoaderScope.STRICT_MODE_PROPERTY, previous)
+        }
     }
 
     private

@@ -24,9 +24,6 @@ import org.gradle.internal.classpath.ClassPath
 
 internal
 fun exportClassPathFromHierarchyOf(scope: ClassLoaderScope): ClassPath {
-    require(scope.isLocked) {
-        "$scope must be locked before it can be used to compute a classpath!"
-    }
     val fullClassPath = getClasspath(scope.exportClassLoader)
     val rootClassPath = getClasspath(scope.root.exportClassLoader)
     return fullClassPath - rootClassPath
@@ -46,14 +43,14 @@ inline fun <T> ClassLoaderScope.foldHierarchy(initial: T, operation: (T, ClassLo
 }
 
 
-internal
+private
 inline fun ClassLoaderScope.traverseHierarchy(action: (ClassLoaderScope) -> Unit) {
     action(this)
     traverseAncestors(action)
 }
 
 
-internal
+private
 inline fun ClassLoaderScope.traverseAncestors(action: (ClassLoaderScope) -> Unit) {
     var scope = this
     while (scope.parent != scope) {
