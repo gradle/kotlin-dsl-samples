@@ -24,9 +24,6 @@ import org.gradle.internal.classpath.ClassPath
 
 internal
 fun exportClassPathFromHierarchyOf(scope: ClassLoaderScope): ClassPath {
-    require(scope.isLocked) {
-        "$scope must be locked before it can be used to compute a classpath!"
-    }
     val fullClassPath = getClasspath(scope.exportClassLoader)
     val rootClassPath = getClasspath(scope.root.exportClassLoader)
     return fullClassPath - rootClassPath
