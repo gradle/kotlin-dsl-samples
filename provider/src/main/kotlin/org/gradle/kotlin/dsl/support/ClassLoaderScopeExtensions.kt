@@ -43,14 +43,14 @@ inline fun <T> ClassLoaderScope.foldHierarchy(initial: T, operation: (T, ClassLo
 }
 
 
-internal
+private
 inline fun ClassLoaderScope.traverseHierarchy(action: (ClassLoaderScope) -> Unit) {
     action(this)
     traverseAncestors(action)
 }
 
 
-internal
+private
 inline fun ClassLoaderScope.traverseAncestors(action: (ClassLoaderScope) -> Unit) {
     var scope = this
     while (scope.parent != scope) {
