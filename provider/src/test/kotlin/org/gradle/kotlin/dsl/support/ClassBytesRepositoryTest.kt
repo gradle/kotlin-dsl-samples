@@ -7,6 +7,7 @@ import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.DeepThought
 
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.CoreMatchers.notNullValue
 
 import org.junit.Assert.assertThat
@@ -74,24 +75,24 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
 
         classPathBytecodeRepositoryFor(listOf(jar1, cpDir)).use { repo ->
             assertThat(
-                repo.classBytesFor(Groovydoc.Link::class.qualifiedName!!),
+                repo.classBytesFor(Groovydoc.Link::class.java.canonicalName),
                 notNullValue())
             assertThat(
-                repo.classBytesFor(Wrapper.DistributionType::class.qualifiedName!!),
+                repo.classBytesFor(Wrapper.DistributionType::class.java.canonicalName),
                 notNullValue())
         }
 
         classPathBytecodeRepositoryFor(listOf(jar1, cpDir)).use { repo ->
             assertThat(
                 repo.allClassesBytesBySourceName().map { it.first }.toList(),
-                equalTo(listOf(
-                    Groovydoc::class.qualifiedName!!,
-                    Groovydoc.Link::class.qualifiedName!!,
-                    DeepThought::class.qualifiedName!!,
-                    Wrapper.DistributionType::class.qualifiedName!!,
-                    Wrapper::class.qualifiedName!!,
-                    SomeKotlin.NestedType::class.qualifiedName!!,
-                    SomeKotlin::class.qualifiedName!!)))
+                hasItems(
+                    Groovydoc::class.java.canonicalName,
+                    Groovydoc.Link::class.java.canonicalName,
+                    DeepThought::class.java.canonicalName,
+                    Wrapper.DistributionType::class.java.canonicalName,
+                    Wrapper::class.java.canonicalName,
+                    SomeKotlin.NestedType::class.java.canonicalName,
+                    SomeKotlin::class.java.canonicalName))
         }
     }
 }
