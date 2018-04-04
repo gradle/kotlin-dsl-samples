@@ -71,13 +71,14 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             SetProperty::class.java,
             Plugin::class.java,
             ObjectFactory::class.java,
-            PluginCollection::class.java))
+            PluginCollection::class.java,
+            Project::class.java))
 
         val generatedExtensions = ApiTypeProvider(classPathBytecodeRepositoryFor(jars)).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
 
-        assertThat(generatedExtensions.size, equalTo(6))
+        assertThat(generatedExtensions.size, equalTo(9))
 
         assertThat(
             generatedExtensions,
@@ -93,6 +94,12 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
                 startsWith(
                     "inline fun <reified T> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> ="),
                 startsWith(
-                    "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> =")))
+                    "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> ="),
+                startsWith(
+                    "@Deprecated(\"Deprecated Gradle API\")\ninline fun <reified T> org.gradle.api.Project.property(): org.gradle.api.provider.PropertyState<T> ="),
+                startsWith(
+                    "inline fun <reified T> org.gradle.api.Project.container(): org.gradle.api.NamedDomainObjectContainer<T> ="),
+                startsWith(
+                    "inline fun <reified T> org.gradle.api.Project.container(p1: org.gradle.api.NamedDomainObjectFactory<T>): org.gradle.api.NamedDomainObjectContainer<T> =")))
     }
 }

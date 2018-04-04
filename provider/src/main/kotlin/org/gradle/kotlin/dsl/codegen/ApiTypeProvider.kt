@@ -102,6 +102,9 @@ class ApiType(
     val isPublic: Boolean =
         (ACC_PUBLIC and delegate.access) > 0
 
+    val isDeprecated: Boolean
+        get() = delegate.visibleAnnotations.hasDeprecated
+
     val formalTypeParameters: List<ApiTypeUsage> by lazy(NONE) {
         visitedSignature?.formalTypeParameterDeclarations(typeIndex) ?: emptyList()
     }
@@ -135,6 +138,9 @@ class ApiFunction(
 
     val isPublic: Boolean =
         (ACC_PUBLIC and delegate.access) > 0
+
+    val isDeprecated: Boolean
+        get() = owner.isDeprecated || delegate.visibleAnnotations.hasDeprecated
 
     val isStatic: Boolean =
         (ACC_STATIC and delegate.access) > 0
@@ -174,6 +180,11 @@ class ApiFunction(
     val List<AnnotationNode>?.hasNullable: Boolean
         get() = this?.any { it.desc == "Ljavax/annotation/Nullable;" } ?: false
 }
+
+
+private
+val List<AnnotationNode>?.hasDeprecated: Boolean
+    get() = this?.any { it.desc == "Ljava/lang/Deprecated;" } ?: false
 
 
 internal
