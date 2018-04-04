@@ -68,8 +68,8 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
 
     fun type(sourceName: String): ApiType? =
         if (closed) throw IllegalStateException("ApiTypeProvider closed!")
-        else apiTypesBySourceName.computeIfAbsent(sourceName) { sourceName ->
-            repository.classBytesFor(sourceName)?.let { { apiTypeFor(sourceName, it) } }
+        else apiTypesBySourceName.computeIfAbsent(sourceName) {
+            repository.classBytesFor(it)?.let { bytes -> { apiTypeFor(it, bytes) } }
         }?.invoke()
 
     fun allTypes(): Sequence<ApiType> =
@@ -216,7 +216,14 @@ fun List<ApiTypeUsage>.toTypeParametersString(type: ApiType? = null, reified: Bo
 
 internal
 fun Map<String, ApiTypeUsage>.toFunctionParametersString(): String =
-    takeIf { it.isNotEmpty() }?.entries?.joinToString(separator = ", ") { (n, t) -> "$n: $t" } ?: ""
+    takeIf { it.isNotEmpty() }
+        ?.entries
+        ?.mapIndexed { index, entry ->
+            if (index == size - 1 && entry.value.sourceName == "Array") "vararg ${entry.key}: ${entry.value.typeParameters.single()}"
+            else "${entry.key}: ${entry.value}"
+        }
+        ?.joinToString(separator = ", ")
+        ?: ""
 
 
 private
@@ -321,6 +328,11 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     override fun visitBaseType(descriptor: Char) {
         visitBinaryName(binaryNameForBaseType(descriptor))
+    }
+
+    override fun visitArrayType(): SignatureVisitor {
+        visitBinaryName("Array")
+        return TypeSignatureVisitor().also { typeParameters[binaryName]!!.add(it) }
     }
 
     override fun visitClassType(name: String) {

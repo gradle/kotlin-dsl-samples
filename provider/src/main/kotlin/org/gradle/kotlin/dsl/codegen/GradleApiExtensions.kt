@@ -91,7 +91,7 @@ val ApiType.isGradleApi: Boolean
         && isPublic
 
 
-internal
+private
 val ApiType.gradleApiFunctions: List<ApiFunction>
     get() = functions.filter { it.isGradleApi && !it.isStatic }
 
