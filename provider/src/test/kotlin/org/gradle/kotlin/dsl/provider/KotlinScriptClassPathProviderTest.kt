@@ -29,7 +29,7 @@ class KotlinScriptClassPathProviderTest : TestWithTempFiles() {
 
         val kotlinExtensionsMonitor = mock<ProgressMonitor>(name = "kotlinExtensionsMonitor")
         val progressMonitorProvider = mock<JarGenerationProgressMonitorProvider> {
-            on { progressMonitorFor(generatedKotlinExtensions, 1) } doReturn kotlinExtensionsMonitor
+            on { progressMonitorFor(generatedKotlinExtensions, 2) } doReturn kotlinExtensionsMonitor
         }
 
         val subject = KotlinScriptClassPathProvider(
@@ -47,7 +47,7 @@ class KotlinScriptClassPathProviderTest : TestWithTempFiles() {
 
     private
     fun verifyProgressMonitor(monitor: ProgressMonitor) {
-        verify(monitor, times(1)).onProgress()
+        verify(monitor, times(2)).onProgress()
         verify(monitor, times(1)).close()
     }
 }
