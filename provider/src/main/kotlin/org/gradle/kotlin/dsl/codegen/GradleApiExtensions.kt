@@ -62,7 +62,11 @@ val reifiedTypeParametersExtensionsGenerator = { type: ApiType ->
         }
         .flatMap { f ->
 
-            val deprecation = if (f.isDeprecated) """@Deprecated("Deprecated Gradle API")""" else ""
+            val annotations =
+                if (f.isDeprecated && f.isIncubating) "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating"
+                else if (f.isDeprecated) "@Deprecated(\"Deprecated Gradle API\")"
+                else if (f.isIncubating) "@org.gradle.api.Incubating"
+                else ""
             val reifiedFormalTypeParameter = f.formalTypeParameters[0]
             val extensionFormalTypeParameters = (listOf("reified $reifiedFormalTypeParameter") + type.formalTypeParameters.map { "$it" })
                 .joinToString(separator = ", ", prefix = "<", postfix = ">")
@@ -77,7 +81,7 @@ val reifiedTypeParametersExtensionsGenerator = { type: ApiType ->
 
             sequenceOf(
                 """
-                |$deprecation
+                |$annotations
                 |inline fun ${extensionFormalTypeParameters.takeIf { it.isNotEmpty() }?.let { "$it " }
                     ?: ""}${type.sourceName}$extendedTypeTypeParameters.${f.name}(${params.toFunctionParametersString()})${f.returnType.let { ": $it" }} =
                 |   ${f.name}($invocationParams)

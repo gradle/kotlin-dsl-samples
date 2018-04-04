@@ -8,6 +8,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.PluginCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.util.TextUtil
 
@@ -72,34 +73,30 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             Plugin::class.java,
             ObjectFactory::class.java,
             PluginCollection::class.java,
-            Project::class.java))
+            ProviderFactory::class.java))
 
         val generatedExtensions = ApiTypeProvider(classPathBytecodeRepositoryFor(jars)).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
 
-        assertThat(generatedExtensions.size, equalTo(9))
+        assertThat(generatedExtensions.size, equalTo(7))
 
         assertThat(
             generatedExtensions,
             hasItems(
                 startsWith(
-                    "inline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p1: String): T ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p1: String): T ="),
                 startsWith(
-                    "inline fun <reified T> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T ="),
                 startsWith(
-                    "inline fun <reified T> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> ="),
                 startsWith(
-                    "inline fun <reified T> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> ="),
                 startsWith(
-                    "inline fun <reified T> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> ="),
                 startsWith(
                     "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> ="),
                 startsWith(
-                    "@Deprecated(\"Deprecated Gradle API\")\ninline fun <reified T> org.gradle.api.Project.property(): org.gradle.api.provider.PropertyState<T> ="),
-                startsWith(
-                    "inline fun <reified T> org.gradle.api.Project.container(): org.gradle.api.NamedDomainObjectContainer<T> ="),
-                startsWith(
-                    "inline fun <reified T> org.gradle.api.Project.container(p1: org.gradle.api.NamedDomainObjectFactory<T>): org.gradle.api.NamedDomainObjectContainer<T> =")))
+                    "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> =")))
     }
 }

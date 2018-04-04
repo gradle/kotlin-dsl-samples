@@ -105,6 +105,9 @@ class ApiType(
     val isDeprecated: Boolean
         get() = delegate.visibleAnnotations.hasDeprecated
 
+    val isIncubating: Boolean
+        get() = delegate.visibleAnnotations.hasIncubating
+
     val formalTypeParameters: List<ApiTypeUsage> by lazy(NONE) {
         visitedSignature?.formalTypeParameterDeclarations(typeIndex) ?: emptyList()
     }
@@ -128,7 +131,7 @@ class ApiType(
 
 internal
 class ApiFunction(
-    val owner: ApiType,
+    private val owner: ApiType,
     private val delegate: MethodNode,
     private val typeIndex: ApiTypeIndex
 ) {
@@ -141,6 +144,9 @@ class ApiFunction(
 
     val isDeprecated: Boolean
         get() = owner.isDeprecated || delegate.visibleAnnotations.hasDeprecated
+
+    val isIncubating: Boolean
+        get() = owner.isIncubating || delegate.visibleAnnotations.hasIncubating
 
     val isStatic: Boolean =
         (ACC_STATIC and delegate.access) > 0
@@ -185,6 +191,11 @@ class ApiFunction(
 private
 val List<AnnotationNode>?.hasDeprecated: Boolean
     get() = this?.any { it.desc == "Ljava/lang/Deprecated;" } ?: false
+
+
+private
+val List<AnnotationNode>?.hasIncubating: Boolean
+    get() = this?.any { it.desc == "Lorg/gradle/api/Incubating;" } ?: false
 
 
 internal
