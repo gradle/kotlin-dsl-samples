@@ -69,7 +69,7 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
     fun type(sourceName: String): ApiType? =
         if (closed) throw IllegalStateException("ApiTypeProvider closed!")
         else apiTypesBySourceName.computeIfAbsent(sourceName) {
-            repository.classBytesFor(it)?.let { bytes -> { apiTypeFor(it, bytes) } }
+            repository.classBytesFor(sourceName)?.let { { apiTypeFor(sourceName, it) } }
         }?.invoke()
 
     fun allTypes(): Sequence<ApiType> =
@@ -240,10 +240,10 @@ fun createApiTypeUsage(
             sourceName,
             nullable,
             typeIndex(sourceName),
-            typeParameterSignatures.map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters[it.binaryName]!!) },
+            typeParameterSignatures.map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) },
             boundsSignatures
                 .filter { it.binaryName != "java.lang.Object" }
-                .map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters[it.binaryName]!!) })
+                .map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) })
     }
 
 
@@ -294,7 +294,7 @@ class MethodSignatureVisitor : BaseSignatureVisitor() {
             val isNullable = nullability?.get(idx) == true
             Pair(
                 "p$idx",
-                createApiTypeUsage(typeIndex, parameterSignature.binaryName, isNullable, parameterSignature.typeParameters[parameterSignature.binaryName]!!))
+                createApiTypeUsage(typeIndex, parameterSignature.binaryName, isNullable, parameterSignature.typeParameters))
         }.toMap()
 
     fun returnType(typeIndex: ApiTypeIndex, nullableReturn: Boolean): ApiTypeUsage =
@@ -302,15 +302,13 @@ class MethodSignatureVisitor : BaseSignatureVisitor() {
             typeIndex,
             returnSignature.binaryName,
             nullableReturn,
-            returnSignature.typeParameters[returnSignature.binaryName]!!)
+            returnSignature.typeParameters)
 
     override fun visitParameterType(): SignatureVisitor {
-        // println(" visitParameterType")
         return TypeSignatureVisitor().also { parametersSignatures.add(it) }
     }
 
     override fun visitReturnType(): SignatureVisitor {
-        // println(" visitReturnType")
         return returnSignature
     }
 }
@@ -321,7 +319,7 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     lateinit var binaryName: String
 
-    val typeParameters = linkedMapOf<String, MutableList<TypeSignatureVisitor>>()
+    val typeParameters = mutableListOf<TypeSignatureVisitor>()
 
     private
     var expectingTypeParameter = false
@@ -332,7 +330,7 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     override fun visitArrayType(): SignatureVisitor {
         visitBinaryName("Array")
-        return TypeSignatureVisitor().also { typeParameters[binaryName]!!.add(it) }
+        return TypeSignatureVisitor().also { typeParameters.add(it) }
     }
 
     override fun visitClassType(name: String) {
@@ -349,7 +347,7 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     override fun visitTypeArgument(wildcard: Char): SignatureVisitor {
         expectingTypeParameter = true
-        return TypeSignatureVisitor().also { typeParameters[binaryName]!!.add(it) }
+        return TypeSignatureVisitor().also { typeParameters.add(it) }
     }
 
     override fun visitTypeVariable(name: String) {
@@ -359,11 +357,10 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
     private
     fun visitBinaryName(binaryName: String) {
         if (expectingTypeParameter) {
-            typeParameters[binaryName]!!.add(TypeSignatureVisitor().also { SignatureReader(binaryName).accept(it) })
+            typeParameters.add(TypeSignatureVisitor().also { SignatureReader(binaryName).accept(it) })
             expectingTypeParameter = false
         } else {
             this.binaryName = binaryName
-            typeParameters[binaryName] = mutableListOf()
         }
     }
 }
