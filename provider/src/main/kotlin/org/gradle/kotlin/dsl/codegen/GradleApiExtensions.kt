@@ -15,6 +15,8 @@
  */
 package org.gradle.kotlin.dsl.codegen
 
+import org.gradle.api.reflect.TypeOf
+
 import org.gradle.kotlin.dsl.support.classPathBytecodeRepositoryFor
 
 import java.io.File
@@ -48,46 +50,70 @@ fun gradleApiExtensionDeclarationsFor(api: ApiTypeProvider): Sequence<String> =
 private
 val reifiedTypeParametersExtensionsGenerator = { type: ApiType ->
 
-    fun ApiTypeUsage.isClassParameterOf(formalTypeParameter: ApiTypeUsage) =
-        sourceName == "java.lang.Class" && !isRaw && typeParameters[0].sourceName == formalTypeParameter.sourceName
+    fun ApiTypeUsage.isParameterMatching(sourceName: String, typeParameter: ApiTypeUsage) =
+        this.sourceName == sourceName && !isRaw && typeParameters[0].sourceName == typeParameter.sourceName
+
+    fun ApiTypeUsage.isTypeOfParameterOf(typeParameter: ApiTypeUsage) =
+        isParameterMatching(TypeOf::class.java.canonicalName, typeParameter)
+
+    fun ApiTypeUsage.isClassParameterOf(typeParameter: ApiTypeUsage) =
+        isParameterMatching("java.lang.Class", typeParameter)
 
     type.gradleApiFunctions.asSequence()
         .filterNot { it.parameters.values.any { it.sourceName == "groovy.lang.Closure" } }
         .filter {
             if (it.formalTypeParameters.size != 1) false
-            else {
-                val formalTypeParameter = it.formalTypeParameters[0]
-                it.parameters.asSequence().singleOrNull { (_, type) -> type.isClassParameterOf(formalTypeParameter) } != null
-            }
+            else it.parameters.asSequence().singleOrNull { (_, type) -> type.isTypeOfParameterOf(it.formalTypeParameters[0]) } != null
+                || it.parameters.asSequence().singleOrNull { (_, type) -> type.isClassParameterOf(it.formalTypeParameters[0]) } != null
         }
-        .flatMap { f ->
+        .sortedBy { f ->
+            if (f.parameters.asSequence().any { (_, type) -> type.isTypeOfParameterOf(f.formalTypeParameters[0]) }) 0
+            else 10
+        }
+        .map { f ->
 
-            val annotations =
-                if (f.isDeprecated && f.isIncubating) "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating"
-                else if (f.isDeprecated) "@Deprecated(\"Deprecated Gradle API\")"
-                else if (f.isIncubating) "@org.gradle.api.Incubating"
-                else ""
+            val isTypeOf = f.parameters.asSequence().any { (_, type) -> type.isTypeOfParameterOf(f.formalTypeParameters[0]) }
+
             val reifiedFormalTypeParameter = f.formalTypeParameters[0]
             val extensionFormalTypeParameters = (listOf("reified $reifiedFormalTypeParameter") + type.formalTypeParameters.map { "$it" })
                 .joinToString(separator = ", ", prefix = "<", postfix = ">")
             val extendedTypeTypeParameters = type.formalTypeParameters.takeIf { it.isNotEmpty() }
                 ?.joinToString(separator = ", ", prefix = "<", postfix = ">") { it.sourceName }
                 ?: ""
-            val params = f.parameters.filterNot { it.value.isClassParameterOf(reifiedFormalTypeParameter) }
+            val params = f.parameters.filterNot {
+                if (isTypeOf) it.value.isTypeOfParameterOf(reifiedFormalTypeParameter)
+                else it.value.isClassParameterOf(reifiedFormalTypeParameter)
+            }
             val invocationParams = f.parameters.map {
-                if (it.value.isClassParameterOf(reifiedFormalTypeParameter)) "${reifiedFormalTypeParameter.sourceName}::class.java"
+                if (isTypeOf && it.value.isTypeOfParameterOf(reifiedFormalTypeParameter)) "typeOf<${reifiedFormalTypeParameter.sourceName}>()"
+                else if (it.value.isClassParameterOf(reifiedFormalTypeParameter)) "${reifiedFormalTypeParameter.sourceName}::class.java"
                 else it.key
             }.joinToString(", ")
 
-            sequenceOf(
-                """
-                |$annotations
-                |inline fun ${extensionFormalTypeParameters.takeIf { it.isNotEmpty() }?.let { "$it " }
-                    ?: ""}${type.sourceName}$extendedTypeTypeParameters.${f.name}(${params.toFunctionParametersString()})${f.returnType.let { ": $it" }} =
-                |   ${f.name}($invocationParams)
-                """.trimMargin().trim())
+            val extensionAnnotations =
+                if (f.isDeprecated && f.isIncubating) "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating"
+                else if (f.isDeprecated) "@Deprecated(\"Deprecated Gradle API\")"
+                else if (f.isIncubating) "@org.gradle.api.Incubating"
+                else ""
+            val extensionSignature = "inline fun ${extensionFormalTypeParameters.takeIf { it.isNotEmpty() }?.let { "$it " }
+                ?: ""}${type.sourceName}$extendedTypeTypeParameters.${f.name}(${params.toFunctionParametersString()})${f.returnType.let { ": $it" }} ="
+            val extensionImplementation = "${f.name}($invocationParams)"
+
+            ReifiedTypeParameterExtension(extensionAnnotations, extensionSignature, extensionImplementation)
+        }
+        .distinctBy { it.signature }
+        .map {
+            """
+            |${it.annotations}
+            |${it.signature}
+            |    ${it.implementation}
+            """.trimMargin().trim()
         }
 }
+
+
+private
+class ReifiedTypeParameterExtension(val annotations: String, val signature: String, val implementation: String)
 
 
 internal

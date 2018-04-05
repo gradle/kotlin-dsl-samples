@@ -15,6 +15,8 @@
  */
 package org.gradle.kotlin.dsl.codegen
 
+import org.gradle.api.Action
+
 import org.gradle.kotlin.dsl.accessors.primitiveTypeStrings
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
 
@@ -242,6 +244,7 @@ fun Map<String, ApiTypeUsage>.toFunctionParametersString(): String =
         ?.entries
         ?.mapIndexed { index, entry ->
             if (index == size - 1 && entry.value.sourceName == "Array") "vararg ${entry.key}: ${entry.value.typeParameters.single()}"
+            else if (entry.value.sourceName == Action::class.java.canonicalName) "noinline ${entry.key}: ${entry.value.typeParameters.single()}.() -> Unit"
             else "${entry.key}: ${entry.value}"
         }
         ?.joinToString(separator = ", ")

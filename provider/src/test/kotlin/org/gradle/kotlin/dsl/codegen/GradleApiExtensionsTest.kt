@@ -5,6 +5,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.plugins.PluginCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -73,13 +74,14 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             Plugin::class.java,
             ObjectFactory::class.java,
             PluginCollection::class.java,
-            ProviderFactory::class.java))
+            ProviderFactory::class.java,
+            ExtensionContainer::class.java))
 
         val generatedExtensions = ApiTypeProvider(classPathBytecodeRepositoryFor(jars)).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
 
-        assertThat(generatedExtensions.size, equalTo(7))
+        assertThat(generatedExtensions.size, equalTo(13))
 
         assertThat(
             generatedExtensions,
@@ -97,6 +99,19 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
                 startsWith(
                     "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> ="),
                 startsWith(
-                    "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> =")))
+                    "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> ="),
+                startsWith(
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.add(p1: String, p2: T): Unit =\n    add(typeOf<T>(), p1, p2)"),
+                startsWith(
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.getByType(): T =\n    getByType(typeOf<T>())"),
+                startsWith(
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =\n    findByType(typeOf<T>())"),
+                startsWith(
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: java.lang.Class<T>, vararg p3: Any): T =\n    create(typeOf<T>(), p1, T::class.java, p3)"),
+                startsWith(
+                    "inline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =\n    create(p0, T::class.java, p2)"),
+                startsWith(
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =\n    configure(typeOf<T>(), p1)")
+            ))
     }
 }
