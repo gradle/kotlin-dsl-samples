@@ -266,9 +266,7 @@ fun createApiTypeUsage(
             nullable,
             typeIndex(sourceName),
             typeParameterSignatures.map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) },
-            boundsSignatures
-                .filter { it.binaryName != "java.lang.Object" }
-                .map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) })
+            boundsSignatures.map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) })
     }
 
 

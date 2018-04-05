@@ -89,29 +89,29 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
                 startsWith(
                     "@org.gradle.api.Incubating\ninline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p1: String): T ="),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T ="),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> ="),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> ="),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> ="),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> ="),
                 startsWith(
                     "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> ="),
                 startsWith(
-                    "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> ="),
+                    "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> ="),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.add(p1: String, p2: T): Unit =\n    add(typeOf<T>(), p1, p2)"),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.add(p1: String, p2: T): Unit =\n    add(typeOf<T>(), p1, p2)"),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.getByType(): T =\n    getByType(typeOf<T>())"),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.getByType(): T =\n    getByType(typeOf<T>())"),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =\n    findByType(typeOf<T>())"),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =\n    findByType(typeOf<T>())"),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: kotlin.reflect.KClass<T>, vararg p3: Any): T =\n    create(typeOf<T>(), p1, p2.java, p3)"),
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: kotlin.reflect.KClass<T>, vararg p3: Any): T =\n    create(typeOf<T>(), p1, p2.java, p3)"),
                 startsWith(
-                    "inline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =\n    create(p0, T::class.java, p2)"),
+                    "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =\n    create(p0, T::class.java, p2)"),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =\n    configure(typeOf<T>(), p1)")
+                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =\n    configure(typeOf<T>(), p1)")
             ))
     }
 }
