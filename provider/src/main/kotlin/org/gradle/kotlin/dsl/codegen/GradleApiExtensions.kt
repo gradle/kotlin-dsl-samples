@@ -80,13 +80,18 @@ val reifiedTypeParametersExtensionsGenerator = { type: ApiType ->
             val extendedTypeTypeParameters = type.formalTypeParameters.takeIf { it.isNotEmpty() }
                 ?.joinToString(separator = ", ", prefix = "<", postfix = ">") { it.sourceName }
                 ?: ""
-            val params = f.parameters.filterNot {
-                if (isTypeOf) it.value.isTypeOfParameterOf(reifiedFormalTypeParameter)
-                else it.value.isClassParameterOf(reifiedFormalTypeParameter)
+            lateinit var reifiedParamName: String
+            val params = f.parameters.filterNot { entry ->
+                if (isTypeOf) entry.value.isTypeOfParameterOf(reifiedFormalTypeParameter).also { if (it) reifiedParamName = entry.key }
+                else entry.value.isClassParameterOf(reifiedFormalTypeParameter).also { if (it) reifiedParamName = entry.key }
+            }.mapValues {
+                if (it.value.sourceName == "java.lang.Class") ApiTypeUsage("kotlin.reflect.KClass", it.value.isNullable, null, it.value.typeParameters)
+                else it.value
             }
             val invocationParams = f.parameters.map {
-                if (isTypeOf && it.value.isTypeOfParameterOf(reifiedFormalTypeParameter)) "typeOf<${reifiedFormalTypeParameter.sourceName}>()"
-                else if (it.value.isClassParameterOf(reifiedFormalTypeParameter)) "${reifiedFormalTypeParameter.sourceName}::class.java"
+                if (isTypeOf && it.key == reifiedParamName) "typeOf<${reifiedFormalTypeParameter.sourceName}>()"
+                else if (it.key == reifiedParamName) "${reifiedFormalTypeParameter.sourceName}::class.java"
+                else if (it.value.sourceName == "java.lang.Class") "${it.key}.java"
                 else it.key
             }.joinToString(", ")
 

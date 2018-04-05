@@ -107,7 +107,7 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
                 startsWith(
                     "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =\n    findByType(typeOf<T>())"),
                 startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: java.lang.Class<T>, vararg p3: Any): T =\n    create(typeOf<T>(), p1, T::class.java, p3)"),
+                    "@org.gradle.api.Incubating\ninline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: kotlin.reflect.KClass<T>, vararg p3: Any): T =\n    create(typeOf<T>(), p1, p2.java, p3)"),
                 startsWith(
                     "inline fun <reified T> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =\n    create(p0, T::class.java, p2)"),
                 startsWith(
