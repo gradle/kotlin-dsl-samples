@@ -21,13 +21,18 @@ import org.gradle.kotlin.dsl.accessors.primitiveTypeStrings
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
 import org.gradle.kotlin.dsl.support.classPathBytecodeRepositoryFor
 
+import org.jetbrains.org.objectweb.asm.AnnotationVisitor
+import org.jetbrains.org.objectweb.asm.Attribute
 import org.jetbrains.org.objectweb.asm.ClassReader
+import org.jetbrains.org.objectweb.asm.ClassReader.SKIP_CODE
 import org.jetbrains.org.objectweb.asm.ClassReader.SKIP_DEBUG
 import org.jetbrains.org.objectweb.asm.ClassReader.SKIP_FRAMES
+import org.jetbrains.org.objectweb.asm.FieldVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.jetbrains.org.objectweb.asm.Opcodes.ACC_STATIC
 import org.jetbrains.org.objectweb.asm.Opcodes.ASM6
 import org.jetbrains.org.objectweb.asm.Type
+import org.jetbrains.org.objectweb.asm.TypePath
 import org.jetbrains.org.objectweb.asm.signature.SignatureReader
 import org.jetbrains.org.objectweb.asm.signature.SignatureVisitor
 import org.jetbrains.org.objectweb.asm.tree.AnnotationNode
@@ -95,8 +100,8 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
 
     private
     fun classNodeFor(classBytes: ByteArray) =
-        ClassNode().also {
-            ClassReader(classBytes).accept(it, SKIP_DEBUG and SKIP_FRAMES)
+        ApiTypeClassNode().also {
+            ClassReader(classBytes).accept(it, SKIP_DEBUG or SKIP_CODE or SKIP_FRAMES)
         }
 }
 
@@ -458,3 +463,15 @@ val collectionTypeStrings =
         "java.util.Map" to "kotlin.collections.Map",
         "java.util.HashMap" to "kotlin.collections.HashMap",
         "java.util.LinkedHashMap" to "kotlin.collections.LinkedHashMap")
+
+
+internal
+class ApiTypeClassNode : ClassNode(ASM6) {
+
+    override fun visitSource(file: String?, debug: String?) = Unit
+    override fun visitOuterClass(owner: String?, name: String?, desc: String?) = Unit
+    override fun visitTypeAnnotation(typeRef: Int, typePath: TypePath?, desc: String?, visible: Boolean): AnnotationVisitor? = null
+    override fun visitAttribute(attr: Attribute?) = Unit
+    override fun visitInnerClass(name: String?, outerName: String?, innerName: String?, access: Int) = Unit
+    override fun visitField(access: Int, name: String?, desc: String?, signature: String?, value: Any?): FieldVisitor? = null
+}

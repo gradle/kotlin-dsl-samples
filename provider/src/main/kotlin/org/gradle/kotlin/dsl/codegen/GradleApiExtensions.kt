@@ -25,7 +25,7 @@ fun writeGradleApiExtensionsTo(file: File, gradleJars: Iterable<File>) {
     file.bufferedWriter().use {
         it.apply {
             write(fileHeader)
-            apiTypeProviderFor(gradleJars.toList()).use { api ->
+            apiTypeProviderFor(gradleJars.filter { it.name.startsWith("gradle-") }.toList()).use { api ->
                 gradleApiExtensionDeclarationsFor(api).forEach {
                     write("\n")
                     write(it)

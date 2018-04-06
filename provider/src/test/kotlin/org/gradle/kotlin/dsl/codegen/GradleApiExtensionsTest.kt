@@ -16,6 +16,7 @@ import org.gradle.util.TextUtil
 
 import org.gradle.kotlin.dsl.GradleDsl
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
+import org.gradle.kotlin.dsl.fixtures.customInstallation
 
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
@@ -27,8 +28,40 @@ import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+import java.io.File
+import java.io.FileFilter
+
+import kotlin.system.measureTimeMillis
+
 
 class GradleApiExtensionsTest : AbstractIntegrationTest() {
+
+    @Test
+    fun `whole Gradle API generation and compilation`() {
+        val jars = customInstallation().let { custom ->
+            sequenceOf(custom.resolve("lib"), custom.resolve("lib/plugins")).flatMap {
+                it.listFiles(FileFilter { it.name.endsWith(".jar") }).asSequence()
+            }.toList()
+        }
+
+        val sourceFile: File = existing("source.kt")
+
+        measureTimeMillis {
+            writeGradleApiExtensionsTo(sourceFile, jars)
+        }.also {
+            println("Generation to file took ${it}ms")
+        }
+
+        measureTimeMillis {
+            StandardKotlinFileCompiler.compileToDirectory(
+                existing("output").also { it.mkdirs() },
+                listOf(sourceFile),
+                jars
+            )
+        }.also {
+            println("Compilation took ${it}ms")
+        }
+    }
 
     @Test
     fun `Gradle API spec`() {

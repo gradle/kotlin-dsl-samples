@@ -148,12 +148,16 @@ private
 const val classFilePathSuffix = ".class"
 
 
+private
+val slashOrDollar = Regex("[/$]")
+
+
 internal
 fun kotlinSourceNameOf(classFilePath: String): String =
-    classFilePath.let {
-        if (it.endsWith("Kt$classFilePathSuffix")) it.dropLast(8)
-        else it.dropLast(6)
-    }.replace("/", ".").replace("$", ".")
+    classFilePath.run {
+        if (endsWith("Kt$classFilePathSuffix")) dropLast(8)
+        else dropLast(6)
+    }.replace(slashOrDollar, ".")
 
 
 internal
