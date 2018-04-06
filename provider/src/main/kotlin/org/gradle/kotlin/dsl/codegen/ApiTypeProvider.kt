@@ -15,8 +15,6 @@
  */
 package org.gradle.kotlin.dsl.codegen
 
-import org.gradle.api.Action
-
 import org.gradle.kotlin.dsl.accessors.primitiveTypeStrings
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
 import org.gradle.kotlin.dsl.support.classPathBytecodeRepositoryFor
@@ -80,29 +78,35 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
             closed = true
         }
 
-    fun type(sourceName: String): ApiType? =
-        if (closed) throw IllegalStateException("ApiTypeProvider closed!")
-        else apiTypesBySourceName.computeIfAbsent(sourceName) {
-            repository.classBytesFor(sourceName)?.let { { apiTypeFor(sourceName, it) } }
+    fun type(sourceName: String): ApiType? = open {
+        apiTypesBySourceName.computeIfAbsent(sourceName) {
+            repository.classBytesFor(sourceName)?.let { apiTypeFor(sourceName, it) }
         }?.invoke()
+    }
 
-    fun allTypes(): Sequence<ApiType> =
-        if (closed) throw IllegalStateException("ApiTypeProvider closed!")
-        else repository.allClassesBytesBySourceName().mapNotNull { (sourceName, classBytes) ->
+    fun allTypes(): Sequence<ApiType> = open {
+        repository.allClassesBytesBySourceName().mapNotNull { (sourceName, classBytes) ->
             apiTypesBySourceName.computeIfAbsent(sourceName) {
-                { apiTypeFor(sourceName, classBytes()) }
+                apiTypeFor(sourceName, classBytes())
             }
         }.map { it() }
+    }
 
     private
-    fun apiTypeFor(sourceName: String, classBytes: ByteArray) =
+    fun apiTypeFor(sourceName: String, classBytes: ByteArray) = {
         ApiType(sourceName, classNodeFor(classBytes), { type(it) })
+    }
 
     private
     fun classNodeFor(classBytes: ByteArray) =
         ApiTypeClassNode().also {
             ClassReader(classBytes).accept(it, SKIP_DEBUG or SKIP_CODE or SKIP_FRAMES)
         }
+
+    private
+    fun <T> open(action: () -> T): T =
+        if (closed) throw IllegalStateException("ApiTypeProvider closed!")
+        else action()
 }
 
 
@@ -123,7 +127,7 @@ class ApiType(
         get() = delegate.visibleAnnotations.hasIncubating
 
     val formalTypeParameters: List<ApiTypeUsage> by lazy(NONE) {
-        visitedSignature?.formalTypeParameterDeclarations(typeIndex) ?: emptyList()
+        visitedSignature?.formalTypeParameterUsages(typeIndex) ?: emptyList()
     }
 
     val functions: List<ApiFunction> by lazy(NONE) {
@@ -162,16 +166,16 @@ class ApiFunction(
         (ACC_STATIC and delegate.access) > 0
 
     val formalTypeParameters: List<ApiTypeUsage> by lazy(NONE) {
-        visitedSignature?.formalTypeParameterDeclarations(typeIndex)
+        visitedSignature?.formalTypeParameterUsages(typeIndex)
             ?: emptyList()
     }
 
     val parameters: List<ApiFunctionParameter> by lazy(NONE) {
-        delegate.visibleParameterAnnotations?.map { it.hasNullable }.let { nullability ->
-            visitedSignature?.parameters(typeIndex, nullability)
+        delegate.visibleParameterAnnotations?.map { it.hasNullable }.let { parametersNullability ->
+            visitedSignature?.functionParameters(typeIndex, parametersNullability)
                 ?: Type.getArgumentTypes(delegate.desc).mapIndexed { idx, p ->
-                    val isNullable = nullability?.get(idx) == true
-                    ApiFunctionParameter("p$idx", createApiTypeUsage(typeIndex, p.className, isNullable, emptyList(), emptyList()))
+                    val isNullable = parametersNullability?.get(idx) == true
+                    apiFunctionParameter(idx, typeIndex.apiTypeUsage(p.className, isNullable))
                 }
         }
     }
@@ -179,9 +183,7 @@ class ApiFunction(
     val returnType: ApiTypeUsage by lazy(NONE) {
         delegate.visibleAnnotations.hasNullable.let { isNullable ->
             visitedSignature?.returnType(typeIndex, isNullable)
-                ?: sourceNameOfBinaryName(Type.getReturnType(delegate.desc).className).let {
-                    ApiTypeUsage(it, isNullable, typeIndex(it))
-                }
+                ?: typeIndex.apiTypeUsage(Type.getReturnType(delegate.desc).className, isNullable)
         }
     }
 
@@ -208,6 +210,11 @@ val List<AnnotationNode>?.hasIncubating: Boolean
     get() = this?.any { it.desc == "Lorg/gradle/api/Incubating;" } ?: false
 
 
+private
+fun apiFunctionParameter(index: Int, type: ApiTypeUsage) =
+    ApiFunctionParameter("p$index", type)
+
+
 internal
 class ApiFunctionParameter(val name: String, val type: ApiTypeUsage)
 
@@ -226,67 +233,10 @@ class ApiTypeUsage(
 
 
 private
-fun Boolean.toKotlinNullabilityString(): String =
-    if (this) "?" else ""
-
-
-internal
-fun ApiTypeUsage.toFormalTypeParameterString(): String =
-    "$sourceName${
-    bounds.takeIf { it.isNotEmpty() }
-        ?.joinToString(separator = ", ", prefix = " : ") { it.toFormalTypeParameterString() }
-        ?: ""
-    }${typeParameters.toFormalTypeParametersString(type)}${isNullable.toKotlinNullabilityString()}"
-
-
-internal
-fun List<ApiTypeUsage>.toFormalTypeParametersString(type: ApiType? = null, reified: Boolean = false): String =
-    resolveRawTypes(type).takeIf { it.isNotEmpty() }
-        ?.joinToString(separator = ", ${if (reified) "reified " else ""}", prefix = "<${if (reified) "reified " else ""}", postfix = ">") {
-            it.toFormalTypeParameterString()
-        }
-        ?: ""
-
-
-internal
-fun ApiTypeUsage.toTypeParameterString(): String =
-    "$sourceName${typeParameters.toTypeParametersString(type)}${isNullable.toKotlinNullabilityString()}"
-
-
-internal
-fun List<ApiTypeUsage>.toTypeParametersString(type: ApiType? = null): String =
-    resolveRawTypes(type).takeIf { it.isNotEmpty() }
-        ?.joinToString(separator = ", ", prefix = "<", postfix = ">") { it.toTypeParameterString() }
-        ?: ""
-
-
-private
-fun List<ApiTypeUsage>.resolveRawTypes(type: ApiType? = null): List<ApiTypeUsage> =
-    when {
-        isNotEmpty() -> this
-        type?.formalTypeParameters?.isNotEmpty() == true -> ApiTypeUsage("*").let { star -> Array(type.formalTypeParameters.size) { star } }.toList()
-        else -> emptyList()
-    }
-
-
-internal
-fun List<ApiFunctionParameter>.toFunctionParametersString(inlineFunction: Boolean = false): String =
-    takeIf { it.isNotEmpty() }
-        ?.mapIndexed { idx, p ->
-            if (idx == size - 1 && p.type.sourceName == "Array") "vararg ${p.name}: ${p.type.typeParameters.single().toTypeParameterString()}"
-            else if (p.type.sourceName == Action::class.java.canonicalName) "${if (inlineFunction) "noinline " else ""}${p.name}: ${p.type.typeParameters.single().toTypeParameterString()}.() -> Unit"
-            else "${p.name}: ${p.type.toTypeParameterString()}"
-        }
-        ?.joinToString(separator = ", ")
-        ?: ""
-
-
-private
-fun createApiTypeUsage(
-    typeIndex: ApiTypeIndex,
+fun ApiTypeIndex.apiTypeUsage(
     binaryName: String,
     nullable: Boolean,
-    typeParameterSignatures: List<TypeSignatureVisitor>,
+    typeParameterSignatures: List<TypeSignatureVisitor> = emptyList(),
     boundsSignatures: List<TypeSignatureVisitor> = emptyList()
 ): ApiTypeUsage =
 
@@ -294,9 +244,9 @@ fun createApiTypeUsage(
         ApiTypeUsage(
             sourceName,
             nullable,
-            typeIndex(sourceName),
-            typeParameterSignatures.map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) },
-            boundsSignatures.map { createApiTypeUsage(typeIndex, it.binaryName, false, it.typeParameters) })
+            this(sourceName),
+            typeParameterSignatures.map { apiTypeUsage(it.binaryName, false, it.typeParameters) },
+            boundsSignatures.map { apiTypeUsage(it.binaryName, false, it.typeParameters) })
     }
 
 
@@ -304,28 +254,26 @@ internal
 abstract class BaseSignatureVisitor : SignatureVisitor(ASM6) {
 
     private
-    val formalTypeParameters: MutableMap<String, MutableList<TypeSignatureVisitor>> = mutableMapOf()
+    val formalTypeParameters = LinkedHashMap<String, MutableList<TypeSignatureVisitor>>(1)
 
     private
     var currentFormalTypeParameter: String? = null
 
-    fun formalTypeParameterDeclarations(typeIndex: ApiTypeIndex): List<ApiTypeUsage> =
+    fun formalTypeParameterUsages(typeIndex: ApiTypeIndex): List<ApiTypeUsage> =
         formalTypeParameters.map { (binaryName, boundsSignatures) ->
-            createApiTypeUsage(typeIndex, binaryName, false, emptyList(), boundsSignatures)
+            typeIndex.apiTypeUsage(binaryName, false, emptyList(), boundsSignatures)
         }
 
-    override fun visitFormalTypeParameter(name: String) {
-        formalTypeParameters[name] = mutableListOf()
-        currentFormalTypeParameter = name
+    override fun visitFormalTypeParameter(binaryName: String) {
+        formalTypeParameters[binaryName] = ArrayList(1)
+        currentFormalTypeParameter = binaryName
     }
 
-    override fun visitClassBound(): SignatureVisitor {
-        return TypeSignatureVisitor().also { formalTypeParameters[currentFormalTypeParameter]!!.add(it) }
-    }
+    override fun visitClassBound(): SignatureVisitor =
+        TypeSignatureVisitor().also { formalTypeParameters[currentFormalTypeParameter]!!.add(it) }
 
-    override fun visitInterfaceBound(): SignatureVisitor {
-        return TypeSignatureVisitor().also { formalTypeParameters[currentFormalTypeParameter]!!.add(it) }
-    }
+    override fun visitInterfaceBound(): SignatureVisitor =
+        TypeSignatureVisitor().also { formalTypeParameters[currentFormalTypeParameter]!!.add(it) }
 }
 
 
@@ -337,33 +285,27 @@ internal
 class MethodSignatureVisitor : BaseSignatureVisitor() {
 
     private
-    val parametersSignatures = mutableListOf<TypeSignatureVisitor>()
+    val parametersSignatures = ArrayList<TypeSignatureVisitor>(1)
 
     private
     val returnSignature = TypeSignatureVisitor()
 
-    fun parameters(typeIndex: ApiTypeIndex, nullability: List<Boolean>?): List<ApiFunctionParameter> =
+    fun functionParameters(typeIndex: ApiTypeIndex, parametersNullability: List<Boolean>?): List<ApiFunctionParameter> =
         parametersSignatures.mapIndexed { idx, parameterSignature ->
-            val isNullable = nullability?.get(idx) == true
-            ApiFunctionParameter(
-                "p$idx",
-                createApiTypeUsage(typeIndex, parameterSignature.binaryName, isNullable, parameterSignature.typeParameters))
+            val isNullable = parametersNullability?.get(idx) == true
+            apiFunctionParameter(
+                idx,
+                typeIndex.apiTypeUsage(parameterSignature.binaryName, isNullable, parameterSignature.typeParameters))
         }
 
     fun returnType(typeIndex: ApiTypeIndex, nullableReturn: Boolean): ApiTypeUsage =
-        createApiTypeUsage(
-            typeIndex,
-            returnSignature.binaryName,
-            nullableReturn,
-            returnSignature.typeParameters)
+        typeIndex.apiTypeUsage(returnSignature.binaryName, nullableReturn, returnSignature.typeParameters)
 
-    override fun visitParameterType(): SignatureVisitor {
-        return TypeSignatureVisitor().also { parametersSignatures.add(it) }
-    }
+    override fun visitParameterType(): SignatureVisitor =
+        TypeSignatureVisitor().also { parametersSignatures.add(it) }
 
-    override fun visitReturnType(): SignatureVisitor {
-        return returnSignature
-    }
+    override fun visitReturnType(): SignatureVisitor =
+        returnSignature
 }
 
 
@@ -372,23 +314,22 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     lateinit var binaryName: String
 
-    val typeParameters = mutableListOf<TypeSignatureVisitor>()
+    val typeParameters = ArrayList<TypeSignatureVisitor>(1)
 
     private
     var expectingTypeParameter = false
 
-    override fun visitBaseType(descriptor: Char) {
+    override fun visitBaseType(descriptor: Char) =
         visitBinaryName(binaryNameForBaseType(descriptor))
-    }
 
-    override fun visitArrayType(): SignatureVisitor {
-        visitBinaryName("Array")
-        return TypeSignatureVisitor().also { typeParameters.add(it) }
-    }
+    override fun visitArrayType(): SignatureVisitor =
+        TypeSignatureVisitor().also {
+            visitBinaryName("Array")
+            typeParameters.add(it)
+        }
 
-    override fun visitClassType(name: String) {
-        visitBinaryName(binaryNameOfInternalName(name))
-    }
+    override fun visitClassType(internalName: String) =
+        visitBinaryName(binaryNameOfInternalName(internalName))
 
     override fun visitInnerClassType(localName: String) {
         binaryName += "${'$'}$localName"
@@ -398,19 +339,23 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
         typeParameters.add(TypeSignatureVisitor().also { it.binaryName = "?" })
     }
 
-    override fun visitTypeArgument(wildcard: Char): SignatureVisitor {
-        expectingTypeParameter = true
-        return TypeSignatureVisitor().also { typeParameters.add(it) }
-    }
+    override fun visitTypeArgument(wildcard: Char): SignatureVisitor =
+        TypeSignatureVisitor().also {
+            expectingTypeParameter = true
+            typeParameters.add(it)
+        }
 
-    override fun visitTypeVariable(name: String) {
-        visitBinaryName(binaryNameOfInternalName(name))
+    override fun visitTypeVariable(internalName: String) {
+        visitBinaryName(binaryNameOfInternalName(internalName))
     }
 
     private
     fun visitBinaryName(binaryName: String) {
         if (expectingTypeParameter) {
-            typeParameters.add(TypeSignatureVisitor().also { SignatureReader(binaryName).accept(it) })
+            TypeSignatureVisitor().let {
+                typeParameters.add(it)
+                SignatureReader(binaryName).accept(it)
+            }
             expectingTypeParameter = false
         } else {
             this.binaryName = binaryName

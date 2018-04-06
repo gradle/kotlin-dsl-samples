@@ -126,7 +126,7 @@ class ClassBytesRepository(classPath: ClassPath) : Closeable {
 
     private
     fun directoryClassBytesIndexFor(dir: File): ClassBytesIndex = { classFilePath ->
-        File(dir, classFilePath).takeIf { it.isFile }?.let { classFile -> { classFile.readBytes() } }
+        dir.resolve(classFilePath).takeIf { it.isFile }?.let { classFile -> { classFile.readBytes() } }
     }
 
     private

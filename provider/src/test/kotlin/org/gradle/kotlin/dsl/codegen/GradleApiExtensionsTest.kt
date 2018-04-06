@@ -37,7 +37,7 @@ import kotlin.system.measureTimeMillis
 class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
     @Test
-    fun `whole Gradle API generation and compilation`() {
+    fun `whole Gradle API extensions generation and compilation`() {
         val jars = customInstallation().let { custom ->
             sequenceOf(custom.resolve("lib"), custom.resolve("lib/plugins")).flatMap {
                 it.listFiles(FileFilter { it.name.endsWith(".jar") }).asSequence()
@@ -49,17 +49,16 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
         measureTimeMillis {
             writeGradleApiExtensionsTo(sourceFile, jars)
         }.also {
-            println("Generation to file took ${it}ms")
+            println("Generation to file succeeded in ${it}ms")
         }
 
         measureTimeMillis {
             StandardKotlinFileCompiler.compileToDirectory(
                 existing("output").also { it.mkdirs() },
                 listOf(sourceFile),
-                jars
-            )
+                jars)
         }.also {
-            println("Compilation took ${it}ms")
+            println("Compilation succeeded in ${it}ms")
         }
     }
 
