@@ -19,6 +19,7 @@ import org.gradle.api.Action
 
 import org.gradle.kotlin.dsl.accessors.primitiveTypeStrings
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
+import org.gradle.kotlin.dsl.support.classPathBytecodeRepositoryFor
 
 import org.jetbrains.org.objectweb.asm.ClassReader
 import org.jetbrains.org.objectweb.asm.ClassReader.SKIP_DEBUG
@@ -34,8 +35,14 @@ import org.jetbrains.org.objectweb.asm.tree.ClassNode
 import org.jetbrains.org.objectweb.asm.tree.MethodNode
 
 import java.io.Closeable
+import java.io.File
 
 import kotlin.LazyThreadSafetyMode.NONE
+
+
+internal
+fun apiTypeProviderFor(jarsOrDirs: List<File>): ApiTypeProvider =
+    ApiTypeProvider(classPathBytecodeRepositoryFor(jarsOrDirs))
 
 
 private
@@ -115,11 +122,7 @@ class ApiType(
     }
 
     val functions: List<ApiFunction> by lazy(NONE) {
-        delegate.methods.map { ApiFunction(this, it, typeIndex) }
-    }
-
-    override fun toString(): String {
-        return "$sourceName${formalTypeParameters.toTypeParametersString(this)}"
+        delegate.methods.filter { it.signature != null }.map { ApiFunction(this, it, typeIndex) }
     }
 
     private
@@ -158,13 +161,13 @@ class ApiFunction(
             ?: emptyList()
     }
 
-    val parameters: Map<String, ApiTypeUsage> by lazy(NONE) {
+    val parameters: List<ApiFunctionParameter> by lazy(NONE) {
         delegate.visibleParameterAnnotations?.map { it.hasNullable }.let { nullability ->
             visitedSignature?.parameters(typeIndex, nullability)
                 ?: Type.getArgumentTypes(delegate.desc).mapIndexed { idx, p ->
                     val isNullable = nullability?.get(idx) == true
-                    Pair("p$idx", createApiTypeUsage(typeIndex, p.className, isNullable, emptyList(), emptyList()))
-                }.toMap()
+                    ApiFunctionParameter("p$idx", createApiTypeUsage(typeIndex, p.className, isNullable, emptyList(), emptyList()))
+                }
         }
     }
 
@@ -201,51 +204,73 @@ val List<AnnotationNode>?.hasIncubating: Boolean
 
 
 internal
-open class ApiTypeUsage(
-    val sourceName: String,
-    val isNullable: Boolean,
-    val type: ApiType?,
-    val typeParameters: List<ApiTypeUsage> = emptyList(),
-    val bounds: List<ApiTypeUsage> = emptyList()
-) {
-
-    val isRaw: Boolean
-        get() = typeParameters.isEmpty() && type?.formalTypeParameters?.isEmpty() != false
-
-    override fun toString(): String {
-        return "$sourceName$boundsString${typeParameters.toTypeParametersString(type)}$nullabilityString"
-    }
-
-    private
-    val boundsString: String
-        get() = bounds.takeIf { it.isNotEmpty() }?.joinToString(separator = ", ", prefix = " : ") ?: ""
-
-    private
-    val nullabilityString
-        get() = if (isNullable) "?" else ""
-}
+class ApiFunctionParameter(val name: String, val type: ApiTypeUsage)
 
 
 internal
-fun List<ApiTypeUsage>.toTypeParametersString(type: ApiType? = null, reified: Boolean = false): String =
-    when {
-        isNotEmpty() -> this
-        type?.formalTypeParameters?.isNotEmpty() == true -> "*".repeat(type.formalTypeParameters.size).asIterable().toList()
-        else -> emptyList()
-    }
-        .takeIf { it.isNotEmpty() }
-        ?.joinToString(separator = ", ${if (reified) "reified " else ""}", prefix = "<${if (reified) "reified " else ""}", postfix = ">")
+class ApiTypeUsage(
+    val sourceName: String,
+    val isNullable: Boolean = false,
+    val type: ApiType? = null,
+    val typeParameters: List<ApiTypeUsage> = emptyList(),
+    val bounds: List<ApiTypeUsage> = emptyList()
+) {
+    val isRaw: Boolean
+        get() = typeParameters.isEmpty() && type?.formalTypeParameters?.isEmpty() != false
+}
+
+
+private
+fun Boolean.toKotlinNullabilityString(): String =
+    if (this) "?" else ""
+
+
+internal
+fun ApiTypeUsage.toFormalTypeParameterString(): String =
+    "$sourceName${
+    bounds.takeIf { it.isNotEmpty() }
+        ?.joinToString(separator = ", ", prefix = " : ") { it.toFormalTypeParameterString() }
+        ?: ""
+    }${typeParameters.toFormalTypeParametersString(type)}${isNullable.toKotlinNullabilityString()}"
+
+
+internal
+fun List<ApiTypeUsage>.toFormalTypeParametersString(type: ApiType? = null, reified: Boolean = false): String =
+    resolveRawTypes(type).takeIf { it.isNotEmpty() }
+        ?.joinToString(separator = ", ${if (reified) "reified " else ""}", prefix = "<${if (reified) "reified " else ""}", postfix = ">") {
+            it.toFormalTypeParameterString()
+        }
         ?: ""
 
 
 internal
-fun Map<String, ApiTypeUsage>.toFunctionParametersString(): String =
+fun ApiTypeUsage.toTypeParameterString(): String =
+    "$sourceName${typeParameters.toTypeParametersString(type)}${isNullable.toKotlinNullabilityString()}"
+
+
+internal
+fun List<ApiTypeUsage>.toTypeParametersString(type: ApiType? = null): String =
+    resolveRawTypes(type).takeIf { it.isNotEmpty() }
+        ?.joinToString(separator = ", ", prefix = "<", postfix = ">") { it.toTypeParameterString() }
+        ?: ""
+
+
+private
+fun List<ApiTypeUsage>.resolveRawTypes(type: ApiType? = null): List<ApiTypeUsage> =
+    when {
+        isNotEmpty() -> this
+        type?.formalTypeParameters?.isNotEmpty() == true -> ApiTypeUsage("*").let { star -> Array(type.formalTypeParameters.size) { star } }.toList()
+        else -> emptyList()
+    }
+
+
+internal
+fun List<ApiFunctionParameter>.toFunctionParametersString(inlineFunction: Boolean = false): String =
     takeIf { it.isNotEmpty() }
-        ?.entries
-        ?.mapIndexed { index, entry ->
-            if (index == size - 1 && entry.value.sourceName == "Array") "vararg ${entry.key}: ${entry.value.typeParameters.single()}"
-            else if (entry.value.sourceName == Action::class.java.canonicalName) "noinline ${entry.key}: ${entry.value.typeParameters.single()}.() -> Unit"
-            else "${entry.key}: ${entry.value}"
+        ?.mapIndexed { idx, p ->
+            if (idx == size - 1 && p.type.sourceName == "Array") "vararg ${p.name}: ${p.type.typeParameters.single().toTypeParameterString()}"
+            else if (p.type.sourceName == Action::class.java.canonicalName) "${if (inlineFunction) "noinline " else ""}${p.name}: ${p.type.typeParameters.single().toTypeParameterString()}.() -> Unit"
+            else "${p.name}: ${p.type.toTypeParameterString()}"
         }
         ?.joinToString(separator = ", ")
         ?: ""
@@ -312,13 +337,13 @@ class MethodSignatureVisitor : BaseSignatureVisitor() {
     private
     val returnSignature = TypeSignatureVisitor()
 
-    fun parameters(typeIndex: ApiTypeIndex, nullability: List<Boolean>?): Map<String, ApiTypeUsage> =
+    fun parameters(typeIndex: ApiTypeIndex, nullability: List<Boolean>?): List<ApiFunctionParameter> =
         parametersSignatures.mapIndexed { idx, parameterSignature ->
             val isNullable = nullability?.get(idx) == true
-            Pair(
+            ApiFunctionParameter(
                 "p$idx",
                 createApiTypeUsage(typeIndex, parameterSignature.binaryName, isNullable, parameterSignature.typeParameters))
-        }.toMap()
+        }
 
     fun returnType(typeIndex: ApiTypeIndex, nullableReturn: Boolean): ApiTypeUsage =
         createApiTypeUsage(
@@ -365,7 +390,7 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
     }
 
     override fun visitTypeArgument() {
-        expectingTypeParameter = true
+        typeParameters.add(TypeSignatureVisitor().also { it.binaryName = "?" })
     }
 
     override fun visitTypeArgument(wildcard: Char): SignatureVisitor {
@@ -413,6 +438,23 @@ private
 fun sourceNameOfBinaryName(binaryName: String): String =
     when (binaryName) {
         "void" -> "Unit"
+        "?" -> "*"
+        in collectionTypeStrings.keys -> collectionTypeStrings[binaryName]!!
         in primitiveTypeStrings.keys -> primitiveTypeStrings[binaryName]!!
         else -> binaryName.replace('$', '.')
     }
+
+private
+val collectionTypeStrings =
+    mapOf(
+        "java.util.Iterable" to "kotlin.collections.Iterable",
+        "java.util.Iterator" to "kotlin.collections.Iterator",
+        "java.util.Collection" to "kotlin.collections.Collection",
+        "java.util.List" to "kotlin.collections.List",
+        "java.util.ArrayList" to "kotlin.collections.ArrayList",
+        "java.util.Set" to "kotlin.collections.Set",
+        "java.util.HashSet" to "kotlin.collections.HashSet",
+        "java.util.LinkedHashSet" to "kotlin.collections.LinkedHashSet",
+        "java.util.Map" to "kotlin.collections.Map",
+        "java.util.HashMap" to "kotlin.collections.HashMap",
+        "java.util.LinkedHashMap" to "kotlin.collections.LinkedHashMap")

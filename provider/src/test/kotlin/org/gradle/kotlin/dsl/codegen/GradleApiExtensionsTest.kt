@@ -3,6 +3,7 @@ package org.gradle.kotlin.dsl.codegen
 import org.gradle.api.Named
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.query.ArtifactResolutionQuery
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionContainer
@@ -15,8 +16,8 @@ import org.gradle.util.TextUtil
 
 import org.gradle.kotlin.dsl.GradleDsl
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
-import org.gradle.kotlin.dsl.support.classPathBytecodeRepositoryFor
 
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.CoreMatchers.startsWith
@@ -39,7 +40,7 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             TextUtil::class.java,
             GradleDsl::class.java))
 
-        ApiTypeProvider(classPathBytecodeRepositoryFor(jars)).use { api ->
+        apiTypeProviderFor(jars).use { api ->
 
             var seenProject = false
             var seenProjectInternal = false
@@ -77,11 +78,11 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             ProviderFactory::class.java,
             ExtensionContainer::class.java))
 
-        val generatedExtensions = ApiTypeProvider(classPathBytecodeRepositoryFor(jars)).use { api ->
+        val generatedExtensions = apiTypeProviderFor(jars).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
 
-        assertThat(generatedExtensions.size, equalTo(13))
+        assertThat(generatedExtensions.filter { it.contains("<reified ") }.size, equalTo(13))
 
         assertThat(
             generatedExtensions,
@@ -113,5 +114,22 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
                 startsWith(
                     "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =\n    configure(typeOf<T>(), p1)")
             ))
+    }
+
+    @Test
+    fun `varargs extension parameters`() {
+        val jars = listOf(withClassJar("some.jar", ArtifactResolutionQuery::class.java))
+
+        val generatedExtensions = apiTypeProviderFor(jars).use { api ->
+            gradleApiExtensionDeclarationsFor(api).toList()
+        }
+
+        val varargExtension = generatedExtensions.single { it.contains(".withArtifacts(") && it.contains("vararg ") }
+        println(varargExtension)
+
+        assertThat(varargExtension,
+            containsString("vararg p1: kotlin.reflect.KClass<org.gradle.api.component.Artifact>"))
+        assertThat(varargExtension,
+            containsString("withArtifacts(p0.java, *p1.map { it.java }.toTypedArray())"))
     }
 }
