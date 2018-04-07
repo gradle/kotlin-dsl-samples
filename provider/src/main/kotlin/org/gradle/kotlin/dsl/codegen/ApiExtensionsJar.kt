@@ -61,6 +61,7 @@ class ApiExtensionsJarGenerator(
                 builtinPluginIdExtensionsSourceFileFor(gradleJars, outputDir),
                 gradleApiExtensionsSourceFileFor(gradleJars, outputDir)),
             classPath = gradleJars)
+        onProgress()
     }
 
     private
