@@ -34,16 +34,16 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
 
                 assertThat(sourceName, equalTo("org.gradle.api.plugins.PluginCollection"))
                 assertTrue(isPublic)
-                assertThat(formalTypeParameters.size, equalTo(1))
-                formalTypeParameters.single().apply {
+                assertThat(typeParameters.size, equalTo(1))
+                typeParameters.single().apply {
                     assertThat(sourceName, equalTo("T"))
                     assertThat(bounds.size, equalTo(1))
                     assertThat(bounds.single().sourceName, equalTo("org.gradle.api.Plugin"))
                 }
 
                 functions.single { it.name == "withType" }.apply {
-                    assertThat(formalTypeParameters.size, equalTo(1))
-                    formalTypeParameters.single().apply {
+                    assertThat(typeParameters.size, equalTo(1))
+                    typeParameters.single().apply {
                         assertThat(sourceName, equalTo("S"))
                         assertThat(bounds.size, equalTo(1))
                         assertThat(bounds.single().sourceName, equalTo("T"))
@@ -51,15 +51,15 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
                     assertThat(parameters.size, equalTo(1))
                     parameters.single().type.apply {
                         assertThat(sourceName, equalTo("java.lang.Class"))
-                        assertThat(typeParameters.size, equalTo(1))
-                        typeParameters.single().apply {
+                        assertThat(typeArguments.size, equalTo(1))
+                        typeArguments.single().apply {
                             assertThat(sourceName, equalTo("S"))
                         }
                     }
                     returnType.apply {
                         assertThat(sourceName, equalTo("org.gradle.api.plugins.PluginCollection"))
-                        assertThat(typeParameters.size, equalTo(1))
-                        typeParameters.single().apply {
+                        assertThat(typeArguments.size, equalTo(1))
+                        typeArguments.single().apply {
                             assertThat(sourceName, equalTo("S"))
                         }
                     }
@@ -68,8 +68,8 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
             api.type(ObjectFactory::class.java.canonicalName)!!.apply {
                 functions.single { it.name == "newInstance" }.apply {
                     parameters.drop(1).single().type.apply {
-                        assertThat(sourceName, equalTo("Array"))
-                        assertThat(typeParameters.single().sourceName, equalTo("Any"))
+                        assertThat(sourceName, equalTo("kotlin.Array"))
+                        assertThat(typeArguments.single().sourceName, equalTo("Any"))
                     }
                 }
             }
@@ -85,13 +85,13 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
             val contentFilterable = api.type(ContentFilterable::class.java.canonicalName)!!
 
             contentFilterable.functions.single { it.name == "expand" }.apply {
-                assertTrue(formalTypeParameters.isEmpty())
+                assertTrue(typeParameters.isEmpty())
                 assertThat(parameters.size, equalTo(1))
                 parameters.single().type.apply {
                     assertThat(sourceName, equalTo("kotlin.collections.Map"))
-                    assertThat(typeParameters.size, equalTo(2))
-                    assertThat(typeParameters[0].sourceName, equalTo("String"))
-                    assertThat(typeParameters[1].sourceName, equalTo("*"))
+                    assertThat(typeArguments.size, equalTo(2))
+                    assertThat(typeArguments[0].sourceName, equalTo("String"))
+                    assertThat(typeArguments[1].sourceName, equalTo("*"))
                 }
             }
         }

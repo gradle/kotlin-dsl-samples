@@ -15,6 +15,8 @@
  */
 package org.gradle.kotlin.dsl.codegen
 
+import org.gradle.api.Incubating
+
 import org.gradle.kotlin.dsl.accessors.primitiveTypeStrings
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
 import org.gradle.kotlin.dsl.support.classPathBytesRepositoryFor
@@ -39,6 +41,9 @@ import org.jetbrains.org.objectweb.asm.tree.MethodNode
 
 import java.io.Closeable
 import java.io.File
+import java.util.Objects
+
+import javax.annotation.Nullable
 
 import kotlin.LazyThreadSafetyMode.NONE
 
@@ -80,28 +85,29 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
 
     fun type(sourceName: String): ApiType? = open {
         apiTypesBySourceName.computeIfAbsent(sourceName) {
-            repository.classBytesFor(sourceName)?.let { apiTypeFor(sourceName, it) }
+            repository.classBytesFor(sourceName)?.let { apiTypeFor(sourceName, { it }) }
         }?.invoke()
     }
 
     fun allTypes(): Sequence<ApiType> = open {
-        repository.allClassesBytesBySourceName().mapNotNull { (sourceName, classBytes) ->
+        repository.allClassesBytesBySourceName().map { (sourceName, classBytes) ->
             apiTypesBySourceName.computeIfAbsent(sourceName) {
-                apiTypeFor(sourceName, classBytes())
-            }
+                apiTypeFor(sourceName, classBytes)
+            }!!
         }.map { it() }
     }
 
     private
-    fun apiTypeFor(sourceName: String, classBytes: ByteArray) = {
+    fun apiTypeFor(sourceName: String, classBytes: () -> ByteArray) = {
         ApiType(sourceName, classNodeFor(classBytes), { type(it) })
     }
 
     private
-    fun classNodeFor(classBytes: ByteArray) =
+    fun classNodeFor(classBytesSupplier: () -> ByteArray) = {
         ApiTypeClassNode().also {
-            ClassReader(classBytes).accept(it, SKIP_DEBUG or SKIP_CODE or SKIP_FRAMES)
+            ClassReader(classBytesSupplier()).accept(it, SKIP_DEBUG or SKIP_CODE or SKIP_FRAMES)
         }
+    }
 
     private
     fun <T> open(action: () -> T): T =
@@ -111,27 +117,32 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
 
 
 internal
-class ApiType(
+data class ApiType(
     val sourceName: String,
-    private val delegate: ClassNode,
+    private val delegateSupplier: () -> ClassNode,
     private val typeIndex: ApiTypeIndex
 ) {
 
-    val isPublic: Boolean =
-        (ACC_PUBLIC and delegate.access) > 0
+    val isPublic: Boolean
+        get() = (ACC_PUBLIC and delegate.access) > 0
 
     val isDeprecated: Boolean
-        get() = delegate.visibleAnnotations.hasDeprecated
+        get() = delegate.visibleAnnotations.has<java.lang.Deprecated>()
 
     val isIncubating: Boolean
-        get() = delegate.visibleAnnotations.hasIncubating
+        get() = delegate.visibleAnnotations.has<Incubating>()
 
-    val formalTypeParameters: List<ApiTypeUsage> by lazy(NONE) {
-        visitedSignature?.formalTypeParameterUsages(typeIndex) ?: emptyList()
+    val typeParameters: List<ApiTypeUsage> by lazy(NONE) {
+        typeIndex.apiTypeParametersFor(visitedSignature)
     }
 
     val functions: List<ApiFunction> by lazy(NONE) {
         delegate.methods.filter { it.signature != null }.map { ApiFunction(this, it, typeIndex) }
+    }
+
+    private
+    val delegate: ClassNode by lazy(NONE) {
+        delegateSupplier()
     }
 
     private
@@ -140,11 +151,18 @@ class ApiType(
             ClassSignatureVisitor().also { SignatureReader(signature).accept(it) }
         }
     }
+
+    override fun equals(other: Any?): Boolean =
+        if (other !is ApiType) false
+        else Objects.equals(sourceName, other.sourceName)
+
+    override fun hashCode(): Int =
+        Objects.hash(sourceName)
 }
 
 
 internal
-class ApiFunction(
+data class ApiFunction(
     private val owner: ApiType,
     private val delegate: MethodNode,
     private val typeIndex: ApiTypeIndex
@@ -157,34 +175,24 @@ class ApiFunction(
         (ACC_PUBLIC and delegate.access) > 0
 
     val isDeprecated: Boolean
-        get() = owner.isDeprecated || delegate.visibleAnnotations.hasDeprecated
+        get() = owner.isDeprecated || delegate.visibleAnnotations.has<java.lang.Deprecated>()
 
     val isIncubating: Boolean
-        get() = owner.isIncubating || delegate.visibleAnnotations.hasIncubating
+        get() = owner.isIncubating || delegate.visibleAnnotations.has<Incubating>()
 
     val isStatic: Boolean =
         (ACC_STATIC and delegate.access) > 0
 
-    val formalTypeParameters: List<ApiTypeUsage> by lazy(NONE) {
-        visitedSignature?.formalTypeParameterUsages(typeIndex)
-            ?: emptyList()
+    val typeParameters: List<ApiTypeUsage> by lazy(NONE) {
+        typeIndex.apiTypeParametersFor(visitedSignature)
     }
 
     val parameters: List<ApiFunctionParameter> by lazy(NONE) {
-        delegate.visibleParameterAnnotations?.map { it.hasNullable }.let { parametersNullability ->
-            visitedSignature?.functionParameters(typeIndex, parametersNullability)
-                ?: Type.getArgumentTypes(delegate.desc).mapIndexed { idx, p ->
-                    val isNullable = parametersNullability?.get(idx) == true
-                    apiFunctionParameter(idx, typeIndex.apiTypeUsage(p.className, isNullable))
-                }
-        }
+        typeIndex.apiFunctionParametersFor(delegate, visitedSignature)
     }
 
     val returnType: ApiTypeUsage by lazy(NONE) {
-        delegate.visibleAnnotations.hasNullable.let { isNullable ->
-            visitedSignature?.returnType(typeIndex, isNullable)
-                ?: typeIndex.apiTypeUsage(Type.getReturnType(delegate.desc).className, isNullable)
-        }
+        typeIndex.apiTypeUsageForReturnType(delegate, visitedSignature?.returnType)
     }
 
     private
@@ -194,49 +202,39 @@ class ApiFunction(
         }
     }
 
-    private
-    val List<AnnotationNode>?.hasNullable: Boolean
-        get() = this?.any { it.desc == "Ljavax/annotation/Nullable;" } ?: false
+    override fun equals(other: Any?): Boolean =
+        if (other !is ApiFunction) false
+        else Objects.equals(owner, other.owner)
+            && Objects.equals(delegate.access, other.delegate.access)
+            && Objects.equals(delegate.name, other.delegate.name)
+            && Objects.equals(delegate.desc, other.delegate.desc)
+            && Objects.equals(delegate.signature, other.delegate.signature)
+
+    override fun hashCode(): Int =
+        Objects.hash(owner, delegate.access, delegate.name, delegate.desc, delegate.signature)
 }
 
 
-private
-val List<AnnotationNode>?.hasDeprecated: Boolean
-    get() = this?.any { it.desc == "Ljava/lang/Deprecated;" } ?: false
-
-
-private
-val List<AnnotationNode>?.hasIncubating: Boolean
-    get() = this?.any { it.desc == "Lorg/gradle/api/Incubating;" } ?: false
-
-
-private
-fun apiFunctionParameter(index: Int, type: ApiTypeUsage) =
-    ApiFunctionParameter("p$index", type)
-
-
 internal
-class ApiFunctionParameter(val name: String, val type: ApiTypeUsage)
-
-
-internal
-class ApiTypeUsage(
+data class ApiTypeUsage(
     val sourceName: String,
     val isNullable: Boolean = false,
     val type: ApiType? = null,
-    val typeParameters: List<ApiTypeUsage> = emptyList(),
-    val bounds: List<ApiTypeUsage> = emptyList()
-) {
-    val isRaw: Boolean
-        get() = typeParameters.isEmpty() && type?.formalTypeParameters?.isEmpty() != false
-}
+    val typeArguments: List<ApiTypeUsage> = emptyList(),
+    val bounds: List<ApiTypeUsage> = emptyList(),
+    val isRaw: Boolean = typeArguments.isEmpty() && type?.typeParameters?.isEmpty() != false
+)
+
+
+internal
+data class ApiFunctionParameter(val name: String, val type: ApiTypeUsage)
 
 
 private
-fun ApiTypeIndex.apiTypeUsage(
+fun ApiTypeIndex.apiTypeUsageFor(
     binaryName: String,
     nullable: Boolean,
-    typeParameterSignatures: List<TypeSignatureVisitor> = emptyList(),
+    typeArgumentsSignatures: List<TypeSignatureVisitor> = emptyList(),
     boundsSignatures: List<TypeSignatureVisitor> = emptyList()
 ): ApiTypeUsage =
 
@@ -245,87 +243,119 @@ fun ApiTypeIndex.apiTypeUsage(
             sourceName,
             nullable,
             this(sourceName),
-            typeParameterSignatures.map { apiTypeUsage(it.binaryName, false, it.typeParameters) },
-            boundsSignatures.map { apiTypeUsage(it.binaryName, false, it.typeParameters) })
+            typeArgumentsSignatures.map { apiTypeUsageFor(it.binaryName, false, it.typeArguments) },
+            boundsSignatures.map { apiTypeUsageFor(it.binaryName, false, it.typeArguments) })
     }
 
 
-internal
+private
+fun ApiTypeIndex.apiTypeParametersFor(visitedSignature: BaseSignatureVisitor?): List<ApiTypeUsage> =
+    visitedSignature?.typeParameters?.map { (binaryName, bounds) ->
+        apiTypeUsageFor(binaryName, false, emptyList(), bounds)
+    } ?: emptyList()
+
+
+private
+fun ApiTypeIndex.apiFunctionParametersFor(delegate: MethodNode, visitedSignature: MethodSignatureVisitor?) =
+    delegate.visibleParameterAnnotations?.map { it.has<Nullable>() }.let { parametersNullability ->
+        visitedSignature?.parameters?.mapIndexed { idx, p ->
+            val isNullable = parametersNullability?.get(idx) == true
+            apiFunctionParameterFor(idx, apiTypeUsageFor(p.binaryName, isNullable, p.typeArguments))
+        } ?: Type.getArgumentTypes(delegate.desc).mapIndexed { idx, p ->
+            val isNullable = parametersNullability?.get(idx) == true
+            apiFunctionParameterFor(idx, apiTypeUsageFor(p.className, isNullable))
+        }
+    }
+
+
+private
+fun apiFunctionParameterFor(index: Int, type: ApiTypeUsage) =
+    ApiFunctionParameter("p$index", type)
+
+
+private
+fun ApiTypeIndex.apiTypeUsageForReturnType(delegate: MethodNode, returnType: TypeSignatureVisitor?) =
+    delegate.visibleAnnotations.has<Nullable>().let { isNullable ->
+        returnType?.let { apiTypeUsageFor(it.binaryName, isNullable, it.typeArguments) }
+            ?: apiTypeUsageFor(Type.getReturnType(delegate.desc).className, isNullable)
+    }
+
+
+private
+inline fun <reified T : Any> List<AnnotationNode>?.has() =
+    if (this == null) false
+    else Type.getDescriptor(T::class.java).let { desc -> any { it.desc == desc } }
+
+
+private
+class ApiTypeClassNode : ClassNode(ASM6) {
+
+    override fun visitSource(file: String?, debug: String?) = Unit
+    override fun visitOuterClass(owner: String?, name: String?, desc: String?) = Unit
+    override fun visitTypeAnnotation(typeRef: Int, typePath: TypePath?, desc: String?, visible: Boolean): AnnotationVisitor? = null
+    override fun visitAttribute(attr: Attribute?) = Unit
+    override fun visitInnerClass(name: String?, outerName: String?, innerName: String?, access: Int) = Unit
+    override fun visitField(access: Int, name: String?, desc: String?, signature: String?, value: Any?): FieldVisitor? = null
+}
+
+
+private
 abstract class BaseSignatureVisitor : SignatureVisitor(ASM6) {
 
-    private
-    val formalTypeParameters = LinkedHashMap<String, MutableList<TypeSignatureVisitor>>(1)
+    val typeParameters: MutableMap<String, MutableList<TypeSignatureVisitor>> = LinkedHashMap(1)
 
     private
-    var currentFormalTypeParameter: String? = null
-
-    fun formalTypeParameterUsages(typeIndex: ApiTypeIndex): List<ApiTypeUsage> =
-        formalTypeParameters.map { (binaryName, boundsSignatures) ->
-            typeIndex.apiTypeUsage(binaryName, false, emptyList(), boundsSignatures)
-        }
+    var currentTypeParameter: String? = null
 
     override fun visitFormalTypeParameter(binaryName: String) {
-        formalTypeParameters[binaryName] = ArrayList(1)
-        currentFormalTypeParameter = binaryName
+        typeParameters[binaryName] = ArrayList(1)
+        currentTypeParameter = binaryName
     }
 
     override fun visitClassBound(): SignatureVisitor =
-        TypeSignatureVisitor().also { formalTypeParameters[currentFormalTypeParameter]!!.add(it) }
+        TypeSignatureVisitor().also { typeParameters[currentTypeParameter]!!.add(it) }
 
     override fun visitInterfaceBound(): SignatureVisitor =
-        TypeSignatureVisitor().also { formalTypeParameters[currentFormalTypeParameter]!!.add(it) }
+        TypeSignatureVisitor().also { typeParameters[currentTypeParameter]!!.add(it) }
 }
 
 
-internal
+private
 class ClassSignatureVisitor : BaseSignatureVisitor()
 
 
-internal
+private
 class MethodSignatureVisitor : BaseSignatureVisitor() {
 
-    private
-    val parametersSignatures = ArrayList<TypeSignatureVisitor>(1)
+    val parameters: MutableList<TypeSignatureVisitor> = ArrayList(1)
 
-    private
-    val returnSignature = TypeSignatureVisitor()
-
-    fun functionParameters(typeIndex: ApiTypeIndex, parametersNullability: List<Boolean>?): List<ApiFunctionParameter> =
-        parametersSignatures.mapIndexed { idx, parameterSignature ->
-            val isNullable = parametersNullability?.get(idx) == true
-            apiFunctionParameter(
-                idx,
-                typeIndex.apiTypeUsage(parameterSignature.binaryName, isNullable, parameterSignature.typeParameters))
-        }
-
-    fun returnType(typeIndex: ApiTypeIndex, nullableReturn: Boolean): ApiTypeUsage =
-        typeIndex.apiTypeUsage(returnSignature.binaryName, nullableReturn, returnSignature.typeParameters)
+    val returnType = TypeSignatureVisitor()
 
     override fun visitParameterType(): SignatureVisitor =
-        TypeSignatureVisitor().also { parametersSignatures.add(it) }
+        TypeSignatureVisitor().also { parameters.add(it) }
 
     override fun visitReturnType(): SignatureVisitor =
-        returnSignature
+        returnType
 }
 
 
-internal
+private
 class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     lateinit var binaryName: String
 
-    val typeParameters = ArrayList<TypeSignatureVisitor>(1)
+    val typeArguments = ArrayList<TypeSignatureVisitor>(1)
 
     private
-    var expectingTypeParameter = false
+    var expectTypeArgument = false
 
     override fun visitBaseType(descriptor: Char) =
-        visitBinaryName(binaryNameForBaseType(descriptor))
+        visitBinaryName(binaryNameOfBaseType(descriptor))
 
     override fun visitArrayType(): SignatureVisitor =
         TypeSignatureVisitor().also {
-            visitBinaryName("Array")
-            typeParameters.add(it)
+            visitBinaryName("kotlin.Array")
+            typeArguments.add(it)
         }
 
     override fun visitClassType(internalName: String) =
@@ -336,13 +366,13 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
     }
 
     override fun visitTypeArgument() {
-        typeParameters.add(TypeSignatureVisitor().also { it.binaryName = "?" })
+        typeArguments.add(TypeSignatureVisitor().also { it.binaryName = "?" })
     }
 
     override fun visitTypeArgument(wildcard: Char): SignatureVisitor =
         TypeSignatureVisitor().also {
-            expectingTypeParameter = true
-            typeParameters.add(it)
+            expectTypeArgument = true
+            typeArguments.add(it)
         }
 
     override fun visitTypeVariable(internalName: String) {
@@ -351,12 +381,12 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
     private
     fun visitBinaryName(binaryName: String) {
-        if (expectingTypeParameter) {
+        if (expectTypeArgument) {
             TypeSignatureVisitor().let {
-                typeParameters.add(it)
+                typeArguments.add(it)
                 SignatureReader(binaryName).accept(it)
             }
-            expectingTypeParameter = false
+            expectTypeArgument = false
         } else {
             this.binaryName = binaryName
         }
@@ -365,18 +395,8 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
 
 private
-fun binaryNameForBaseType(descriptor: Char) =
-    when (Type.getType(descriptor.toString())) {
-        Type.BOOLEAN_TYPE -> Type.BOOLEAN_TYPE.className
-        Type.BYTE_TYPE -> Type.BYTE_TYPE.className
-        Type.SHORT_TYPE -> Type.SHORT_TYPE.className
-        Type.INT_TYPE -> Type.INT_TYPE.className
-        Type.CHAR_TYPE -> Type.CHAR_TYPE.className
-        Type.LONG_TYPE -> Type.LONG_TYPE.className
-        Type.FLOAT_TYPE -> Type.FLOAT_TYPE.className
-        Type.DOUBLE_TYPE -> Type.DOUBLE_TYPE.className
-        else -> Type.VOID_TYPE.className
-    }
+fun binaryNameOfBaseType(descriptor: Char) =
+    Type.getType(descriptor.toString()).className
 
 
 private
@@ -394,6 +414,7 @@ fun sourceNameOfBinaryName(binaryName: String): String =
         else -> binaryName.replace('$', '.')
     }
 
+
 private
 val collectionTypeStrings =
     mapOf(
@@ -408,15 +429,3 @@ val collectionTypeStrings =
         "java.util.Map" to "kotlin.collections.Map",
         "java.util.HashMap" to "kotlin.collections.HashMap",
         "java.util.LinkedHashMap" to "kotlin.collections.LinkedHashMap")
-
-
-internal
-class ApiTypeClassNode : ClassNode(ASM6) {
-
-    override fun visitSource(file: String?, debug: String?) = Unit
-    override fun visitOuterClass(owner: String?, name: String?, desc: String?) = Unit
-    override fun visitTypeAnnotation(typeRef: Int, typePath: TypePath?, desc: String?, visible: Boolean): AnnotationVisitor? = null
-    override fun visitAttribute(attr: Attribute?) = Unit
-    override fun visitInnerClass(name: String?, outerName: String?, innerName: String?, access: Int) = Unit
-    override fun visitField(access: Int, name: String?, desc: String?, signature: String?, value: Any?): FieldVisitor? = null
-}

@@ -20,8 +20,7 @@ import org.gradle.kotlin.dsl.fixtures.customInstallation
 
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.hasItems
-import org.hamcrest.CoreMatchers.startsWith
+import org.hamcrest.CoreMatchers.hasItem
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThat
@@ -52,13 +51,18 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             println("Generation to file succeeded in ${it}ms")
         }
 
-        measureTimeMillis {
-            StandardKotlinFileCompiler.compileToDirectory(
-                existing("output").also { it.mkdirs() },
-                listOf(sourceFile),
-                jars)
-        }.also {
-            println("Compilation succeeded in ${it}ms")
+        try {
+            measureTimeMillis {
+                StandardKotlinFileCompiler.compileToDirectory(
+                    existing("output").also { it.mkdirs() },
+                    listOf(sourceFile),
+                    jars)
+            }.also {
+                println("Compilation succeeded in ${it}ms")
+            }
+        } catch (ex: Exception) {
+            sourceFile.readLines().mapIndexed { idx, line -> "${(idx + 1).toString().padStart(4)}: $line" }.forEach { println(it) }
+            throw ex
         }
     }
 
@@ -116,36 +120,62 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
         assertThat(generatedExtensions.filter { it.contains("<reified ") }.size, equalTo(13))
 
-        assertThat(
-            generatedExtensions,
-            hasItems(
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p1: String): T ="),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T ="),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> ="),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> ="),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> ="),
-                startsWith(
-                    "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> ="),
-                startsWith(
-                    "@Deprecated(\"Deprecated Gradle API\")\n@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> ="),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.add(p1: String, p2: T): Unit =\n    add(typeOf<T>(), p1, p2)"),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.getByType(): T =\n    getByType(typeOf<T>())"),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =\n    findByType(typeOf<T>())"),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: kotlin.reflect.KClass<T>, vararg p3: Any): T =\n    create(typeOf<T>(), p1, p2.java, p3)"),
-                startsWith(
-                    "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =\n    create(p0, T::class.java, p2)"),
-                startsWith(
-                    "@org.gradle.api.Incubating\ninline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =\n    configure(typeOf<T>(), p1)")
-            ))
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p1: String): T =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@Deprecated(\"Deprecated Gradle API\")\n" +
+                "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> =")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.add(p1: String, p2: T): Unit =\n" +
+                "    add(typeOf<T>(), p1, p2)")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.getByType(): T =\n" +
+                "    getByType(typeOf<T>())")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =\n" +
+                "    findByType(typeOf<T>())")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: kotlin.reflect.KClass<T>, vararg p3: Any): T =\n" +
+                "    create(typeOf<T>(), p1, p2.java, p3)")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =\n" +
+                "    create(p0, T::class.java, p2)")))
+
+        assertThat(generatedExtensions, hasItem(containsString(
+            "@org.gradle.api.Incubating\n" +
+                "inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =\n" +
+                "    configure(typeOf<T>(), p1)")))
     }
 
     @Test
