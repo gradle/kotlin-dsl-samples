@@ -73,7 +73,7 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
         val cpDir = existing("cp-dir").also { it.mkdirs() }
         unzipTo(cpDir, jar2)
 
-        classPathBytecodeRepositoryFor(listOf(jar1, cpDir)).use { repo ->
+        classPathBytesRepositoryFor(listOf(jar1, cpDir)).use { repo ->
             assertThat(
                 repo.classBytesFor(Groovydoc.Link::class.java.canonicalName),
                 notNullValue())
@@ -82,7 +82,7 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
                 notNullValue())
         }
 
-        classPathBytecodeRepositoryFor(listOf(jar1, cpDir)).use { repo ->
+        classPathBytesRepositoryFor(listOf(jar1, cpDir)).use { repo ->
             assertThat(
                 repo.allClassesBytesBySourceName().map { it.first }.toList(),
                 hasItems(

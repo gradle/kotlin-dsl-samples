@@ -17,7 +17,7 @@ package org.gradle.kotlin.dsl.codegen
 
 import org.gradle.kotlin.dsl.accessors.primitiveTypeStrings
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
-import org.gradle.kotlin.dsl.support.classPathBytecodeRepositoryFor
+import org.gradle.kotlin.dsl.support.classPathBytesRepositoryFor
 
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.Attribute
@@ -45,7 +45,7 @@ import kotlin.LazyThreadSafetyMode.NONE
 
 internal
 fun apiTypeProviderFor(jarsOrDirs: List<File>): ApiTypeProvider =
-    ApiTypeProvider(classPathBytecodeRepositoryFor(jarsOrDirs))
+    ApiTypeProvider(classPathBytesRepositoryFor(jarsOrDirs))
 
 
 private

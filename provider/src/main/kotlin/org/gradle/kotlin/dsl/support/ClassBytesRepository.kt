@@ -27,7 +27,7 @@ import java.util.jar.JarFile
 
 
 internal
-fun classPathBytecodeRepositoryFor(jarsOrDirs: List<File>) =
+fun classPathBytesRepositoryFor(jarsOrDirs: List<File>) =
     ClassBytesRepository(DefaultClassPath.of(jarsOrDirs))
 
 
