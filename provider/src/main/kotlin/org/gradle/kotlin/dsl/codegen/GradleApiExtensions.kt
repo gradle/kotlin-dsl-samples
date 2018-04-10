@@ -72,7 +72,7 @@ data class KotlinExtensionFunction(
     val expressionBody: String
 ) {
 
-    val signatureKey: Int = Objects.hash(targetType, name, parameters.map { it.type })
+    val signatureKey: Int = Objects.hash(targetType.sourceName, targetType.typeParameters, name, parameters.map { it.type })
 
     fun toKotlinString(): String = StringBuilder().apply {
         appendln("""

@@ -117,7 +117,7 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
 
 
 internal
-data class ApiType(
+class ApiType(
     val sourceName: String,
     private val delegateSupplier: () -> ClassNode,
     private val typeIndex: ApiTypeIndex
@@ -151,18 +151,11 @@ data class ApiType(
             ClassSignatureVisitor().also { SignatureReader(signature).accept(it) }
         }
     }
-
-    override fun equals(other: Any?): Boolean =
-        if (other !is ApiType) false
-        else Objects.equals(sourceName, other.sourceName)
-
-    override fun hashCode(): Int =
-        Objects.hash(sourceName)
 }
 
 
 internal
-data class ApiFunction(
+class ApiFunction(
     private val owner: ApiType,
     private val delegate: MethodNode,
     private val typeIndex: ApiTypeIndex
@@ -201,17 +194,6 @@ data class ApiFunction(
             MethodSignatureVisitor().also { visitor -> SignatureReader(signature).accept(visitor) }
         }
     }
-
-    override fun equals(other: Any?): Boolean =
-        if (other !is ApiFunction) false
-        else Objects.equals(owner, other.owner)
-            && Objects.equals(delegate.access, other.delegate.access)
-            && Objects.equals(delegate.name, other.delegate.name)
-            && Objects.equals(delegate.desc, other.delegate.desc)
-            && Objects.equals(delegate.signature, other.delegate.signature)
-
-    override fun hashCode(): Int =
-        Objects.hash(owner, delegate.access, delegate.name, delegate.desc, delegate.signature)
 }
 
 
@@ -221,9 +203,22 @@ data class ApiTypeUsage(
     val isNullable: Boolean = false,
     val type: ApiType? = null,
     val typeArguments: List<ApiTypeUsage> = emptyList(),
-    val bounds: List<ApiTypeUsage> = emptyList(),
+    val bounds: List<ApiTypeUsage> = emptyList()
+) {
+
     val isRaw: Boolean = typeArguments.isEmpty() && type?.typeParameters?.isEmpty() != false
-)
+
+    override fun equals(other: Any?) =
+        if (other !is ApiTypeUsage) false
+        else Objects.equals(sourceName, other.sourceName)
+            && Objects.equals(isNullable, other.isNullable)
+            && Objects.equals(typeArguments, other.typeArguments)
+            && Objects.equals(bounds, other.bounds)
+            && Objects.equals(isRaw, other.isRaw)
+
+    override fun hashCode() =
+        Objects.hash(sourceName, isNullable, typeArguments, bounds, isRaw)
+}
 
 
 internal
