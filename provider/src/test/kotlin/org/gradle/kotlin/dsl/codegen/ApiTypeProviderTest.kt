@@ -98,14 +98,15 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `ignores functions overrides`() {
+    fun `includes function overrides that change signature, excludes overrides that don't`() {
         val jars = listOf(withClassJar("some.jar", AbstractCopyTask::class.java))
 
         apiTypeProviderFor(jars).use { api ->
             val type = api.type(AbstractCopyTask::class.java.canonicalName)!!
 
-            val filterFunctions = type.functions.filter { it.name == "filter" }
-            assertThat(filterFunctions.size, equalTo(3))
+            assertThat(type.functions.filter { it.name == "filter" }.size, equalTo(3))
+
+            assertTrue(type.functions.none { it.name == "getRootSpec" })
         }
     }
 }
