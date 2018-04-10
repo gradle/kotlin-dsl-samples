@@ -222,7 +222,7 @@ data class ApiTypeUsage(
 
 
 internal
-data class ApiFunctionParameter(val name: String, val type: ApiTypeUsage)
+data class ApiFunctionParameter(val index: Int, val type: ApiTypeUsage)
 
 
 private
@@ -255,17 +255,12 @@ fun ApiTypeIndex.apiFunctionParametersFor(delegate: MethodNode, visitedSignature
     delegate.visibleParameterAnnotations?.map { it.has<Nullable>() }.let { parametersNullability ->
         visitedSignature?.parameters?.mapIndexed { idx, p ->
             val isNullable = parametersNullability?.get(idx) == true
-            apiFunctionParameterFor(idx, apiTypeUsageFor(p.binaryName, isNullable, p.typeArguments))
+            ApiFunctionParameter(idx, apiTypeUsageFor(p.binaryName, isNullable, p.typeArguments))
         } ?: Type.getArgumentTypes(delegate.desc).mapIndexed { idx, p ->
             val isNullable = parametersNullability?.get(idx) == true
-            apiFunctionParameterFor(idx, apiTypeUsageFor(p.className, isNullable))
+            ApiFunctionParameter(idx, apiTypeUsageFor(p.className, isNullable))
         }
     }
-
-
-private
-fun apiFunctionParameterFor(index: Int, type: ApiTypeUsage) =
-    ApiFunctionParameter("p$index", type)
 
 
 private

@@ -225,14 +225,14 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p1: String): T =
-                named(T::class.java, p1)
+            inline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(p0: String): T =
+                named(T::class.java, p0)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.newInstance(vararg p1: Any): T =
-                newInstance(T::class.java, p1)
+            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.newInstance(vararg p0: Any): T =
+                newInstance(T::class.java, p0)
             """)
 
             assertContainsExtension("""
@@ -267,8 +267,8 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.add(p1: String, p2: T): Unit =
-                add(typeOf<T>(), p1, p2)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.add(p0: String, p1: T): Unit =
+                add(typeOf<T>(), p0, p1)
             """)
 
             assertContainsExtension("""
@@ -285,19 +285,19 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p1: String, p2: kotlin.reflect.KClass<T>, vararg p3: Any): T =
-                create(typeOf<T>(), p1, p2.java, p3)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p0: String, p1: kotlin.reflect.KClass<T>, vararg p2: Any): T =
+                create(typeOf<T>(), p0, p1.java, p2)
             """)
 
             assertContainsExtension("""
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p2: Any): T =
-                create(p0, T::class.java, p2)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(p0: String, vararg p1: Any): T =
+                create(p0, T::class.java, p1)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline p1: T.() -> Unit): Unit =
-                configure(typeOf<T>(), p1)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline p0: T.() -> Unit): Unit =
+                configure(typeOf<T>(), p0)
             """)
         }
     }

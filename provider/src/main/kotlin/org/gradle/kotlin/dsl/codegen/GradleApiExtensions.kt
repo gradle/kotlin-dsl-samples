@@ -145,7 +145,7 @@ val kClassExtensionsGenerator: ExtensionsForType = { type: ApiType ->
                 f.isIncubating, f.isDeprecated, false,
                 (f.typeParameters + type.typeParameters).map { Pair(it, false) },
                 type, f.name, f.parameters.map(kClassParameterDeclarationOverride), f.returnType,
-                "${f.name}(${f.parameters.toFunctionParametersInvocationString(kClassParameterInvocationOverride)})")
+                "${f.name}(${f.parameters.toFunctionParametersInvocationString(override = kClassParameterInvocationOverride)})")
         }
 }
 
@@ -167,10 +167,10 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
                 }
             val isReifiedTypeOf = reifiedParameter.type.sourceName == SourceNames.gradleTypeOf
 
-            val reifiedTypeParameterInvocationOverride = { p: ApiFunctionParameter ->
-                if (isReifiedTypeOf && p.name == reifiedParameter.name) "typeOf<${reifiedTypeParameter.sourceName}>()"
-                else if (p.name == reifiedParameter.name) "${reifiedTypeParameter.sourceName}::class.java"
-                else kClassParameterInvocationOverride(p)
+            val reifiedTypeParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
+                if (isReifiedTypeOf && p.index.toParameterName() == reifiedParameter.index.toParameterName()) "typeOf<${reifiedTypeParameter.sourceName}>()"
+                else if (p.index.toParameterName() == reifiedParameter.index.toParameterName()) "${reifiedTypeParameter.sourceName}::class.java"
+                else kClassParameterInvocationOverride(index, p)
             }
 
             KotlinExtensionFunction(
@@ -178,7 +178,7 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
                 f.isIncubating, f.isDeprecated, true,
                 listOf(Pair(reifiedTypeParameter, true)) + type.typeParameters.map { Pair(it, false) },
                 type, f.name, f.parameters.minus(reifiedParameter).map(kClassParameterDeclarationOverride), f.returnType,
-                "${f.name}(${f.parameters.toFunctionParametersInvocationString(reifiedTypeParameterInvocationOverride)})")
+                "${f.name}(${f.parameters.toFunctionParametersInvocationString(listOf(reifiedParameter.index), reifiedTypeParameterInvocationOverride)})")
         }
 }
 
@@ -187,15 +187,15 @@ private
 val kClassParameterDeclarationOverride = { p: ApiFunctionParameter ->
     if (p.type.isJavaClass) p.toKotlinClass()
     else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass)
-        ApiFunctionParameter(p.name, ApiTypeUsage(SourceNames.kotlinArray, p.type.isNullable, null, listOf(ApiTypeUsage(SourceNames.kotlinClass, false, null, p.type.typeArguments.single().typeArguments))))
+        ApiFunctionParameter(p.index, ApiTypeUsage(SourceNames.kotlinArray, p.type.isNullable, null, listOf(ApiTypeUsage(SourceNames.kotlinClass, false, null, p.type.typeArguments.single().typeArguments))))
     else p
 }
 
 
 private
-val kClassParameterInvocationOverride = { p: ApiFunctionParameter ->
-    if (p.type.isJavaClass) "${p.name}.java"
-    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) "*${p.name}.map { it.java }.toTypedArray()"
+val kClassParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
+    if (p.type.isJavaClass) "${index.toParameterName()}.java"
+    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) "*${index.toParameterName()}.map { it.java }.toTypedArray()"
     else null
 }
 
@@ -237,7 +237,7 @@ fun Sequence<ApiFunction>.sortedWithTypeOfTakingFunctionsFirst() =
 
 private
 fun ApiFunctionParameter.toKotlinClass() =
-    ApiFunctionParameter(name, type.toKotlinClass())
+    ApiFunctionParameter(index, type.toKotlinClass())
 
 
 private
@@ -249,19 +249,29 @@ private
 fun List<ApiFunctionParameter>.toFunctionParametersString(inlineFunction: Boolean = false): String =
     takeIf { it.isNotEmpty() }
         ?.mapIndexed { idx, p ->
-            if (idx == size - 1 && p.type.isKotlinArray) "vararg ${p.name}: ${p.type.typeArguments.single().toTypeArgumentString()}"
-            else if (p.type.isGradleAction) "${if (inlineFunction) "noinline " else ""}${p.name}: ${p.type.typeArguments.single().toTypeArgumentString()}.() -> Unit"
-            else "${p.name}: ${p.type.toTypeArgumentString()}"
+            if (idx == size - 1 && p.type.isKotlinArray) "vararg ${idx.toParameterName()}: ${p.type.typeArguments.single().toTypeArgumentString()}"
+            else if (p.type.isGradleAction) "${if (inlineFunction) "noinline " else ""}${idx.toParameterName()}: ${p.type.typeArguments.single().toTypeArgumentString()}.() -> Unit"
+            else "${idx.toParameterName()}: ${p.type.toTypeArgumentString()}"
         }
         ?.joinToString(separator = ", ")
         ?: ""
 
 
 private
-fun List<ApiFunctionParameter>.toFunctionParametersInvocationString(override: (ApiFunctionParameter) -> String? = { null }): String =
+fun List<ApiFunctionParameter>.toFunctionParametersInvocationString(skippedIndices: List<Int> = emptyList(), override: (Int, ApiFunctionParameter) -> String? = { _, _ -> null }): String =
     takeIf { it.isNotEmpty() }
-        ?.joinToString(separator = ", ") { p -> override(p) ?: p.name }
+        ?.mapIndexed { idx, p ->
+            (p.index - skippedIndices.count { it <= idx }).let { index ->
+                override(index, p) ?: index.toParameterName()
+            }
+        }
+        ?.joinToString(separator = ", ")
         ?: ""
+
+
+private
+fun Int.toParameterName() =
+    "p$this"
 
 
 private
