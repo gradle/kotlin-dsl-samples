@@ -121,37 +121,6 @@ data class KotlinExtensionFunction(
 
 
 private
-object SourceNames {
-    const val javaClass = "java.lang.Class"
-    const val groovyClosure = "groovy.lang.Closure"
-    const val gradleAction = "org.gradle.api.Action"
-    const val gradleTypeOf = "org.gradle.api.reflect.TypeOf"
-    const val kotlinClass = "kotlin.reflect.KClass"
-    const val kotlinArray = "kotlin.Array"
-}
-
-
-private
-val ApiTypeUsage.isJavaClass
-    get() = sourceName == SourceNames.javaClass
-
-
-private
-val ApiTypeUsage.isGroovyClosure
-    get() = sourceName == SourceNames.groovyClosure
-
-
-private
-val ApiTypeUsage.isGradleAction
-    get() = sourceName == SourceNames.gradleAction
-
-
-private
-val ApiTypeUsage.isKotlinArray
-    get() = sourceName == SourceNames.kotlinArray
-
-
-private
 typealias ExtensionsForType = (ApiType) -> Sequence<KotlinExtensionFunction>
 
 
@@ -174,19 +143,21 @@ private
 val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiType ->
 
     type.gradleApiFunctions.asSequence()
-        .withSingleTypeParameterAndTypeOfOrClassParameter()
+        .withNonRawNorStarTypeOfOrClassParameter()
         .sortedWithTypeOfTakingFunctionsFirst()
         .map { f ->
-            val reifiedTypeParameter = f.typeParameters.first()
-            val reifiedParameter =
-                Pair(
-                    isParameterWithTypeArgument(SourceNames.gradleTypeOf, reifiedTypeParameter),
-                    isParameterWithTypeArgument(SourceNames.javaClass, reifiedTypeParameter)
-                ).let { (isTypeOfT, isJavaClassOfT) ->
-                    f.parameters.first { p -> isTypeOfT(p) || isJavaClassOfT(p) }
-                }
-            val isReifiedTypeOf = reifiedParameter.type.sourceName == SourceNames.gradleTypeOf
+            val reifiedParameter = f.parameters.first { it.type.isGradleTypeOf || it.type.isJavaClass }
+            val reifiedParameterTypeArgument = reifiedParameter.type.typeArguments.single()
 
+            val reifiedTypeParameter = f.typeParameters.singleOrNull { it.sourceName == reifiedParameterTypeArgument.sourceName }
+                ?: ApiTypeUsage(nextAvailableTypeParameterName(f.typeParameters + type.typeParameters), bounds = listOf(reifiedParameterTypeArgument))
+
+
+            val extensionTypeParameters = listOf(Pair(reifiedTypeParameter, true)) +
+                f.typeParameters.minus(reifiedTypeParameter).map { Pair(it, false) } +
+                type.typeParameters.map { Pair(it, false) }
+
+            val isReifiedTypeOf = reifiedParameter.type.isGradleTypeOf
             val reifiedTypeParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
                 if (isReifiedTypeOf && p.index == reifiedParameter.index) "typeOf<${reifiedTypeParameter.sourceName}>()"
                 else if (p.index == reifiedParameter.index) "${reifiedTypeParameter.sourceName}::class.java"
@@ -196,7 +167,7 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
             KotlinExtensionFunction(
                 "Kotlin extension function with reified type parameter for [${type.sourceName}.${f.name}]",
                 f.isIncubating, f.isDeprecated, true,
-                listOf(Pair(reifiedTypeParameter, true)) + type.typeParameters.map { Pair(it, false) },
+                extensionTypeParameters,
                 type, f.name, f.parameters.minus(reifiedParameter).map(kClassParameterDeclarationOverride), f.returnType,
                 "${f.name}(${f.parameters.toFunctionParametersInvocationString(listOf(reifiedParameter.index), reifiedTypeParameterInvocationOverride)})")
         }
@@ -205,8 +176,9 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
 
 private
 val kClassParameterDeclarationOverride = { p: ApiFunctionParameter ->
-    if (p.type.isJavaClass) p.toKotlinClass()
-    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) p.toArrayOfKotlinClasses()
+    if (p.type.isJavaClass) p.copy(type = p.type.toKotlinClass())
+    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) p.copy(type = p.type.toArrayOfKotlinClasses())
+    else if (p.type.isKotlinCollection && p.type.typeArguments.single().isJavaClass) p.copy(type = p.type.toCollectionOfKotlinClasses())
     else p
 }
 
@@ -215,63 +187,59 @@ private
 val kClassParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
     if (p.type.isJavaClass) "${gradleApiParameterNameFor(p, index)}.java"
     else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) "*${gradleApiParameterNameFor(p, index)}.map { it.java }.toTypedArray()"
+    else if (p.type.isKotlinCollection && p.type.typeArguments.single().isJavaClass) "${gradleApiParameterNameFor(p, index)}.map { it.java }"
     else null
 }
 
 
 private
 fun Sequence<ApiFunction>.withClassOrClassArrayParameter() =
-    filter { f -> f.parameters.any { it.type.isJavaClass || it.type.isKotlinArray && it.type.typeArguments.single().isJavaClass } }
-
-
-private
-fun isParameterWithTypeArgument(typeSourceName: String, typeArgument: ApiTypeUsage) = { p: ApiFunctionParameter ->
-    p.type.sourceName == typeSourceName && !p.type.isRaw && p.type.typeArguments.singleOrNull()?.sourceName == typeArgument.sourceName
-}
-
-
-private
-fun ApiFunction.hasParameterWithTypeArgument(typeSourceName: String, typeArgument: ApiTypeUsage) =
-    isParameterWithTypeArgument(typeSourceName, typeArgument).let { predicate ->
-        parameters.any(predicate)
-    }
-
-
-private
-fun Sequence<ApiFunction>.withSingleTypeParameterAndTypeOfOrClassParameter() =
     filter { f ->
-        f.typeParameters.size == 1
-            && (f.hasParameterWithTypeArgument(SourceNames.gradleTypeOf, f.typeParameters.first())
-            || f.hasParameterWithTypeArgument(SourceNames.javaClass, f.typeParameters.first()))
+        f.parameters.any {
+            it.type.isJavaClass
+                || (it.type.isKotlinArray && it.type.typeArguments.single().isJavaClass)
+                || (it.type.isKotlinCollection && it.type.typeArguments.single().isJavaClass)
+        }
     }
+
+
+private
+fun Sequence<ApiFunction>.withNonRawNorStarTypeOfOrClassParameter() =
+    filter { f -> f.parameters.any { p -> (p.type.isGradleTypeOf || p.type.isJavaClass) && !p.type.isRaw && p.type.typeArguments.single() != starProjectionTypeUsage } }
 
 
 private
 fun Sequence<ApiFunction>.sortedWithTypeOfTakingFunctionsFirst() =
     sortedBy { f ->
-        if (f.hasParameterWithTypeArgument(SourceNames.gradleTypeOf, f.typeParameters.first())) 0
+        if (f.parameters.any { it.type.isGradleTypeOf }) 0
         else 1
     }
 
 
 private
-fun ApiFunctionParameter.toKotlinClass() =
-    copy(type = type.toKotlinClass())
-
-
-private
 fun ApiTypeUsage.toKotlinClass() =
-    ApiTypeUsage(SourceNames.kotlinClass, isNullable, null, typeArguments)
-
-
-private
-fun ApiFunctionParameter.toArrayOfKotlinClasses() =
-    copy(type = type.toArrayOfKotlinClasses())
+    ApiTypeUsage(SourceNames.kotlinClass, isNullable, typeArguments = typeArguments)
 
 
 private
 fun ApiTypeUsage.toArrayOfKotlinClasses() =
-    ApiTypeUsage(SourceNames.kotlinArray, isNullable, null, listOf(ApiTypeUsage(SourceNames.kotlinClass, false, null, typeArguments.single().typeArguments)))
+    ApiTypeUsage(SourceNames.kotlinArray, isNullable, typeArguments = listOf(ApiTypeUsage(SourceNames.kotlinClass, typeArguments = typeArguments.single().typeArguments)))
+
+
+private
+fun ApiTypeUsage.toCollectionOfKotlinClasses() =
+    ApiTypeUsage(SourceNames.kotlinCollection, isNullable, typeArguments = listOf(ApiTypeUsage(SourceNames.kotlinClass, typeArguments = typeArguments.single().typeArguments)))
+
+
+private
+val typeParameterPossibleNames: List<String> = "TUVWXYZABCDEFGHIJKLMNOPQRS".map { it.toString() }
+
+
+private
+fun nextAvailableTypeParameterName(existing: List<ApiTypeUsage>) =
+    existing.map { it.sourceName }.let { existingNames ->
+        typeParameterPossibleNames.first { it !in existingNames }
+    }
 
 
 private
@@ -348,6 +316,48 @@ fun <T> List<T>?.joinInAngleBrackets(transform: (T) -> CharSequence = { it.toStr
 
 private
 val starProjectionTypeUsage = ApiTypeUsage("*")
+
+
+private
+object SourceNames {
+    const val javaClass = "java.lang.Class"
+    const val groovyClosure = "groovy.lang.Closure"
+    const val gradleAction = "org.gradle.api.Action"
+    const val gradleTypeOf = "org.gradle.api.reflect.TypeOf"
+    const val kotlinClass = "kotlin.reflect.KClass"
+    const val kotlinArray = "kotlin.Array"
+    const val kotlinCollection = "kotlin.collections.Collection"
+}
+
+
+private
+val ApiTypeUsage.isJavaClass
+    get() = sourceName == SourceNames.javaClass
+
+
+private
+val ApiTypeUsage.isGroovyClosure
+    get() = sourceName == SourceNames.groovyClosure
+
+
+private
+val ApiTypeUsage.isGradleAction
+    get() = sourceName == SourceNames.gradleAction
+
+
+private
+val ApiTypeUsage.isGradleTypeOf
+    get() = sourceName == SourceNames.gradleTypeOf
+
+
+private
+val ApiTypeUsage.isKotlinArray
+    get() = sourceName == SourceNames.kotlinArray
+
+
+private
+val ApiTypeUsage.isKotlinCollection
+    get() = sourceName == SourceNames.kotlinCollection
 
 
 internal

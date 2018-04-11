@@ -4,6 +4,8 @@ import org.gradle.api.Named
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.query.ArtifactResolutionQuery
+import org.gradle.api.component.Artifact
+import org.gradle.api.component.Component
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionContainer
@@ -19,7 +21,6 @@ import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
 import org.gradle.kotlin.dsl.fixtures.customInstallation
 
-import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItem
 
@@ -313,18 +314,45 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `varargs extension parameters`() {
-        val jars = listOf(gradleApiParameterNamesJar, withClassJar("some.jar", ArtifactResolutionQuery::class.java))
+    fun `varargs and collections of either TypeOf or Class extension parameters`() {
+
+        val jars = listOf(gradleApiParameterNamesJar, withClassJar(
+            "some.jar",
+            ArtifactResolutionQuery::class.java,
+            Component::class.java,
+            Artifact::class.java))
 
         val generatedExtensions = apiTypeProviderFor(jars, parameterNamesSupplierFor(jars)).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
 
-        val varargExtension = generatedExtensions.single { it.contains(".withArtifacts(") && it.contains("vararg ") }
+        generatedExtensions.filter { it.contains(".withArtifacts(") }.apply {
 
-        assertThat(varargExtension,
-            containsString("vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>"))
-        assertThat(varargExtension,
-            containsString("withArtifacts(componentType.java, *artifactTypes.map { it.java }.toTypedArray())"))
+            assertContainsExtension("""
+            @org.gradle.api.Incubating
+            inline fun <reified T : org.gradle.api.component.Component> org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                withArtifacts(T::class.java, *artifactTypes.map { it.java }.toTypedArray())
+            """)
+
+            assertContainsExtension("""
+            @org.gradle.api.Incubating
+            inline fun <reified T : org.gradle.api.component.Component> org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(artifactTypes: kotlin.collections.Collection<kotlin.reflect.KClass<org.gradle.api.component.Artifact>>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                withArtifacts(T::class.java, artifactTypes.map { it.java })
+            """)
+
+            assertContainsExtension("""
+            @org.gradle.api.Incubating
+            fun org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(componentType: kotlin.reflect.KClass<org.gradle.api.component.Component>, vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                withArtifacts(componentType.java, *artifactTypes.map { it.java }.toTypedArray())
+            """)
+
+            assertContainsExtension("""
+            @org.gradle.api.Incubating
+            fun org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(componentType: kotlin.reflect.KClass<org.gradle.api.component.Component>, artifactTypes: kotlin.collections.Collection<kotlin.reflect.KClass<org.gradle.api.component.Artifact>>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                withArtifacts(componentType.java, artifactTypes.map { it.java })
+            """)
+
+            assertThat(size, equalTo(4))
+        }
     }
 }
