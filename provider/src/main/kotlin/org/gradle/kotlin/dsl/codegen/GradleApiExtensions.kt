@@ -33,9 +33,10 @@ fun writeGradleApiExtensionsTo(file: File, jars: Iterable<File>) {
         file.bufferedWriter().use {
             it.apply {
                 write(fileHeader)
+                write("\n")
                 apiTypeProviderFor(gradleJars, parameterNamesSupplierFor(gradleJars)).use { api ->
                     gradleApiExtensionDeclarationsFor(api).forEach {
-                        write("\n$it\n")
+                        write("\n$it")
                     }
                 }
             }

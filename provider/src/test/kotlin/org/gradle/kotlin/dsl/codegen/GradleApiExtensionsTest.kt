@@ -58,18 +58,15 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             println("Generation to file succeeded in ${it}ms")
         }
 
-        try {
-            measureTimeMillis {
-                StandardKotlinFileCompiler.compileToDirectory(
-                    existing("output").also { it.mkdirs() },
-                    listOf(sourceFile),
-                    jars)
-            }.also {
-                println("Compilation succeeded in ${it}ms")
-            }
-        } catch (ex: Exception) {
-            sourceFile.readLines().mapIndexed { idx, line -> "${(idx + 1).toString().padStart(4)}: $line" }.forEach { println(it) }
-            throw ex
+        sourceFile.readLines().mapIndexed { idx, line -> "${(idx + 1).toString().padStart(4)}: $line" }.forEach { println(it) }
+
+        measureTimeMillis {
+            StandardKotlinFileCompiler.compileToDirectory(
+                existing("output").also { it.mkdirs() },
+                listOf(sourceFile),
+                jars)
+        }.also {
+            println("Compilation succeeded in ${it}ms")
         }
     }
 
@@ -123,6 +120,8 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
         val generatedExtensions = apiTypeProviderFor(jars, parameterNamesSupplierFor(jars)).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
+
+        generatedExtensions.forEach { println(it) }
 
         assertThat(generatedExtensions.filter { it.contains("KClass<") }.size, equalTo(14))
 
@@ -224,6 +223,8 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
         val generatedExtensions = apiTypeProviderFor(jars, parameterNamesSupplierFor(jars)).use { api ->
             gradleApiExtensionDeclarationsFor(api).toList()
         }
+
+        generatedExtensions.forEach { println(it) }
 
         assertThat(generatedExtensions.filter { it.contains("<reified ") }.size, equalTo(13))
 
