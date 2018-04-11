@@ -24,12 +24,7 @@ import java.util.jar.JarFile
 /**
  * Generate and write Gradle API extensions to the given file.
  *
- * ApiTypeProvider Limitations:
- * - supports Java byte code only, not Kotlin
- * - does not support nested Java arrays as method parameters
- * - does not distinguish co-variance and contra-variance
- *
- * GradleApiExtensions Limitations:
+ * Limitations:
  * - does not support generating extensions for functions with type parameters having multiple bounds (Kotlin where clause)
  */
 internal
@@ -132,7 +127,7 @@ val kClassExtensionsGenerator: ExtensionsForType = { type: ApiType ->
             KotlinExtensionFunction(
                 "Kotlin extension function taking [kotlin.reflect.KClass] for [${type.sourceName}.${f.name}]",
                 f.isIncubating, f.isDeprecated, false,
-                (f.typeParameters + type.typeParameters).map { Pair(it, false) },
+                (f.typeParameters + type.typeParameters).map { it to false },
                 type, f.name, f.parameters.map(kClassParameterDeclarationOverride), f.returnType,
                 "`${f.name}`(${f.parameters.toFunctionParametersInvocationString(override = kClassParameterInvocationOverride)})")
         }
@@ -153,9 +148,9 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
                 ?: ApiTypeUsage(nextAvailableTypeParameterName(f.typeParameters + type.typeParameters), bounds = listOf(reifiedParameterTypeArgument))
 
 
-            val extensionTypeParameters = listOf(Pair(reifiedTypeParameter, true)) +
-                f.typeParameters.minus(reifiedTypeParameter).map { Pair(it, false) } +
-                type.typeParameters.map { Pair(it, false) }
+            val extensionTypeParameters = listOf(reifiedTypeParameter to true) +
+                f.typeParameters.minus(reifiedTypeParameter).map { it to false } +
+                type.typeParameters.map { it to false }
 
             val isReifiedTypeOf = reifiedParameter.type.isGradleTypeOf
             val reifiedTypeParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
