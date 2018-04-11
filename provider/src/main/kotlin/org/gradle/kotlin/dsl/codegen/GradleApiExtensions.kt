@@ -17,24 +17,31 @@ package org.gradle.kotlin.dsl.codegen
 
 import java.io.File
 import java.util.Objects
+import java.util.Properties
+import java.util.jar.JarFile
 
 
 /**
  * Generate and write Gradle API extensions to the given file.
  *
- * Limitations:
- * - supports only what is needed by current generators
- * - does not support generating extensions for functions with type parameters having multiple bounds (Kotlin where clause)
+ * ApiTypeProvider Limitations:
+ * - supports Java byte code only, not Kotlin
+ * - does not support nested Java arrays as method parameters
  * - does not distinguish co-variance and contra-variance
+ *
+ * GradleApiExtensions Limitations:
+ * - does not support generating extensions for functions with type parameters having multiple bounds (Kotlin where clause)
  */
 internal
-fun writeGradleApiExtensionsTo(file: File, gradleJars: Iterable<File>) {
-    file.bufferedWriter().use {
-        it.apply {
-            write(fileHeader)
-            apiTypeProviderFor(gradleJars.filter(gradleJarsFilter).toList()).use { api ->
-                gradleApiExtensionDeclarationsFor(api).forEach {
-                    write("\n$it\n")
+fun writeGradleApiExtensionsTo(file: File, jars: Iterable<File>) {
+    jars.filter(gradleJarsFilter).toList().let { gradleJars ->
+        file.bufferedWriter().use {
+            it.apply {
+                write(fileHeader)
+                apiTypeProviderFor(gradleJars, parameterNamesSupplierFor(gradleJars)).use { api ->
+                    gradleApiExtensionDeclarationsFor(api).forEach {
+                        write("\n$it\n")
+                    }
                 }
             }
         }
@@ -46,6 +53,19 @@ private
 val gradleJarsFilter = { jar: File ->
     jar.name.startsWith("gradle-") && !jar.name.startsWith("gradle-kotlin-")
 }
+
+
+internal
+fun parameterNamesSupplierFor(gradleJars: List<File>) =
+    JarFile(gradleJars.single { it.name.startsWith("gradle-api-parameter-names-") }).use { jar ->
+        jar.getInputStream(jar.getJarEntry("gradle-api-parameter-names.properties")).use { input ->
+            Properties().also { it.load(input) }.let { index ->
+                { key: String ->
+                    index.getProperty(key, null)?.split(",")
+                }
+            }
+        }
+    }
 
 
 internal
@@ -193,8 +213,8 @@ val kClassParameterDeclarationOverride = { p: ApiFunctionParameter ->
 
 private
 val kClassParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
-    if (p.type.isJavaClass) "${index.toParameterName()}.java"
-    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) "*${index.toParameterName()}.map { it.java }.toTypedArray()"
+    if (p.type.isJavaClass) "${gradleApiParameterNameFor(p, index)}.java"
+    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) "*${gradleApiParameterNameFor(p, index)}.map { it.java }.toTypedArray()"
     else null
 }
 
@@ -236,7 +256,7 @@ fun Sequence<ApiFunction>.sortedWithTypeOfTakingFunctionsFirst() =
 
 private
 fun ApiFunctionParameter.toKotlinClass() =
-    ApiFunctionParameter(index, type.toKotlinClass())
+    copy(type = type.toKotlinClass())
 
 
 private
@@ -246,7 +266,7 @@ fun ApiTypeUsage.toKotlinClass() =
 
 private
 fun ApiFunctionParameter.toArrayOfKotlinClasses() =
-    ApiFunctionParameter(index, type.toArrayOfKotlinClasses())
+    copy(type = type.toArrayOfKotlinClasses())
 
 
 private
@@ -257,10 +277,10 @@ fun ApiTypeUsage.toArrayOfKotlinClasses() =
 private
 fun List<ApiFunctionParameter>.toFunctionParametersString(inlineFunction: Boolean = false): String =
     takeIf { it.isNotEmpty() }
-        ?.mapIndexed { idx, p ->
-            if (idx == size - 1 && p.type.isKotlinArray) "vararg ${idx.toParameterName()}: ${p.type.typeArguments.single().toTypeArgumentString()}"
-            else if (p.type.isGradleAction) "${if (inlineFunction) "noinline " else ""}${idx.toParameterName()}: ${p.type.typeArguments.single().toTypeArgumentString()}.() -> Unit"
-            else "${idx.toParameterName()}: ${p.type.toTypeArgumentString()}"
+        ?.mapIndexed { index, p ->
+            if (index == size - 1 && p.type.isKotlinArray) "vararg ${gradleApiParameterNameFor(p, index)}: ${p.type.typeArguments.single().toTypeArgumentString()}"
+            else if (p.type.isGradleAction) "${if (inlineFunction) "noinline " else ""}${gradleApiParameterNameFor(p, index)}: ${p.type.typeArguments.single().toTypeArgumentString()}.() -> Unit"
+            else "${gradleApiParameterNameFor(p, index)}: ${p.type.toTypeArgumentString()}"
         }
         ?.joinToString(separator = ", ")
         ?: ""
@@ -271,7 +291,7 @@ fun List<ApiFunctionParameter>.toFunctionParametersInvocationString(skippedIndic
     takeIf { it.isNotEmpty() }
         ?.mapIndexed { idx, p ->
             (p.index - skippedIndices.count { it <= idx }).let { index ->
-                override(index, p) ?: index.toParameterName()
+                override(index, p) ?: gradleApiParameterNameFor(p, index)
             }
         }
         ?.joinToString(separator = ", ")
@@ -279,8 +299,8 @@ fun List<ApiFunctionParameter>.toFunctionParametersInvocationString(skippedIndic
 
 
 private
-fun Int.toParameterName() =
-    "p$this"
+fun gradleApiParameterNameFor(parameter: ApiFunctionParameter, index: Int): String =
+    parameter.name ?: "p$index"
 
 
 private

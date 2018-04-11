@@ -49,16 +49,16 @@ import kotlin.LazyThreadSafetyMode.NONE
 
 
 internal
-fun apiTypeProviderFor(jarsOrDirs: List<File>): ApiTypeProvider =
-    ApiTypeProvider(classPathBytesRepositoryFor(jarsOrDirs))
-
-
-private
-typealias ApiTypeIndex = (String) -> ApiType?
+fun apiTypeProviderFor(jarsOrDirs: List<File>, parameterNamesSupplier: ParameterNamesSupplier = { null }): ApiTypeProvider =
+    ApiTypeProvider(classPathBytesRepositoryFor(jarsOrDirs), parameterNamesSupplier)
 
 
 private
 typealias ApiTypeSupplier = () -> ApiType
+
+
+internal
+typealias ParameterNamesSupplier = (String) -> List<String>?
 
 
 /**
@@ -68,13 +68,19 @@ typealias ApiTypeSupplier = () -> ApiType
  * Once closed, type graph navigation from [ApiType] and [ApiFunction] instances will throw.
  */
 internal
-class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable {
+class ApiTypeProvider(
+    private val repository: ClassBytesRepository,
+    parameterNamesSupplier: ParameterNamesSupplier
+) : Closeable {
 
     private
     var closed = false
 
     private
     val apiTypesBySourceName = mutableMapOf<String, ApiTypeSupplier?>()
+
+    private
+    val context = Context(this, parameterNamesSupplier)
 
     override fun close() =
         try {
@@ -99,7 +105,7 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
 
     private
     fun apiTypeFor(sourceName: String, classBytes: () -> ByteArray) = {
-        ApiType(sourceName, classNodeFor(classBytes), { type(it) })
+        ApiType(sourceName, classNodeFor(classBytes), context)
     }
 
     private
@@ -113,6 +119,18 @@ class ApiTypeProvider(private val repository: ClassBytesRepository) : Closeable 
     fun <T> open(action: () -> T): T =
         if (closed) throw IllegalStateException("ApiTypeProvider closed!")
         else action()
+
+    internal
+    class Context(
+        private val typeProvider: ApiTypeProvider,
+        private val parameterNamesSupplier: ParameterNamesSupplier
+    ) {
+        fun type(sourceName: String): ApiType? =
+            typeProvider.type(sourceName)
+
+        fun parameterNamesFor(typeName: String, functionName: String, parameterTypeNames: List<String>): List<String>? =
+            parameterNamesSupplier("$typeName.$functionName(${parameterTypeNames.joinToString(",")})")
+    }
 }
 
 
@@ -120,7 +138,7 @@ internal
 class ApiType(
     val sourceName: String,
     private val delegateSupplier: () -> ClassNode,
-    private val typeIndex: ApiTypeIndex
+    private val context: ApiTypeProvider.Context
 ) {
 
     val isPublic: Boolean
@@ -133,11 +151,11 @@ class ApiType(
         get() = delegate.visibleAnnotations.has<Incubating>()
 
     val typeParameters: List<ApiTypeUsage> by lazy(NONE) {
-        typeIndex.apiTypeParametersFor(visitedSignature)
+        context.apiTypeParametersFor(visitedSignature)
     }
 
     val functions: List<ApiFunction> by lazy(NONE) {
-        delegate.methods.filter { it.signature != null }.map { ApiFunction(this, it, typeIndex) }
+        delegate.methods.filter { it.signature != null }.map { ApiFunction(this, it, context) }
     }
 
     private
@@ -156,9 +174,9 @@ class ApiType(
 
 internal
 class ApiFunction(
-    private val owner: ApiType,
+    val owner: ApiType,
     private val delegate: MethodNode,
-    private val typeIndex: ApiTypeIndex
+    private val context: ApiTypeProvider.Context
 ) {
 
     val name: String =
@@ -177,22 +195,20 @@ class ApiFunction(
         (ACC_STATIC and delegate.access) > 0
 
     val typeParameters: List<ApiTypeUsage> by lazy(NONE) {
-        typeIndex.apiTypeParametersFor(visitedSignature)
+        context.apiTypeParametersFor(visitedSignature)
     }
 
     val parameters: List<ApiFunctionParameter> by lazy(NONE) {
-        typeIndex.apiFunctionParametersFor(delegate, visitedSignature)
+        context.apiFunctionParametersFor(this, delegate, visitedSignature)
     }
 
     val returnType: ApiTypeUsage by lazy(NONE) {
-        typeIndex.apiTypeUsageForReturnType(delegate, visitedSignature?.returnType)
+        context.apiTypeUsageForReturnType(delegate, visitedSignature.returnType)
     }
 
     private
-    val visitedSignature: MethodSignatureVisitor? by lazy(NONE) {
-        delegate.signature?.let { signature ->
-            MethodSignatureVisitor().also { visitor -> SignatureReader(signature).accept(visitor) }
-        }
+    val visitedSignature: MethodSignatureVisitor by lazy(NONE) {
+        MethodSignatureVisitor().also { visitor -> SignatureReader(delegate.signature).accept(visitor) }
     }
 }
 
@@ -222,53 +238,61 @@ data class ApiTypeUsage(
 
 
 internal
-data class ApiFunctionParameter(val index: Int, val type: ApiTypeUsage)
+data class ApiFunctionParameter(
+    val index: Int,
+    private val nameSupplier: () -> String?,
+    val type: ApiTypeUsage
+) {
+
+    val name: String? by lazy(NONE) {
+        nameSupplier()
+    }
+}
 
 
 private
-fun ApiTypeIndex.apiTypeUsageFor(
+fun ApiTypeProvider.Context.apiTypeUsageFor(
     binaryName: String,
-    nullable: Boolean,
-    typeArgumentsSignatures: List<TypeSignatureVisitor> = emptyList(),
-    boundsSignatures: List<TypeSignatureVisitor> = emptyList()
+    isNullable: Boolean = false,
+    typeArguments: List<TypeSignatureVisitor> = emptyList(),
+    bounds: List<TypeSignatureVisitor> = emptyList()
 ): ApiTypeUsage =
 
     sourceNameOfBinaryName(binaryName).let { sourceName ->
         ApiTypeUsage(
             sourceName,
-            nullable,
-            this(sourceName),
-            typeArgumentsSignatures.map { apiTypeUsageFor(it.binaryName, false, it.typeArguments) },
-            boundsSignatures.map { apiTypeUsageFor(it.binaryName, false, it.typeArguments) })
+            isNullable,
+            type(sourceName),
+            typeArguments.map { apiTypeUsageFor(it.binaryName, typeArguments = it.typeArguments) },
+            bounds.map { apiTypeUsageFor(it.binaryName, typeArguments = it.typeArguments) })
     }
 
 
 private
-fun ApiTypeIndex.apiTypeParametersFor(visitedSignature: BaseSignatureVisitor?): List<ApiTypeUsage> =
-    visitedSignature?.typeParameters?.map { (binaryName, bounds) ->
-        apiTypeUsageFor(binaryName, false, emptyList(), bounds)
-    } ?: emptyList()
+fun ApiTypeProvider.Context.apiTypeParametersFor(visitedSignature: BaseSignatureVisitor?): List<ApiTypeUsage> =
+    visitedSignature?.typeParameters?.map { (binaryName, bounds) -> apiTypeUsageFor(binaryName, bounds = bounds) }
+        ?: emptyList()
 
 
 private
-fun ApiTypeIndex.apiFunctionParametersFor(delegate: MethodNode, visitedSignature: MethodSignatureVisitor?) =
+fun ApiTypeProvider.Context.apiFunctionParametersFor(function: ApiFunction, delegate: MethodNode, visitedSignature: MethodSignatureVisitor) =
     delegate.visibleParameterAnnotations?.map { it.has<Nullable>() }.let { parametersNullability ->
-        visitedSignature?.parameters?.mapIndexed { idx, p ->
+        val names by lazy(NONE) {
+            parameterNamesFor(
+                function.owner.sourceName,
+                function.name,
+                visitedSignature.parameters.map { if (it.isArray) "${it.typeArguments.single().binaryName}[]" else it.binaryName })
+        }
+        visitedSignature.parameters.mapIndexed { idx, p ->
             val isNullable = parametersNullability?.get(idx) == true
-            ApiFunctionParameter(idx, apiTypeUsageFor(p.binaryName, isNullable, p.typeArguments))
-        } ?: Type.getArgumentTypes(delegate.desc).mapIndexed { idx, p ->
-            val isNullable = parametersNullability?.get(idx) == true
-            ApiFunctionParameter(idx, apiTypeUsageFor(p.className, isNullable))
+            ApiFunctionParameter(idx, { names?.get(idx) }, apiTypeUsageFor(p.binaryName, isNullable, p.typeArguments))
         }
     }
 
 
 private
-fun ApiTypeIndex.apiTypeUsageForReturnType(delegate: MethodNode, returnType: TypeSignatureVisitor?) =
-    delegate.visibleAnnotations.has<Nullable>().let { isNullable ->
-        returnType?.let { apiTypeUsageFor(it.binaryName, isNullable, it.typeArguments) }
-            ?: apiTypeUsageFor(Type.getReturnType(delegate.desc).className, isNullable)
-    }
+fun ApiTypeProvider.Context.apiTypeUsageForReturnType(delegate: MethodNode, returnType: TypeSignatureVisitor) =
+    apiTypeUsageFor(returnType.binaryName, delegate.visibleAnnotations.has<Nullable>(), returnType.typeArguments)
 
 
 private
@@ -332,6 +356,8 @@ class MethodSignatureVisitor : BaseSignatureVisitor() {
 private
 class TypeSignatureVisitor : SignatureVisitor(ASM6) {
 
+    var isArray = false
+
     lateinit var binaryName: String
 
     val typeArguments = ArrayList<TypeSignatureVisitor>(1)
@@ -345,6 +371,7 @@ class TypeSignatureVisitor : SignatureVisitor(ASM6) {
     override fun visitArrayType(): SignatureVisitor =
         TypeSignatureVisitor().also {
             visitBinaryName("kotlin.Array")
+            isArray = true
             typeArguments.add(it)
         }
 
