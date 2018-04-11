@@ -108,7 +108,7 @@ data class KotlinExtensionFunction(
         append(targetType.sourceName)
         if (targetType.typeParameters.isNotEmpty()) append(targetType.typeParameters.toTypeArgumentsString(targetType))
         append(".")
-        append(name)
+        append("`$name`")
         append("(")
         append(parameters.toFunctionParametersString(isInline))
         append("): ")
@@ -134,7 +134,7 @@ val kClassExtensionsGenerator: ExtensionsForType = { type: ApiType ->
                 f.isIncubating, f.isDeprecated, false,
                 (f.typeParameters + type.typeParameters).map { Pair(it, false) },
                 type, f.name, f.parameters.map(kClassParameterDeclarationOverride), f.returnType,
-                "${f.name}(${f.parameters.toFunctionParametersInvocationString(override = kClassParameterInvocationOverride)})")
+                "`${f.name}`(${f.parameters.toFunctionParametersInvocationString(override = kClassParameterInvocationOverride)})")
         }
 }
 
@@ -169,7 +169,7 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
                 f.isIncubating, f.isDeprecated, true,
                 extensionTypeParameters,
                 type, f.name, f.parameters.minus(reifiedParameter).map(kClassParameterDeclarationOverride), f.returnType,
-                "${f.name}(${f.parameters.toFunctionParametersInvocationString(listOf(reifiedParameter.index), reifiedTypeParameterInvocationOverride)})")
+                "`${f.name}`(${f.parameters.toFunctionParametersInvocationString(listOf(reifiedParameter.index), reifiedTypeParameterInvocationOverride)})")
         }
 }
 

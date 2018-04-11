@@ -130,78 +130,78 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(type: kotlin.reflect.KClass<T>, name: String): T =
-                named(type.java, name)
+            fun <T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.`named`(type: kotlin.reflect.KClass<T>, name: String): T =
+                `named`(type.java, name)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.model.ObjectFactory.newInstance(type: kotlin.reflect.KClass<T>, vararg parameters: Any): T =
-                newInstance(type.java, parameters)
+            fun <T : Any> org.gradle.api.model.ObjectFactory.`newInstance`(type: kotlin.reflect.KClass<T>, vararg parameters: Any): T =
+                `newInstance`(type.java, parameters)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.model.ObjectFactory.property(valueType: kotlin.reflect.KClass<T>): org.gradle.api.provider.Property<T> =
-                property(valueType.java)
+            fun <T : Any> org.gradle.api.model.ObjectFactory.`property`(valueType: kotlin.reflect.KClass<T>): org.gradle.api.provider.Property<T> =
+                `property`(valueType.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.model.ObjectFactory.listProperty(elementType: kotlin.reflect.KClass<T>): org.gradle.api.provider.ListProperty<T> =
-                listProperty(elementType.java)
+            fun <T : Any> org.gradle.api.model.ObjectFactory.`listProperty`(elementType: kotlin.reflect.KClass<T>): org.gradle.api.provider.ListProperty<T> =
+                `listProperty`(elementType.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.model.ObjectFactory.setProperty(elementType: kotlin.reflect.KClass<T>): org.gradle.api.provider.SetProperty<T> =
-                setProperty(elementType.java)
+            fun <T : Any> org.gradle.api.model.ObjectFactory.`setProperty`(elementType: kotlin.reflect.KClass<T>): org.gradle.api.provider.SetProperty<T> =
+                `setProperty`(elementType.java)
             """)
 
             assertContainsExtension("""
-            fun <S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(type: kotlin.reflect.KClass<S>): org.gradle.api.plugins.PluginCollection<S> =
-                withType(type.java)
+            fun <S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.`withType`(type: kotlin.reflect.KClass<S>): org.gradle.api.plugins.PluginCollection<S> =
+                `withType`(type.java)
             """)
 
             assertContainsExtension("""
             @Deprecated("Deprecated Gradle API")
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.provider.ProviderFactory.property(valueType: kotlin.reflect.KClass<T>): org.gradle.api.provider.PropertyState<T> =
-                property(valueType.java)
+            fun <T : Any> org.gradle.api.provider.ProviderFactory.`property`(valueType: kotlin.reflect.KClass<T>): org.gradle.api.provider.PropertyState<T> =
+                `property`(valueType.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.add(publicType: kotlin.reflect.KClass<T>, name: String, extension: T): Unit =
-                add(publicType.java, name, extension)
+            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`add`(publicType: kotlin.reflect.KClass<T>, name: String, extension: T): Unit =
+                `add`(publicType.java, name, extension)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.create(publicType: kotlin.reflect.KClass<T>, name: String, instanceType: kotlin.reflect.KClass<T>, vararg constructionArguments: Any): T =
-                create(publicType.java, name, instanceType.java, constructionArguments)
+            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`create`(publicType: kotlin.reflect.KClass<T>, name: String, instanceType: kotlin.reflect.KClass<T>, vararg constructionArguments: Any): T =
+                `create`(publicType.java, name, instanceType.java, constructionArguments)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.create(publicType: org.gradle.api.reflect.TypeOf<T>, name: String, instanceType: kotlin.reflect.KClass<T>, vararg constructionArguments: Any): T =
-                create(publicType, name, instanceType.java, constructionArguments)
+            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`create`(publicType: org.gradle.api.reflect.TypeOf<T>, name: String, instanceType: kotlin.reflect.KClass<T>, vararg constructionArguments: Any): T =
+                `create`(publicType, name, instanceType.java, constructionArguments)
             """)
 
             assertContainsExtension("""
-            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.getByType(type: kotlin.reflect.KClass<T>): T =
-                getByType(type.java)
+            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`getByType`(type: kotlin.reflect.KClass<T>): T =
+                `getByType`(type.java)
             """)
 
             assertContainsExtension("""
-            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.findByType(type: kotlin.reflect.KClass<T>): T? =
-                findByType(type.java)
+            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`findByType`(type: kotlin.reflect.KClass<T>): T? =
+                `findByType`(type.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.configure(type: kotlin.reflect.KClass<T>, action: T.() -> Unit): Unit =
-                configure(type.java, action)
+            fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`configure`(type: kotlin.reflect.KClass<T>, action: T.() -> Unit): Unit =
+                `configure`(type.java, action)
             """)
         }
     }
@@ -231,86 +231,81 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.named(name: String): T =
-                named(T::class.java, name)
+            inline fun <reified T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.`named`(name: String): T =
+                `named`(T::class.java, name)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.newInstance(vararg parameters: Any): T =
-                newInstance(T::class.java, parameters)
+            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.`newInstance`(vararg parameters: Any): T =
+                `newInstance`(T::class.java, parameters)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.property(): org.gradle.api.provider.Property<T> =
-                property(T::class.java)
+            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.`property`(): org.gradle.api.provider.Property<T> =
+                `property`(T::class.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.listProperty(): org.gradle.api.provider.ListProperty<T> =
-                listProperty(T::class.java)
+            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.`listProperty`(): org.gradle.api.provider.ListProperty<T> =
+                `listProperty`(T::class.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.setProperty(): org.gradle.api.provider.SetProperty<T> =
-                setProperty(T::class.java)
+            inline fun <reified T : Any> org.gradle.api.model.ObjectFactory.`setProperty`(): org.gradle.api.provider.SetProperty<T> =
+                `setProperty`(T::class.java)
             """)
 
             assertContainsExtension("""
-            inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.withType(): org.gradle.api.plugins.PluginCollection<S> =
-                withType(S::class.java)
+            inline fun <reified S : T, T : org.gradle.api.Plugin<*>> org.gradle.api.plugins.PluginCollection<T>.`withType`(): org.gradle.api.plugins.PluginCollection<S> =
+                `withType`(S::class.java)
             """)
 
             assertContainsExtension("""
             @Deprecated("Deprecated Gradle API")
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.provider.ProviderFactory.property(): org.gradle.api.provider.PropertyState<T> =
-                property(T::class.java)
+            inline fun <reified T : Any> org.gradle.api.provider.ProviderFactory.`property`(): org.gradle.api.provider.PropertyState<T> =
+                `property`(T::class.java)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.add(name: String, extension: T): Unit =
-                add(typeOf<T>(), name, extension)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.`add`(name: String, extension: T): Unit =
+                `add`(typeOf<T>(), name, extension)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.getByType(): T =
-                getByType(typeOf<T>())
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.`getByType`(): T =
+                `getByType`(typeOf<T>())
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.findByType(): T? =
-                findByType(typeOf<T>())
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.`findByType`(): T? =
+                `findByType`(typeOf<T>())
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(name: String, instanceType: kotlin.reflect.KClass<T>, vararg constructionArguments: Any): T =
-                create(typeOf<T>(), name, instanceType.java, constructionArguments)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.`create`(name: String, instanceType: kotlin.reflect.KClass<T>, vararg constructionArguments: Any): T =
+                `create`(typeOf<T>(), name, instanceType.java, constructionArguments)
             """)
 
             assertContainsExtension("""
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.create(name: String, vararg constructionArguments: Any): T =
-                create(name, T::class.java, constructionArguments)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.`create`(name: String, vararg constructionArguments: Any): T =
+                `create`(name, T::class.java, constructionArguments)
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.configure(noinline action: T.() -> Unit): Unit =
-                configure(typeOf<T>(), action)
+            inline fun <reified T : Any> org.gradle.api.plugins.ExtensionContainer.`configure`(noinline action: T.() -> Unit): Unit =
+                `configure`(typeOf<T>(), action)
             """)
         }
-    }
-
-    private
-    fun List<String>.assertContainsExtension(string: String) {
-        assertThat(this, hasItem(containsMultiLineString(string)))
     }
 
     @Test
@@ -326,33 +321,38 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             gradleApiExtensionDeclarationsFor(api).toList()
         }
 
-        generatedExtensions.filter { it.contains(".withArtifacts(") }.apply {
+        generatedExtensions.filter { it.contains(".`withArtifacts`(") }.apply {
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : org.gradle.api.component.Component> org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
-                withArtifacts(T::class.java, *artifactTypes.map { it.java }.toTypedArray())
+            inline fun <reified T : org.gradle.api.component.Component> org.gradle.api.artifacts.query.ArtifactResolutionQuery.`withArtifacts`(vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                `withArtifacts`(T::class.java, *artifactTypes.map { it.java }.toTypedArray())
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            inline fun <reified T : org.gradle.api.component.Component> org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(artifactTypes: kotlin.collections.Collection<kotlin.reflect.KClass<org.gradle.api.component.Artifact>>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
-                withArtifacts(T::class.java, artifactTypes.map { it.java })
+            inline fun <reified T : org.gradle.api.component.Component> org.gradle.api.artifacts.query.ArtifactResolutionQuery.`withArtifacts`(artifactTypes: kotlin.collections.Collection<kotlin.reflect.KClass<org.gradle.api.component.Artifact>>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                `withArtifacts`(T::class.java, artifactTypes.map { it.java })
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(componentType: kotlin.reflect.KClass<org.gradle.api.component.Component>, vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
-                withArtifacts(componentType.java, *artifactTypes.map { it.java }.toTypedArray())
+            fun org.gradle.api.artifacts.query.ArtifactResolutionQuery.`withArtifacts`(componentType: kotlin.reflect.KClass<org.gradle.api.component.Component>, vararg artifactTypes: kotlin.reflect.KClass<org.gradle.api.component.Artifact>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                `withArtifacts`(componentType.java, *artifactTypes.map { it.java }.toTypedArray())
             """)
 
             assertContainsExtension("""
             @org.gradle.api.Incubating
-            fun org.gradle.api.artifacts.query.ArtifactResolutionQuery.withArtifacts(componentType: kotlin.reflect.KClass<org.gradle.api.component.Component>, artifactTypes: kotlin.collections.Collection<kotlin.reflect.KClass<org.gradle.api.component.Artifact>>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
-                withArtifacts(componentType.java, artifactTypes.map { it.java })
+            fun org.gradle.api.artifacts.query.ArtifactResolutionQuery.`withArtifacts`(componentType: kotlin.reflect.KClass<org.gradle.api.component.Component>, artifactTypes: kotlin.collections.Collection<kotlin.reflect.KClass<org.gradle.api.component.Artifact>>): org.gradle.api.artifacts.query.ArtifactResolutionQuery =
+                `withArtifacts`(componentType.java, artifactTypes.map { it.java })
             """)
 
             assertThat(size, equalTo(4))
         }
+    }
+
+    private
+    fun List<String>.assertContainsExtension(string: String) {
+        assertThat(this, hasItem(containsMultiLineString(string)))
     }
 }
