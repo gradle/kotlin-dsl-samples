@@ -72,7 +72,7 @@ data class KotlinExtensionFunction(
     val expressionBody: String
 ) {
 
-    val signatureKey: Int = Objects.hash(targetType.sourceName, targetType.typeParameters, name, parameters.map { it.type })
+    val signatureKey: Int = Objects.hash(targetType.sourceName, name, parameters.map { it.type })
 
     fun toKotlinString(): String = StringBuilder().apply {
         appendln("""
@@ -168,8 +168,8 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
             val isReifiedTypeOf = reifiedParameter.type.sourceName == SourceNames.gradleTypeOf
 
             val reifiedTypeParameterInvocationOverride = { index: Int, p: ApiFunctionParameter ->
-                if (isReifiedTypeOf && p.index.toParameterName() == reifiedParameter.index.toParameterName()) "typeOf<${reifiedTypeParameter.sourceName}>()"
-                else if (p.index.toParameterName() == reifiedParameter.index.toParameterName()) "${reifiedTypeParameter.sourceName}::class.java"
+                if (isReifiedTypeOf && p.index == reifiedParameter.index) "typeOf<${reifiedTypeParameter.sourceName}>()"
+                else if (p.index == reifiedParameter.index) "${reifiedTypeParameter.sourceName}::class.java"
                 else kClassParameterInvocationOverride(index, p)
             }
 
@@ -186,8 +186,7 @@ val reifiedTypeParametersExtensionsGenerator: ExtensionsForType = { type: ApiTyp
 private
 val kClassParameterDeclarationOverride = { p: ApiFunctionParameter ->
     if (p.type.isJavaClass) p.toKotlinClass()
-    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass)
-        ApiFunctionParameter(p.index, ApiTypeUsage(SourceNames.kotlinArray, p.type.isNullable, null, listOf(ApiTypeUsage(SourceNames.kotlinClass, false, null, p.type.typeArguments.single().typeArguments))))
+    else if (p.type.isKotlinArray && p.type.typeArguments.single().isJavaClass) p.toArrayOfKotlinClasses()
     else p
 }
 
@@ -243,6 +242,16 @@ fun ApiFunctionParameter.toKotlinClass() =
 private
 fun ApiTypeUsage.toKotlinClass() =
     ApiTypeUsage(SourceNames.kotlinClass, isNullable, null, typeArguments)
+
+
+private
+fun ApiFunctionParameter.toArrayOfKotlinClasses() =
+    ApiFunctionParameter(index, type.toArrayOfKotlinClasses())
+
+
+private
+fun ApiTypeUsage.toArrayOfKotlinClasses() =
+    ApiTypeUsage(SourceNames.kotlinArray, isNullable, null, listOf(ApiTypeUsage(SourceNames.kotlinClass, false, null, typeArguments.single().typeArguments)))
 
 
 private
