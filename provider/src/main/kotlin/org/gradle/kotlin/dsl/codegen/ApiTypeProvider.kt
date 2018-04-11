@@ -431,17 +431,31 @@ fun sourceNameOfBinaryName(binaryName: String): String =
     when (binaryName) {
         "void" -> "Unit"
         "?" -> "*"
-        in collectionTypeStrings.keys -> collectionTypeStrings[binaryName]!!
+        in mappedTypeStrings.keys -> mappedTypeStrings[binaryName]!!
         in primitiveTypeStrings.keys -> primitiveTypeStrings[binaryName]!!
         else -> binaryName.replace('$', '.')
     }
 
 
+/**
+ * See https://kotlinlang.org/docs/reference/java-interop.html#mapped-types
+ */
 private
-val collectionTypeStrings =
+val mappedTypeStrings =
     mapOf(
+        // Built-ins
+        "java.lang.Cloneable" to "kotlin.Cloneable",
+        "java.lang.Comparable" to "kotlin.Comparable",
+        "java.lang.Enum" to "kotlin.Enum",
+        "java.lang.Annotation" to "kotlin.Annotation",
+        "java.lang.Deprecated" to "kotlin.Deprecated",
+        "java.lang.CharSequence" to "kotlin.CharSequence",
+        "java.lang.Number" to "kotlin.Number",
+        "java.lang.Throwable" to "kotlin.Throwable",
+        // Collections
         "java.util.Iterable" to "kotlin.collections.Iterable",
         "java.util.Iterator" to "kotlin.collections.Iterator",
+        "java.util.ListIterator" to "kotlin.collections.ListIterator",
         "java.util.Collection" to "kotlin.collections.Collection",
         "java.util.List" to "kotlin.collections.List",
         "java.util.ArrayList" to "kotlin.collections.ArrayList",
@@ -449,5 +463,6 @@ val collectionTypeStrings =
         "java.util.HashSet" to "kotlin.collections.HashSet",
         "java.util.LinkedHashSet" to "kotlin.collections.LinkedHashSet",
         "java.util.Map" to "kotlin.collections.Map",
+        "java.util.Map.Entry" to "kotlin.collections.Map.Entry",
         "java.util.HashMap" to "kotlin.collections.HashMap",
         "java.util.LinkedHashMap" to "kotlin.collections.LinkedHashMap")
