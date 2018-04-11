@@ -1,4 +1,5 @@
 import groovy.lang.GroovyObject
+import org.gradle.util.GradleVersion
 
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import org.jfrog.gradle.plugin.artifactory.dsl.ResolverConfig
@@ -108,6 +109,7 @@ val copyCurrentDistro by task<Copy> {
     // TODO:pm remove SPIKE
     from(file("gradle/gradle-api-parameter-names-SPIKE.jar")) {
         into("lib")
+        rename { it.replace("SPIKE", GradleVersion.current().baseVersion.version) }
     }
 
     // preserve last modified date on each file to make it easier

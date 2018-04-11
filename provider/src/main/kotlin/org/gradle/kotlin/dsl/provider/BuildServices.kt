@@ -18,6 +18,7 @@ package org.gradle.kotlin.dsl.provider
 
 import org.gradle.api.internal.ClassPathRegistry
 import org.gradle.api.internal.artifacts.dsl.dependencies.DependencyFactory
+import org.gradle.api.internal.classpath.ModuleRegistry
 import org.gradle.cache.internal.GeneratedGradleJarCache
 
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
@@ -43,6 +44,7 @@ object BuildServices {
     @Suppress("unused")
     fun createKotlinScriptClassPathProvider(
         classPathRegistry: ClassPathRegistry,
+        moduleRegistry: ModuleRegistry,
         dependencyFactory: DependencyFactory,
         jarCache: GeneratedGradleJarCache,
         progressLoggerFactory: ProgressLoggerFactory
@@ -50,6 +52,7 @@ object BuildServices {
 
         KotlinScriptClassPathProvider(
             classPathRegistry,
+            moduleRegistry,
             gradleApiJarsProviderFor(dependencyFactory),
             versionedJarCacheFor(jarCache),
             StandardJarGenerationProgressMonitorProvider(progressLoggerFactory))
