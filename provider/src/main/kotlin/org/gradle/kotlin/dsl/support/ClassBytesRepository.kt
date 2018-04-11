@@ -70,7 +70,7 @@ class ClassBytesRepository(classPath: ClassPath) : Closeable {
         classPathFiles.asSequence()
             .flatMap { sourceNamesFrom(it) }
             .mapNotNull { sourceName ->
-                classBytesSupplierForSourceName(sourceName)?.let { Pair(sourceName, it) }
+                classBytesSupplierForSourceName(sourceName)?.let { sourceName to it }
             }
 
     private
