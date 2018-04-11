@@ -65,7 +65,12 @@ typealias ParameterNamesSupplier = (String) -> List<String>?
  * Provides [ApiType] instances by Kotlin source name from a class path.
  *
  * Keeps JAR files open for fast lookup, must be closed.
- * Once closed, type graph navigation from [ApiType] and [ApiFunction] instances will throw.
+ * Once closed, type graph navigation from [ApiType] and [ApiFunction] instances will throw [IllegalStateException].
+ *
+ * Limitations:
+ * - supports Java byte code only, not Kotlin
+ * - does not support nested Java arrays as method parameters
+ * - does not distinguish co-variance and contra-variance
  */
 internal
 class ApiTypeProvider(
@@ -296,9 +301,9 @@ fun ApiTypeProvider.Context.apiTypeUsageForReturnType(delegate: MethodNode, retu
 
 
 private
-inline fun <reified T : Any> List<AnnotationNode>?.has() =
+inline fun <reified AnnotationType : Any> List<AnnotationNode>?.has() =
     if (this == null) false
-    else Type.getDescriptor(T::class.java).let { desc -> any { it.desc == desc } }
+    else Type.getDescriptor(AnnotationType::class.java).let { desc -> any { it.desc == desc } }
 
 
 private
