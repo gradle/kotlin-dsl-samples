@@ -105,6 +105,11 @@ val copyCurrentDistro by task<Copy> {
     into(customInstallationDir)
     exclude("**/*kotlin*")
 
+    // TODO:pm remove SPIKE
+    from(file("gradle/gradle-api-parameter-names-SPIKE.jar")) {
+        into("lib")
+    }
+
     // preserve last modified date on each file to make it easier
     // to check which files were patched by next step
     val copyDetails = mutableListOf<FileCopyDetails>()
