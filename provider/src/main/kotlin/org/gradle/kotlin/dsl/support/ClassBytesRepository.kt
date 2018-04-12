@@ -75,7 +75,9 @@ class ClassBytesRepository(classPath: ClassPath) : Closeable {
 
     private
     fun classBytesSupplierForSourceName(sourceName: String): ClassBytesSupplier? =
-        classFilePathCandidatesFor(sourceName).firstNotNullResult { classBytesSupplierForFilePath(it) }
+        classFilePathCandidatesFor(sourceName)
+            .mapNotNull(::classBytesSupplierForFilePath)
+            .firstOrNull()
 
     private
     fun classBytesSupplierForFilePath(classFilePath: String): ClassBytesSupplier? =
@@ -115,11 +117,7 @@ class ClassBytesRepository(classPath: ClassPath) : Closeable {
     fun jarClassBytesIndexFor(jar: File): ClassBytesIndex = { classFilePath ->
         openJarFile(jar).run {
             getJarEntry(classFilePath)?.let { jarEntry ->
-                {
-                    getInputStream(jarEntry).use { jarInput ->
-                        jarInput.readBytes()
-                    }
-                }
+                { getInputStream(jarEntry).use { jarInput -> jarInput.readBytes() } }
             }
         }
     }
@@ -141,11 +139,13 @@ class ClassBytesRepository(classPath: ClassPath) : Closeable {
 
 private
 val String.isClassFilePath
-    get() = endsWith(classFilePathSuffix) && !endsWith("package-info$classFilePathSuffix") && !matches(compilerGeneratedClassFilePath)
+    get() = endsWith(classFileExtension)
+        && !endsWith("package-info$classFileExtension")
+        && !matches(compilerGeneratedClassFilePath)
 
 
 private
-const val classFilePathSuffix = ".class"
+const val classFileExtension = ".class"
 
 
 private
@@ -158,22 +158,33 @@ val slashOrDollar = Regex("[/$]")
 
 internal
 fun kotlinSourceNameOf(classFilePath: String): String =
-    classFilePath.run {
-        if (endsWith("Kt$classFilePathSuffix")) dropLast(8)
-        else dropLast(6)
-    }.replace(slashOrDollar, ".")
+    classFilePath
+        .removeSuffix(classFileExtension)
+        .removeSuffix("Kt")
+        .replace(slashOrDollar, ".")
 
 
 internal
-fun classFilePathCandidatesFor(sourceName: String): Iterable<String> =
+fun classFilePathCandidatesFor(sourceName: String): Sequence<String> =
     sourceName.replace(".", "/").let { path ->
-        sequenceOf("$path$classFilePathSuffix", "${path}Kt$classFilePathSuffix") +
-            if (path.contains("/")) {
-                val generator = { p: String ->
-                    if (p.contains("/")) p.substringBeforeLast("/") + '$' + p.substring(p.lastIndexOf("/") + 1)
-                    else null
-                }
-                generateSequence({ generator(path) }, generator)
-                    .flatMap { sequenceOf("$it$classFilePathSuffix", "${it}Kt$classFilePathSuffix") }
-            } else emptySequence()
-    }.asIterable()
+        candidateClassFiles(path) + nestedClassFilePathCandidatesFor(path)
+    }
+
+
+private
+fun nestedClassFilePathCandidatesFor(path: String): Sequence<String> =
+    generateSequence({ nestedClassNameFor(path) }, ::nestedClassNameFor)
+        .flatMap(::candidateClassFiles)
+
+
+private
+fun candidateClassFiles(path: String) =
+    sequenceOf("$path$classFileExtension", "${path}Kt$classFileExtension")
+
+
+private
+fun nestedClassNameFor(path: String) = path.run {
+    lastIndexOf('/').takeIf { it > 0 }?.let { index ->
+        substring(0, index) + '$' + substring(index + 1)
+    }
+}
