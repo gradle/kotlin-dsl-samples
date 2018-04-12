@@ -227,7 +227,8 @@ data class ApiTypeUsage(
     val bounds: List<ApiTypeUsage> = emptyList()
 ) {
 
-    val isRaw: Boolean = typeArguments.isEmpty() && type?.typeParameters?.isEmpty() != false
+    val isRaw: Boolean
+        get() = typeArguments.isEmpty() && type?.typeParameters?.isEmpty() != false
 
     override fun equals(other: Any?) =
         if (other !is ApiTypeUsage) false
