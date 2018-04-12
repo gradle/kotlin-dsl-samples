@@ -5,13 +5,17 @@ import org.gradle.api.tasks.wrapper.Wrapper
 
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.DeepThought
+import org.gradle.kotlin.dsl.fixtures.customInstallation
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.CoreMatchers.notNullValue
 
 import org.junit.Assert.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.Test
+
+import java.io.FileFilter
 
 
 class ClassBytesRepositoryTest : AbstractIntegrationTest() {
@@ -93,6 +97,19 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
                     Wrapper::class.java.canonicalName,
                     SomeKotlin.NestedType::class.java.canonicalName,
                     SomeKotlin::class.java.canonicalName))
+        }
+    }
+
+    @Test
+    fun `ignores package-info and compiler generated classes`() {
+
+        val jars = customInstallation().resolve("lib").listFiles(FileFilter { it.name.startsWith("gradle-core-api-") }).toList()
+
+        classPathBytesRepositoryFor(jars).use { repository ->
+            repository.allClassesBytesBySourceName().map { it.first }.toList().apply {
+                assertTrue(none { it == "package-info" })
+                assertTrue(none { it.matches(Regex("\\$[0-9]\\.class")) })
+            }
         }
     }
 }

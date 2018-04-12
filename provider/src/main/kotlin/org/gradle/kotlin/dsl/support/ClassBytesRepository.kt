@@ -141,11 +141,15 @@ class ClassBytesRepository(classPath: ClassPath) : Closeable {
 
 private
 val String.isClassFilePath
-    get() = endsWith(classFilePathSuffix)
+    get() = endsWith(classFilePathSuffix) && !endsWith("package-info$classFilePathSuffix") && !matches(compilerGeneratedClassFilePath)
 
 
 private
 const val classFilePathSuffix = ".class"
+
+
+private
+val compilerGeneratedClassFilePath = Regex(".*\\$\\d+\\.class$")
 
 
 private
