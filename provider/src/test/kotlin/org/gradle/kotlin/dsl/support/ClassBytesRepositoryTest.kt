@@ -129,8 +129,9 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
     private
     val ClassBytesRepository.allSourceNames: List<String>
         get() = allClassesBytesBySourceName().map { it.first }.toList()
-
-    private
-    inline fun <reified T> canonicalNameOf(): String =
-        T::class.java.canonicalName
 }
+
+
+internal
+inline fun <reified T> canonicalNameOf(): String =
+    T::class.java.canonicalName

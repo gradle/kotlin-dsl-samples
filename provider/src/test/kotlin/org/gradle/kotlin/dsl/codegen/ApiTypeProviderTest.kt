@@ -7,6 +7,7 @@ import org.gradle.api.plugins.PluginCollection
 import org.gradle.api.tasks.AbstractCopyTask
 
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
+import org.gradle.kotlin.dsl.support.canonicalNameOf
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
@@ -28,9 +29,9 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
 
         apiTypeProviderFor(jars).use { api ->
 
-            assertThat(api.type(Test::class.java.canonicalName), nullValue())
+            assertThat(api.type<Test>(), nullValue())
 
-            api.type(PluginCollection::class.java.canonicalName)!!.apply {
+            api.type<PluginCollection<*>>()!!.apply {
 
                 assertThat(sourceName, equalTo("org.gradle.api.plugins.PluginCollection"))
                 assertTrue(isPublic)
@@ -65,7 +66,7 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
                     }
                 }
             }
-            api.type(ObjectFactory::class.java.canonicalName)!!.apply {
+            api.type<ObjectFactory>()!!.apply {
                 functions.single { it.name == "newInstance" }.apply {
                     parameters.drop(1).single().type.apply {
                         assertThat(sourceName, equalTo("kotlin.Array"))
@@ -82,9 +83,8 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
         val jars = listOf(withClassJar("some.jar", ContentFilterable::class.java))
 
         apiTypeProviderFor(jars).use { api ->
-            val contentFilterable = api.type(ContentFilterable::class.java.canonicalName)!!
 
-            contentFilterable.functions.single { it.name == "expand" }.apply {
+            api.type<ContentFilterable>()!!.functions.single { it.name == "expand" }.apply {
                 assertTrue(typeParameters.isEmpty())
                 assertThat(parameters.size, equalTo(1))
                 parameters.single().type.apply {
@@ -102,11 +102,15 @@ class ApiTypeProviderTest : AbstractIntegrationTest() {
         val jars = listOf(withClassJar("some.jar", AbstractCopyTask::class.java))
 
         apiTypeProviderFor(jars).use { api ->
-            val type = api.type(AbstractCopyTask::class.java.canonicalName)!!
+            val type = api.type<AbstractCopyTask>()!!
 
             assertThat(type.functions.filter { it.name == "filter" }.size, equalTo(3))
 
             assertTrue(type.functions.none { it.name == "getRootSpec" })
         }
     }
+
+    private
+    inline fun <reified T> ApiTypeProvider.type() =
+        type(canonicalNameOf<T>())
 }

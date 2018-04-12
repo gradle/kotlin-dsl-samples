@@ -21,6 +21,7 @@ import org.gradle.kotlin.dsl.GradleDsl
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
 import org.gradle.kotlin.dsl.fixtures.customInstallation
+import org.gradle.kotlin.dsl.support.canonicalNameOf
 import org.hamcrest.CoreMatchers.containsString
 
 import org.hamcrest.CoreMatchers.equalTo
@@ -43,7 +44,10 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
     private
     val gradleApiParameterNamesJar: File by lazy {
-        customInstallation().resolve("lib").listFiles(FileFilter { it.name.startsWith("gradle-api-parameter-names-") }).single()
+        customInstallation()
+            .resolve("lib")
+            .listFiles(FileFilter { it.name.startsWith("gradle-api-parameter-names-") })
+            .single()
     }
 
     @Test
@@ -97,10 +101,10 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
 
             api.allTypes().filter { it.isGradleApi }.forEach {
                 when (it.sourceName) {
-                    Project::class.java.canonicalName -> seenProject = true
-                    ProjectInternal::class.java.canonicalName -> seenProjectInternal = true
-                    TextUtil::class.java.canonicalName -> seenTextUtil = true
-                    GradleDsl::class.java.canonicalName -> seenGradleDsl = true
+                    canonicalNameOf<Project>() -> seenProject = true
+                    canonicalNameOf<ProjectInternal>() -> seenProjectInternal = true
+                    canonicalNameOf<TextUtil>() -> seenTextUtil = true
+                    canonicalNameOf<GradleDsl>() -> seenGradleDsl = true
                 }
             }
 
