@@ -23,35 +23,45 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
     @Test
     fun `class file path candidates for source name`() {
 
-        assertThat(
-            classFilePathCandidatesFor("My").toList(),
-            equalTo(listOf("My.class", "MyKt.class")))
+        assertClassFilePathCandidatesFor(
+            "My",
+            listOf("My.class", "MyKt.class"))
 
-        assertThat(
-            classFilePathCandidatesFor("foo.My").toList(),
-            equalTo(listOf(
-                "foo/My.class", "foo/MyKt.class",
-                "foo${'$'}My.class", "foo${'$'}MyKt.class")))
+        assertClassFilePathCandidatesFor(
+            "foo.My",
+            listOf("foo/My.class", "foo/MyKt.class", "foo${'$'}My.class", "foo${'$'}MyKt.class"))
 
-        assertThat(
-            classFilePathCandidatesFor("foo.My.Nested").toList(),
-            equalTo(listOf(
+        assertClassFilePathCandidatesFor(
+            "foo.My.Nested",
+            listOf(
                 "foo/My/Nested.class", "foo/My/NestedKt.class",
                 "foo/My${'$'}Nested.class", "foo/My${'$'}NestedKt.class",
-                "foo${'$'}My${'$'}Nested.class", "foo${'$'}My${'$'}NestedKt.class")))
+                "foo${'$'}My${'$'}Nested.class", "foo${'$'}My${'$'}NestedKt.class"))
+    }
+
+    private
+    fun assertClassFilePathCandidatesFor(sourceName: String, candidates: List<String>) {
+        assertThat(
+            classFilePathCandidatesFor(sourceName).toList(),
+            equalTo(candidates))
     }
 
     @Test
     fun `source name for class file path`() {
 
-        assertThat(kotlinSourceNameOf("My.class"), equalTo("My"))
-        assertThat(kotlinSourceNameOf("MyKt.class"), equalTo("My"))
+        assertKotlinSourceNameOf("My.class", "My")
+        assertKotlinSourceNameOf("MyKt.class", "My")
 
-        assertThat(kotlinSourceNameOf("foo/My.class"), equalTo("foo.My"))
-        assertThat(kotlinSourceNameOf("foo/MyKt.class"), equalTo("foo.My"))
+        assertKotlinSourceNameOf("foo/My.class", "foo.My")
+        assertKotlinSourceNameOf("foo/MyKt.class", "foo.My")
 
-        assertThat(kotlinSourceNameOf("foo/My${'$'}Nested.class"), equalTo("foo.My.Nested"))
-        assertThat(kotlinSourceNameOf("foo/My${'$'}NestedKt.class"), equalTo("foo.My.Nested"))
+        assertKotlinSourceNameOf("foo/My${'$'}Nested.class", "foo.My.Nested")
+        assertKotlinSourceNameOf("foo/My${'$'}NestedKt.class", "foo.My.Nested")
+    }
+
+    private
+    fun assertKotlinSourceNameOf(classFilePath: String, expected: String) {
+        assertThat(kotlinSourceNameOf(classFilePath), equalTo(expected))
     }
 
     class SomeKotlin {
@@ -74,42 +84,53 @@ class ClassBytesRepositoryTest : AbstractIntegrationTest() {
             SomeKotlin::class.java,
             SomeKotlin.NestedType::class.java)
 
-        val cpDir = existing("cp-dir").also { it.mkdirs() }
+        val cpDir = newDir("cp-dir")
         unzipTo(cpDir, jar2)
 
-        classPathBytesRepositoryFor(listOf(jar1, cpDir)).use { repo ->
+        classPathBytesRepositoryFor(listOf(jar1, cpDir)).use { repository ->
             assertThat(
-                repo.classBytesFor(Groovydoc.Link::class.java.canonicalName),
+                repository.classBytesFor(canonicalNameOf<Groovydoc.Link>()),
                 notNullValue())
             assertThat(
-                repo.classBytesFor(Wrapper.DistributionType::class.java.canonicalName),
+                repository.classBytesFor(canonicalNameOf<Wrapper.DistributionType>()),
                 notNullValue())
         }
 
-        classPathBytesRepositoryFor(listOf(jar1, cpDir)).use { repo ->
+        classPathBytesRepositoryFor(listOf(jar1, cpDir)).use { repository ->
             assertThat(
-                repo.allClassesBytesBySourceName().map { it.first }.toList(),
+                repository.allSourceNames,
                 hasItems(
-                    Groovydoc::class.java.canonicalName,
-                    Groovydoc.Link::class.java.canonicalName,
-                    DeepThought::class.java.canonicalName,
-                    Wrapper.DistributionType::class.java.canonicalName,
-                    Wrapper::class.java.canonicalName,
-                    SomeKotlin.NestedType::class.java.canonicalName,
-                    SomeKotlin::class.java.canonicalName))
+                    canonicalNameOf<Groovydoc>(),
+                    canonicalNameOf<Groovydoc.Link>(),
+                    canonicalNameOf<DeepThought>(),
+                    canonicalNameOf<Wrapper.DistributionType>(),
+                    canonicalNameOf<Wrapper>(),
+                    canonicalNameOf<SomeKotlin.NestedType>(),
+                    canonicalNameOf<SomeKotlin>()))
         }
     }
 
     @Test
     fun `ignores package-info and compiler generated classes`() {
 
-        val jars = customInstallation().resolve("lib").listFiles(FileFilter { it.name.startsWith("gradle-core-api-") }).toList()
+        val jars = customInstallation()
+            .resolve("lib")
+            .listFiles(FileFilter { it.name.startsWith("gradle-core-api-") })
+            .toList()
 
         classPathBytesRepositoryFor(jars).use { repository ->
-            repository.allClassesBytesBySourceName().map { it.first }.toList().apply {
+            repository.allSourceNames.apply {
                 assertTrue(none { it == "package-info" })
                 assertTrue(none { it.matches(Regex("\\$[0-9]\\.class")) })
             }
         }
     }
+
+    private
+    val ClassBytesRepository.allSourceNames: List<String>
+        get() = allClassesBytesBySourceName().map { it.first }.toList()
+
+    private
+    inline fun <reified T> canonicalNameOf(): String =
+        T::class.java.canonicalName
 }
