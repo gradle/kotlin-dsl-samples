@@ -20,9 +20,11 @@ import org.gradle.kotlin.dsl.GradleDsl
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
 import org.gradle.kotlin.dsl.fixtures.customInstallation
+import org.hamcrest.CoreMatchers.containsString
 
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItem
+import org.hamcrest.CoreMatchers.not
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThat
@@ -58,7 +60,10 @@ class GradleApiExtensionsTest : AbstractIntegrationTest() {
             println("Generation to file succeeded in ${it}ms")
         }
 
-        sourceFile.readLines().mapIndexed { idx, line -> "${(idx + 1).toString().padStart(4)}: $line" }.forEach { println(it) }
+        val generatedSource = sourceFile.readText()
+        generatedSource.lines().mapIndexed { idx, line -> "${(idx + 1).toString().padStart(4)}: $line" }.forEach { println(it) }
+
+        assertThat(generatedSource, not(containsString("java.lang.Class")))
 
         measureTimeMillis {
             StandardKotlinFileCompiler.compileToDirectory(
