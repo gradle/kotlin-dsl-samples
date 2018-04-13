@@ -66,15 +66,15 @@ class ApiExtensionsJarGenerator(
 
     private
     fun builtinPluginIdExtensionsSourceFileFor(gradleJars: Iterable<File>, outputDir: File) =
-        generatedSourceFile(outputDir, "BuiltinPluginIdExtensions.kt").apply {
-            writeBuiltinPluginIdExtensionsTo(this, gradleJars)
+        generatedSourceFile(outputDir, "BuiltinPluginIdExtensions.kt").also {
+            writeBuiltinPluginIdExtensionsTo(it, gradleJars)
             onProgress()
         }
 
     private
     fun gradleApiExtensionsSourceFileFor(gradleJars: Iterable<File>, outputDir: File) =
-        generatedSourceFile(outputDir, "GradleApiGeneratedExtensions.kt").apply {
-            writeGradleApiExtensionsTo(this, gradleJars)
+        generatedSourceFile(outputDir, "GradleApiGeneratedExtensions.kt").also {
+            writeGradleApiExtensionsTo(it, gradleJars)
             onProgress()
         }
 
