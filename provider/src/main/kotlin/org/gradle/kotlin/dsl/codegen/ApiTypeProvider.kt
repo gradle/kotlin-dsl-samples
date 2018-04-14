@@ -42,8 +42,6 @@ import org.jetbrains.org.objectweb.asm.tree.MethodNode
 import java.io.Closeable
 import java.io.File
 
-import java.util.Objects
-
 import javax.annotation.Nullable
 
 import kotlin.LazyThreadSafetyMode.NONE
@@ -235,14 +233,6 @@ data class ApiTypeUsage(
     val isRaw: Boolean
         get() = typeArguments.isEmpty()
             && type?.typeParameters?.isEmpty() != false
-
-    val key: Int
-        get() = Objects.hash(
-            sourceName,
-            isNullable,
-            typeArguments.map { it.key },
-            bounds.map { it.key },
-            isRaw)
 }
 
 

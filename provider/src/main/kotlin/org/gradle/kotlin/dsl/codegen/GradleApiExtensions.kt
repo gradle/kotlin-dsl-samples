@@ -16,7 +16,7 @@
 package org.gradle.kotlin.dsl.codegen
 
 import java.io.File
-import java.util.Objects
+
 import java.util.Properties
 import java.util.jar.JarFile
 
@@ -77,8 +77,23 @@ fun gradleApiExtensionDeclarationsFor(api: ApiTypeProvider): Sequence<String> =
     api.allTypes()
         .filter { type -> type.isGradleApi }
         .flatMap { type -> kotlinExtensionFunctionsFor(type) }
-        .distinctBy { extension -> extension.signatureKey }
+        .distinctBy(::signatureKey)
         .map { it.toKotlinString() }
+
+
+private
+fun signatureKey(extension: KotlinExtensionFunction): List<Any> = extension.run {
+    (listOf(targetType.sourceName, name)
+        + parameters.filter { it.reifiedAs == null }.flatMap { apiTypeKey(it.type) })
+}
+
+
+private
+fun apiTypeKey(usage: ApiTypeUsage): List<Any> = usage.run {
+    (listOf(sourceName, isNullable, isRaw)
+        + typeArguments.flatMap(::apiTypeKey)
+        + bounds.flatMap(::apiTypeKey))
+}
 
 
 private
@@ -215,11 +230,6 @@ data class KotlinExtensionFunction(
     val returnType: ApiTypeUsage
 ) {
 
-    val signatureKey: Int
-        get() = Objects.hash(
-            targetType.sourceName,
-            name,
-            parameters.filter { it.reifiedAs == null }.map { it.type.key })
 
     fun toKotlinString(): String = StringBuilder().apply {
 
