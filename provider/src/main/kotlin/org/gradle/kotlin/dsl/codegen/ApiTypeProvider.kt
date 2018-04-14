@@ -41,6 +41,7 @@ import org.jetbrains.org.objectweb.asm.tree.MethodNode
 
 import java.io.Closeable
 import java.io.File
+
 import java.util.Objects
 
 import javax.annotation.Nullable
@@ -49,7 +50,11 @@ import kotlin.LazyThreadSafetyMode.NONE
 
 
 internal
-fun apiTypeProviderFor(jarsOrDirs: List<File>, parameterNamesSupplier: ParameterNamesSupplier = { null }): ApiTypeProvider =
+fun apiTypeProviderFor(
+    jarsOrDirs: List<File>,
+    parameterNamesSupplier: ParameterNamesSupplier = { null }
+): ApiTypeProvider =
+
     ApiTypeProvider(classPathBytesRepositoryFor(jarsOrDirs), parameterNamesSupplier)
 
 
@@ -65,7 +70,8 @@ typealias ParameterNamesSupplier = (String) -> List<String>?
  * Provides [ApiType] instances by Kotlin source name from a class path.
  *
  * Keeps JAR files open for fast lookup, must be closed.
- * Once closed, type graph navigation from [ApiType] and [ApiFunction] instances will throw [IllegalStateException].
+ * Once closed, type graph navigation from [ApiType] and [ApiFunction] instances
+ * will throw [IllegalStateException].
  *
  * Limitations:
  * - supports Java byte code only, not Kotlin
@@ -79,20 +85,13 @@ class ApiTypeProvider(
 ) : Closeable {
 
     private
-    var closed = false
+    val context = Context(this, parameterNamesSupplier)
 
     private
     val apiTypesBySourceName = mutableMapOf<String, ApiTypeSupplier?>()
 
     private
-    val context = Context(this, parameterNamesSupplier)
-
-    override fun close() =
-        try {
-            repository.close()
-        } finally {
-            closed = true
-        }
+    var closed = false
 
     fun type(sourceName: String): ApiType? = open {
         apiTypesBySourceName.computeIfAbsent(sourceName) {
@@ -107,6 +106,13 @@ class ApiTypeProvider(
             }!!
         }.map { it() }
     }
+
+    override fun close() =
+        try {
+            repository.close()
+        } finally {
+            closed = true
+        }
 
     private
     fun apiTypeFor(sourceName: String, classBytes: () -> ByteArray) = {
