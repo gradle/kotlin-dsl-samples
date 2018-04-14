@@ -92,7 +92,10 @@ fun kotlinExtensionFunctionsFor(type: ApiType): Sequence<KotlinExtensionFunction
                 val javaClassToKotlinClass = function.parameters.any {
                     it.type.isJavaClass || (it.type.isKotlinArray && it.type.typeArguments.single().isJavaClass) || (it.type.isKotlinCollection && it.type.typeArguments.single().isJavaClass)
                 }
-                val reifiedParameter = function.parameters.any { p -> (p.type.isGradleTypeOf || p.type.isJavaClass) && !p.type.isRaw && p.type.typeArguments.single() != starProjectionTypeUsage }
+                val reifiedParameter = function.parameters.any { p ->
+                    (p.type.isGradleTypeOf || p.type.isJavaClass)
+                        && !p.type.isRaw && !p.type.typeArguments.single().isStarProjectionTypeUsage
+                }
 
                 val extension
                     get() = groovyNamedArgumentsToVarargs || javaClassToKotlinClass || reifiedParameter
@@ -161,7 +164,11 @@ fun List<MappedApiFunctionParameter>.groovyNamedArgumentsToVarargs() =
         drop(1) + first.copy(
             type = ApiTypeUsage(
                 sourceName = SourceNames.kotlinArray,
-                typeArguments = listOf(ApiTypeUsage("Pair", typeArguments = listOf(ApiTypeUsage("String"), starProjectionTypeUsage)))),
+                typeArguments = listOf(
+                    ApiTypeUsage(
+                        "Pair",
+                        typeArguments = listOf(
+                            ApiTypeUsage("String"), starProjectionTypeUsage)))),
             invocation = "mapOf(*${first.invocation})")
     } ?: this
 
@@ -185,7 +192,9 @@ fun List<MappedApiFunctionParameter>.typeOfOrKClassToReifiedTypeParameter(typePa
         if (p.type.isGradleTypeOf) foundTypeOf = true
         if (p.type.isKotlinClass) foundKotlinClass = true
         val reified = p.type.typeArguments.single().let { typeArgument -> typeParameters.singleOrNull { it.sourceName == typeArgument.sourceName } }
-            ?: ApiTypeUsage(p.name.capitalize(), bounds = listOfNotNull(p.type.typeArguments.single().takeIf { it != starProjectionTypeUsage }))
+            ?: ApiTypeUsage(
+                p.name.capitalize(),
+                bounds = listOfNotNull(p.type.typeArguments.single().takeIf { !it.isStarProjectionTypeUsage }))
         p.copy(
             index = -1,
             reifiedAs = reified,
@@ -206,7 +215,11 @@ data class KotlinExtensionFunction(
     val returnType: ApiTypeUsage
 ) {
 
-    val signatureKey: Int = Objects.hash(targetType.sourceName, name, parameters.filter { it.reifiedAs == null }.map { it.type })
+    val signatureKey: Int
+        get() = Objects.hash(
+            targetType.sourceName,
+            name,
+            parameters.filter { it.reifiedAs == null }.map { it.type.key })
 
     fun toKotlinString(): String = StringBuilder().apply {
 
@@ -321,11 +334,9 @@ fun <T> List<T>?.joinInAngleBrackets(transform: (T) -> CharSequence = { it.toStr
 
 private
 val ApiTypeUsage.isMapOfStringStar
-    get() = sourceName == "kotlin.collections.Map" && typeArguments.first().sourceName == "String" && typeArguments.drop(1).first() == starProjectionTypeUsage
-
-
-private
-val starProjectionTypeUsage = ApiTypeUsage("*")
+    get() = sourceName == "kotlin.collections.Map"
+        && typeArguments[0].sourceName == "String"
+        && typeArguments[1].isStarProjectionTypeUsage
 
 
 private

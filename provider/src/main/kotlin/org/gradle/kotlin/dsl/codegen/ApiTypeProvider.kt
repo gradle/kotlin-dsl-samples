@@ -226,20 +226,17 @@ data class ApiTypeUsage(
     val typeArguments: List<ApiTypeUsage> = emptyList(),
     val bounds: List<ApiTypeUsage> = emptyList()
 ) {
-
     val isRaw: Boolean
-        get() = typeArguments.isEmpty() && type?.typeParameters?.isEmpty() != false
+        get() = typeArguments.isEmpty()
+            && type?.typeParameters?.isEmpty() != false
 
-    override fun equals(other: Any?) =
-        if (other !is ApiTypeUsage) false
-        else Objects.equals(sourceName, other.sourceName)
-            && Objects.equals(isNullable, other.isNullable)
-            && Objects.equals(typeArguments, other.typeArguments)
-            && Objects.equals(bounds, other.bounds)
-            && Objects.equals(isRaw, other.isRaw)
-
-    override fun hashCode() =
-        Objects.hash(sourceName, isNullable, typeArguments, bounds, isRaw)
+    val key: Int
+        get() = Objects.hash(
+            sourceName,
+            isNullable,
+            typeArguments.map { it.key },
+            bounds.map { it.key },
+            isRaw)
 }
 
 
@@ -264,7 +261,8 @@ fun ApiTypeProvider.Context.apiTypeUsageFor(
     bounds: List<TypeSignatureVisitor> = emptyList()
 ): ApiTypeUsage =
 
-    sourceNameOfBinaryName(binaryName).let { sourceName ->
+    if (binaryName == "?") starProjectionTypeUsage
+    else sourceNameOfBinaryName(binaryName).let { sourceName ->
         ApiTypeUsage(
             sourceName,
             isNullable,
@@ -272,6 +270,15 @@ fun ApiTypeProvider.Context.apiTypeUsageFor(
             typeArguments.map { apiTypeUsageFor(it.binaryName, typeArguments = it.typeArguments) },
             bounds.map { apiTypeUsageFor(it.binaryName, typeArguments = it.typeArguments) })
     }
+
+
+internal
+val ApiTypeUsage.isStarProjectionTypeUsage
+    get() = this === starProjectionTypeUsage
+
+
+internal
+val starProjectionTypeUsage = ApiTypeUsage("*")
 
 
 private
