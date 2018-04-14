@@ -320,7 +320,7 @@ private
 fun List<ApiTypeUsage>.rawTypesToStarProjections(type: ApiType? = null): List<ApiTypeUsage> =
     when {
         isNotEmpty() -> this
-        type?.typeParameters?.isNotEmpty() == true -> Array(type.typeParameters.size) { starProjectionTypeUsage }.toList()
+        type?.typeParameters?.isNotEmpty() == true -> List(type.typeParameters.size) { starProjectionTypeUsage }
         else -> emptyList()
     }
 
