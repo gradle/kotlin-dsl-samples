@@ -18,7 +18,9 @@ tasks.withType<KotlinCompile> {
     }
 }
 
-(tasks.findByName("test") as Test).useJUnitPlatform()
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
 
 repositories {
     mavenCentral()
