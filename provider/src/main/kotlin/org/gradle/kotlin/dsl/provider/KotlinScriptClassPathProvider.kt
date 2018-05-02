@@ -23,6 +23,7 @@ import org.gradle.api.artifacts.SelfResolvingDependency
 
 import org.gradle.api.internal.ClassPathRegistry
 import org.gradle.api.internal.artifacts.dsl.dependencies.DependencyFactory
+import org.gradle.api.internal.classpath.ModuleRegistry
 import org.gradle.api.internal.initialization.ClassLoaderScope
 
 import org.gradle.internal.classloader.ClasspathUtil.getClasspath
@@ -68,6 +69,7 @@ typealias JarsProvider = () -> Collection<File>
 
 class KotlinScriptClassPathProvider(
     val classPathRegistry: ClassPathRegistry,
+    val moduleRegistry: ModuleRegistry,
     val gradleApiJarsProvider: JarsProvider,
     val jarCache: JarCache,
     val progressMonitorProvider: JarGenerationProgressMonitorProvider
@@ -114,13 +116,13 @@ class KotlinScriptClassPathProvider(
     private
     fun gradleKotlinDslExtensions(): File =
         produceFrom("kotlin-dsl-extensions") { outputFile, onProgress ->
-            generateApiExtensionsJar(outputFile, gradleJars, onProgress)
+            generateApiExtensionsJar(outputFile, gradleJars + gradleApiParameterNamesJar, onProgress)
         }
 
     private
     fun produceFrom(id: String, generate: JarGeneratorWithProgress): File =
         jarCache(id) { outputFile ->
-            progressMonitorFor(outputFile, 1).use { progressMonitor ->
+            progressMonitorFor(outputFile, 3).use { progressMonitor ->
                 generateAtomically(outputFile, { generate(it, progressMonitor::onProgress) })
             }
         }
@@ -152,6 +154,11 @@ class KotlinScriptClassPathProvider(
     val gradleJars by lazy {
         classPathRegistry.getClassPath(gradleApiNotation.name).asFiles
     }
+
+    private
+    val gradleApiParameterNamesJar by lazy {
+        moduleRegistry.getExternalModule(gradleApiParameterNamesModule).classpath.asFiles.single()
+    }
 }
 
 
@@ -167,6 +174,10 @@ fun DependencyFactory.gradleApi(): Dependency =
 
 private
 val gradleApiNotation = DependencyFactory.ClassPathNotation.GRADLE_API
+
+
+private
+const val gradleApiParameterNamesModule = "gradle-api-parameter-names"
 
 
 private

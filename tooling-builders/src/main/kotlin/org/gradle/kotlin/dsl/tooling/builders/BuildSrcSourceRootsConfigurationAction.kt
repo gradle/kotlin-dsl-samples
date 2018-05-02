@@ -95,7 +95,7 @@ open class GenerateSourceRootsFile : DefaultTask() {
 
     @get:Input
     @get:PathSensitive(PathSensitivity.NONE)
-    val sourceRoots = project.objects.listProperty<String>()
+    val sourceRoots = project.objects.listProperty(String::class.java)
 
     @get:OutputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)

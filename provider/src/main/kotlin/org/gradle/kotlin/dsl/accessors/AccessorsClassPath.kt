@@ -26,11 +26,10 @@ import org.gradle.internal.classpath.DefaultClassPath
 
 import org.gradle.kotlin.dsl.cache.ScriptCache
 import org.gradle.kotlin.dsl.codegen.fileHeader
+import org.gradle.kotlin.dsl.support.ClassBytesRepository
 import org.gradle.kotlin.dsl.support.compileToJar
 import org.gradle.kotlin.dsl.support.loggerFor
 import org.gradle.kotlin.dsl.support.serviceOf
-
-import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 
 import org.jetbrains.org.objectweb.asm.ClassReader
 import org.jetbrains.org.objectweb.asm.ClassVisitor
@@ -45,7 +44,6 @@ import java.io.Closeable
 import java.io.File
 
 import java.util.*
-import java.util.jar.JarFile
 
 
 fun accessorsClassPathFor(project: Project, classPath: ClassPath) =
@@ -157,10 +155,6 @@ fun availableProjectSchemaFor(projectSchema: ProjectSchema<String>, classPath: C
 
 
 private
-typealias ClassFileIndex = (String) -> ByteArray?
-
-
-private
 data class TypeAccessibilityInfo(
     val inaccessibilityReasons: List<InaccessibilityReason>,
     val hasTypeParameter: Boolean = false
@@ -171,13 +165,14 @@ internal
 class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
 
     private
-    val classPathIndex = classPath.asFiles.map { classFileIndexFor(it) }
-
-    private
-    val openJars = mutableMapOf<File, JarFile>()
-
-    private
     val typeAccessibilityInfoPerClass = mutableMapOf<String, TypeAccessibilityInfo>()
+
+    private
+    val classBytesRepository = ClassBytesRepository(classPath)
+
+    override fun close() {
+        classBytesRepository.close()
+    }
 
     fun accessibilityForType(type: String): TypeAccessibility =
         inaccessibilityReasonsFor(classNamesFromTypeString(type)).let { inaccessibilityReasons ->
@@ -208,7 +203,8 @@ class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
 
     private
     fun loadAccessibilityInfoFor(className: String): TypeAccessibilityInfo {
-        val classBytes = classBytesFor(className) ?: return TypeAccessibilityInfo(listOf(nonAvailable(className)))
+        val classBytes = classBytesRepository.classBytesFor(className)
+            ?: return TypeAccessibilityInfo(listOf(nonAvailable(className)))
         val visitor = HasTypeParameterClassVisitor()
         val classReader = ClassReader(classBytes)
         val access = classReader.access
@@ -221,44 +217,6 @@ class TypeAccessibilityProvider(classPath: ClassPath) : Closeable {
             }),
             visitor.hasTypeParameters
         )
-    }
-
-    private
-    fun classBytesFor(className: String): ByteArray? {
-        val classFilePath = className.replace(".", "/") + ".class"
-        return classPathIndex.firstNotNullResult { it(classFilePath) }
-    }
-
-    private
-    fun classFileIndexFor(jarOrDir: File): ClassFileIndex =
-        when {
-            jarOrDir.isFile -> jarIndexFor(jarOrDir)
-            jarOrDir.isDirectory -> directoryIndexFor(jarOrDir)
-            else -> { _ -> null }
-        }
-
-    private
-    fun jarIndexFor(file: File): ClassFileIndex = { classFilePath ->
-        openJarFile(file).run {
-            getJarEntry(classFilePath)?.let { jarEntry ->
-                getInputStream(jarEntry).use { jarInput ->
-                    jarInput.readBytes()
-                }
-            }
-        }
-    }
-
-    private
-    fun openJarFile(file: File) =
-        openJars.computeIfAbsent(file, ::JarFile)
-
-    override fun close() {
-        openJars.values.forEach(JarFile::close)
-    }
-
-    private
-    fun directoryIndexFor(baseDir: File): ClassFileIndex = { classFilePath ->
-        File(baseDir, classFilePath).takeIf { it.isFile }?.readBytes()
     }
 }
 

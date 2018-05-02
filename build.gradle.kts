@@ -1,4 +1,5 @@
 import groovy.lang.GroovyObject
+import org.gradle.util.GradleVersion
 
 import org.jetbrains.gradle.ext.ProjectSettings
 
@@ -112,6 +113,12 @@ val copyCurrentDistro by task<Copy> {
     from(gradle.gradleHomeDir)
     into(customInstallationDir)
     exclude("**/*kotlin*")
+
+    // TODO:pm remove SPIKE
+    from(file("gradle/gradle-api-parameter-names-SPIKE.jar")) {
+        into("lib")
+        rename { it.replace("SPIKE", GradleVersion.current().baseVersion.version) }
+    }
 
     // preserve last modified date on each file to make it easier
     // to check which files were patched by next step

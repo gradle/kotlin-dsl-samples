@@ -57,14 +57,24 @@ class ApiExtensionsJarGenerator(
     fun compileExtensionsTo(outputDir: File, gradleJars: Collection<File>) {
         compiler.compileToDirectory(
             outputDir,
-            listOf(builtinPluginIdExtensionsSourceFileFor(gradleJars, outputDir)),
+            listOf(
+                builtinPluginIdExtensionsSourceFileFor(gradleJars, outputDir),
+                gradleApiExtensionsSourceFileFor(gradleJars, outputDir)),
             classPath = gradleJars)
+        onProgress()
     }
 
     private
     fun builtinPluginIdExtensionsSourceFileFor(gradleJars: Iterable<File>, outputDir: File) =
-        generatedSourceFile(outputDir, "BuiltinPluginIdExtensions.kt").apply {
-            writeBuiltinPluginIdExtensionsTo(this, gradleJars)
+        generatedSourceFile(outputDir, "BuiltinPluginIdExtensions.kt").also {
+            writeBuiltinPluginIdExtensionsTo(it, gradleJars)
+            onProgress()
+        }
+
+    private
+    fun gradleApiExtensionsSourceFileFor(gradleJars: Iterable<File>, outputDir: File) =
+        generatedSourceFile(outputDir, "GradleApiGeneratedExtensions.kt").also {
+            writeGradleApiExtensionsTo(it, gradleJars)
             onProgress()
         }
 
@@ -76,7 +86,7 @@ class ApiExtensionsJarGenerator(
 
     private
     fun sourceFileName(fileName: String) =
-        packageDir + "/" + fileName
+        "$packageDir/$fileName"
 
     private
     val packageDir = packageName.replace('.', '/')
@@ -86,10 +96,19 @@ class ApiExtensionsJarGenerator(
 internal
 object StandardKotlinFileCompiler : KotlinFileCompiler {
     override fun compileToDirectory(outputDirectory: File, sourceFiles: Collection<File>, classPath: Collection<File>) {
-        compileToDirectory(
+
+        val success = compileToDirectory(
             outputDirectory,
             sourceFiles,
             loggerFor<StandardKotlinFileCompiler>(),
             classPath = classPath)
+
+        if (!success) {
+            throw IllegalStateException(
+                "Unable to compile Gradle Kotlin DSL API Extensions Jar\n" +
+                    "\tFrom:\n" +
+                    sourceFiles.joinToString("\n\t- ", prefix = "\t- ", postfix = "\n") +
+                    "\tSee compiler logs for details.")
+        }
     }
 }
