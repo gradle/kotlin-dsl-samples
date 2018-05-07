@@ -7,12 +7,12 @@ plugins {
 
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
     }
 
     dependencies {
-        classpath(kotlin("gradle-plugin", "1.2.31"))
-        classpath(kotlin("native-gradle-plugin", "0.6.2"))
+        classpath(kotlin("gradle-plugin", "1.2.41"))
+        classpath(kotlin("native-gradle-plugin", "0.7"))
     }
 }
 
@@ -24,7 +24,6 @@ allprojects {
     buildscript {
         repositories {
             jcenter()
-            mavenCentral()
             maven("https://plugins.gradle.org/m2/")
             maven("http://kotlin.bintray.com/kotlinx")
             maven("https://dl.bintray.com/jetbrains/kotlin-native-dependencies")
@@ -32,7 +31,6 @@ allprojects {
     }
 
     repositories {
-        mavenCentral()
         jcenter()
     }
 
@@ -63,5 +61,5 @@ allprojects {
 
 tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.ALL
-    gradleVersion = "4.6"
+    gradleVersion = "4.7"
 }

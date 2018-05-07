@@ -1,24 +1,26 @@
-import com.moowork.gradle.node.npm.NpmTask
-import com.moowork.gradle.node.task.NodeTask
+import com.liferay.gradle.plugins.node.tasks.ExecuteNodeScriptTask
+import com.liferay.gradle.plugins.node.tasks.ExecuteNpmTask
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
     id("kotlin-platform-js")
-    id("com.moowork.node") version "1.2.0"
+    id("com.liferay.node") version "4.3.3"
 }
 
 dependencies {
-    "expectedBy"(project(":platform-common"))
-    "implementation"(kotlin("stdlib-js"))
-    "testCompile"(kotlin("test-js"))
+    expectedBy(project(":platform-common"))
+    implementation(kotlin("stdlib-js"))
+    testCompile(kotlin("test-js"))
+}
+
+configurations {
+    node {
+        isDownload = true
+        setNodeVersion("9.11.1")
+    }
 }
 
 tasks {
-
-    node {
-        version = "9.9.0"
-        download = true
-    }
 
     "compileKotlin2Js"(Kotlin2JsCompile::class) {
         kotlinOptions {
@@ -46,15 +48,15 @@ tasks {
         into("$buildDir/node_modules")
     }
 
-    "installQunit"(NpmTask::class) {
+    "installQunit"(ExecuteNpmTask::class) {
         inputs.property("qunitVersion", "2.6.0")
         outputs.dir(file("node_modules/qunit"))
         setArgs(listOf("install", "qunit@2.6.0"))
     }
 
-    "runQunit"(NodeTask::class) {
+    "runQunit"(ExecuteNodeScriptTask::class) {
         dependsOn("compileTestKotlin2Js", "populateNodeModules", "installQunit")
-        setScript(file("node_modules/qunit/bin/qunit"))
+        setScriptFile(file("node_modules/qunit/bin/qunit"))
         val kotlin2JsCompile = tasks["compileTestKotlin2Js"] as Kotlin2JsCompile
         setArgs(listOf(projectDir.toPath().relativize(file(kotlin2JsCompile.outputFile).toPath())))
     }
