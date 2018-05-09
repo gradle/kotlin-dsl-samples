@@ -16,6 +16,7 @@
 package org.gradle.kotlin.dsl
 
 import org.gradle.api.Task
+import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.tasks.TaskContainer
 
 
@@ -25,3 +26,40 @@ import org.gradle.api.tasks.TaskContainer
  */
 inline fun <reified T : Task> TaskContainer.create(name: String, vararg arguments: Any) =
     create(name, T::class.java, *arguments)
+
+
+/**
+ * Locates a task by name and casts it to the expected type [T].
+ *
+ * If a task with the given [name] is not found, [UnknownDomainObjectException] is thrown.
+ * If the task is found but cannot be cast to the expected type [T], [IllegalStateException] is thrown.
+ *
+ * @param name task name
+ * @return task, never null
+ * @throws [UnknownDomainObjectException] When the given task is not found.
+ * @throws [IllegalStateException] When the given task cannot be cast to the expected type.
+ */
+@Suppress("extension_shadowed_by_member")
+inline fun <reified T : Any> TaskContainer.getByName(name: String) =
+    getByName(name).let {
+        it as? T
+            ?: throw IllegalStateException(
+                "Task '$name' of type '${it::class.java.name}' cannot be cast to '${T::class.qualifiedName}'.")
+    }
+
+
+/**
+ * Locates a task by name, casts it to the expected type [T] then configures it.
+ *
+ * If a task with the given [name] is not found, [UnknownDomainObjectException] is thrown.
+ * If the task is found but cannot be cast to the expected type [T], [IllegalStateException] is thrown.
+ *
+ * @param name task name
+ * @param configure configuration action to apply to the task before returning it
+ * @return task, never null
+ * @throws [UnknownDomainObjectException] When the given task is not found.
+ * @throws [IllegalStateException] When the given task cannot be cast to the expected type.
+ */
+@Suppress("extension_shadowed_by_member")
+inline fun <reified T : Any> TaskContainer.getByName(name: String, configure: T.() -> Unit) =
+    getByName<T>(name).also(configure)
