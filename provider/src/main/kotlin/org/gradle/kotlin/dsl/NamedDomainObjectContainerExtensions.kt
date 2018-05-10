@@ -57,8 +57,24 @@ class NamedDomainObjectContainerScope<T : Any>(
     /**
      * @see [NamedDomainObjectContainer.maybeCreate]
      */
+    @JvmName("invokeReified")
+    inline
+    operator fun <reified U : T> String.invoke(configuration: U.() -> Unit): U =
+        this(U::class).apply(configuration)
+
+    /**
+     * @see [NamedDomainObjectContainer.maybeCreate]
+     */
     operator fun String.invoke(): T =
         container.maybeCreate(this)
+
+    /**
+     * @see [NamedDomainObjectContainer.maybeCreate]
+     */
+    @JvmName("invokeReified")
+    inline
+    operator fun <reified U : T> String.invoke(): U =
+        this(U::class)
 
     /**
      * @see [PolymorphicDomainObjectContainer.maybeCreate]
@@ -79,10 +95,22 @@ class NamedDomainObjectContainerScope<T : Any>(
         polymorphicDomainObjectContainer().creating(type)
 
     /**
+     * Provides a property delegate that creates elements of the given [U].
+     */
+    inline fun <reified U : T> creating() =
+        creating(U::class)
+
+    /**
      * Provides a property delegate that creates elements of the given [type] with the given [configuration].
      */
     fun <U : T> creating(type: KClass<U>, configuration: U.() -> Unit) =
         polymorphicDomainObjectContainer().creating(type, configuration)
+
+    /**
+     * Provides a property delegate that creates elements of the given [U] with the given [configuration].
+     */
+    inline fun <reified U : T> creating(noinline configuration: U.() -> Unit) =
+        creating(U::class, configuration)
 
     /**
      * Provides a property delegate that gets elements of the given [type].
@@ -91,10 +119,30 @@ class NamedDomainObjectContainerScope<T : Any>(
         polymorphicDomainObjectContainer().getting(type)
 
     /**
+     * Provides a property delegate that gets elements of the given [U].
+     */
+    inline
+    fun <reified U : T> getting() =
+        getting(U::class)
+
+    /**
+     * Provides a property delegate that gets elements of [T].
+     */
+    fun getting(configuration: T.() -> Unit) =
+        polymorphicDomainObjectContainer().getting(configuration)
+
+    /**
      * Provides a property delegate that gets elements of the given [type] and applies the given [configuration].
      */
     fun <U : T> getting(type: KClass<U>, configuration: U.() -> Unit) =
         polymorphicDomainObjectContainer().getting(type, configuration)
+
+    /**
+     * Provides a property delegate that gets elements of the given type [U] and applies the given [configuration].
+     */
+    inline
+    fun <reified U : T> getting(noinline configuration: U.() -> Unit) =
+        getting(U::class, configuration)
 
     private
     fun polymorphicDomainObjectContainer() =
