@@ -1,5 +1,4 @@
 import org.gradle.kotlin.dsl.kotlin
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     base
@@ -21,15 +20,6 @@ allprojects {
     group = "multiplatform"
     version = "1.0-SNAPSHOT"
 
-    buildscript {
-        repositories {
-            jcenter()
-            maven("https://plugins.gradle.org/m2/")
-            maven("http://kotlin.bintray.com/kotlinx")
-            maven("https://dl.bintray.com/jetbrains/kotlin-native-dependencies")
-        }
-    }
-
     repositories {
         jcenter()
     }
@@ -39,15 +29,6 @@ allprojects {
             testLogging {
                 showStandardStreams = true
                 events("passed", "failed")
-            }
-        }
-
-        withType<KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = "1.8"
-                javaParameters = true
-                verbose = true
-                freeCompilerArgs = listOf("-Xjsr305=strict")
             }
         }
     }

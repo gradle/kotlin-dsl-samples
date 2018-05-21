@@ -1,7 +1,7 @@
-import org.gradle.internal.impldep.bsh.commands.dir
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("kotlin-platform-jvm")
+    kotlin("platform.jvm")
 }
 
 dependencies {
@@ -14,5 +14,14 @@ dependencies {
 tasks {
     "test"(Test::class) {
         useTestNG()
+    }
+
+    withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "1.8"
+            javaParameters = true
+            verbose = true
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+        }
     }
 }

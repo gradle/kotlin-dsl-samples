@@ -3,7 +3,7 @@ import com.liferay.gradle.plugins.node.tasks.ExecuteNpmTask
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    id("kotlin-platform-js")
+    kotlin("platform.js")
     id("com.liferay.node") version "4.3.3"
 }
 

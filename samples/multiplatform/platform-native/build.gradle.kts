@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.plugin.KonanArtifactContainer
 
-apply {
-    plugin("konan")
+plugins {
+    id("konan")
 }
 
 configure<KonanArtifactContainer> {
@@ -21,7 +21,7 @@ configure<KonanArtifactContainer> {
 }
 
 dependencies {
-    "expectedBy"(project(":platform-common"))
+    expectedBy(project(":platform-common"))
 }
 
 tasks {

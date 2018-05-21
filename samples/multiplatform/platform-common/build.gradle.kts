@@ -1,5 +1,5 @@
 plugins {
-    id("kotlin-platform-common")
+    kotlin("platform.common")
 }
 
 dependencies {
