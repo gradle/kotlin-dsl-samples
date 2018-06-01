@@ -120,7 +120,7 @@ class KotlinDslPluginTest : AbstractPluginTest() {
 
             gradlePlugin {
                 (plugins) {
-                    "myPlugin" {
+                    create("myPlugin") {
                         id = "my-plugin"
                         implementationClass = "my.MyPlugin"
                     }

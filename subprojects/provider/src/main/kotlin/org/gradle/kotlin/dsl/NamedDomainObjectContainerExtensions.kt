@@ -59,28 +59,28 @@ class NamedDomainObjectContainerScope<T : Any>(
         polymorphicDomainObjectContainer().containerWithType(type)
 
     /**
-     * @see [NamedDomainObjectContainer.maybeCreate]
+     * @see [NamedDomainObjectContainer.getByName]
      */
     inline operator fun String.invoke(configuration: T.() -> Unit): T =
         this().apply(configuration)
 
     /**
-     * @see [NamedDomainObjectContainer.maybeCreate]
+     * @see [NamedDomainObjectContainer.getByName]
      */
     operator fun String.invoke(): T =
-        container.maybeCreate(this)
+        container.getByName(this)
 
     /**
-     * @see [PolymorphicDomainObjectContainer.maybeCreate]
+     * @see [PolymorphicDomainObjectContainer.getByName]
      */
     inline operator fun <U : T> String.invoke(type: KClass<U>, configuration: U.() -> Unit): U =
         this(type).apply(configuration)
 
     /**
-     * @see [PolymorphicDomainObjectContainer.maybeCreate]
+     * @see [PolymorphicDomainObjectContainer.getByName]
      */
     operator fun <U : T> String.invoke(type: KClass<U>): U =
-        polymorphicDomainObjectContainer().maybeCreate(this, type.java)
+        polymorphicDomainObjectContainer().getByName(this, type)
 
     /**
      * Cast this to [PolymorphicDomainObjectContainer] or throw [IllegalArgumentException].

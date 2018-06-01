@@ -96,21 +96,22 @@ class NamedDomainObjectContainerExtensionsTest {
         val alice = DomainObject()
         val bob = DomainObject()
         val container = mock<NamedDomainObjectContainer<DomainObject>> {
-            on { maybeCreate("alice") } doReturn alice
-            on { maybeCreate("bob") } doReturn bob
+            on { create(argThat { equals("alice") }, check<Action<DomainObject>> { it(alice) }) } doReturn alice
+            on { getByName("alice") } doReturn alice
+            on { create(argThat { equals("bob") }, check<Action<DomainObject>> { it(bob) }) } doReturn bob
         }
 
         container {
-            "alice" {
-                foo = "alice-foo"
+            create("alice") {
+                it.foo = "alice-foo"
             }
             "alice" {
                 // will configure the same object as the previous block
                 bar = true
             }
-            "bob" {
-                foo = "bob-foo"
-                bar = false
+            create("bob") {
+                it.foo = "bob-foo"
+                it.bar = false
             }
         }
 
@@ -136,24 +137,38 @@ class NamedDomainObjectContainerExtensionsTest {
         val bob = DomainObjectBase.Bar()
         val default: DomainObjectBase = DomainObjectBase.Default()
         val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
-            on { maybeCreate("alice", DomainObjectBase.Foo::class.java) } doReturn alice
-            on { maybeCreate("bob", DomainObjectBase.Bar::class.java) } doReturn bob
-            on { maybeCreate("jim") } doReturn default
-            on { maybeCreate("steve") } doReturn default
+            on { create(argThat { equals("alice") }, argThat { equals(DomainObjectBase.Foo::class.java) }, check<Action<DomainObjectBase.Foo>> { it(alice) }) } doReturn alice
+            on { create("bob", DomainObjectBase.Bar::class.java) } doReturn bob
+            on { create(argThat { equals("jim") }, any<Action<DomainObjectBase>>()) } doReturn default
+            on { create("steve") } doReturn default
+            on { getByName("alice") } doReturn alice
+            on { getByName("bob") } doReturn bob
+            on { getByName("jim") } doReturn default
+            on { getByName("steve") } doReturn default
         }
 
         container {
-            val a = "alice"(DomainObjectBase.Foo::class) {
+            val a = create<DomainObjectBase.Foo>("alice") {
                 foo = "foo"
             }
-            val b = "bob"(type = DomainObjectBase.Bar::class)
-            val j = "jim" {}
-            val s = "steve"() // can invoke without a block, but must invoke
+            val b = create<DomainObjectBase.Bar>("bob")
+            val j = create("jim") {}
+            val s = create("steve")
 
             assertThat(a, sameInstance(alice))
             assertThat(b, sameInstance(bob))
             assertThat(j, sameInstance(default))
             assertThat(s, sameInstance(default))
+
+            val ga = "alice"(DomainObjectBase.Foo::class) {}
+            val gb = "bob"(DomainObjectBase.Bar::class) {}
+            val gj = "jim"(DomainObjectBase::class) {}
+            val gs = "steve"() // can invoke without a block, but must invoke
+
+            assertThat(ga, sameInstance(alice))
+            assertThat(gb, sameInstance(bob))
+            assertThat(gj, sameInstance(default))
+            assertThat(gs, sameInstance(default))
         }
 
         assertThat(
@@ -170,9 +185,8 @@ class NamedDomainObjectContainerExtensionsTest {
 
         val clean = mock<Delete>()
         val tasks = mock<TaskContainer> {
-            on { create(argThat { equals("clean") }, argThat { equals(Delete::class.java) }, any<Action<Delete>>()) } doReturn clean
+            on { create(argThat { equals("clean") }, argThat { equals(Delete::class.java) }, check<Action<Delete>> { it(clean) }) } doReturn clean
             on { getByName("clean") } doReturn clean
-            on { maybeCreate("clean", Delete::class.java) } doReturn clean
         }
 
         tasks {
@@ -192,6 +206,7 @@ class NamedDomainObjectContainerExtensionsTest {
         }
 
         inOrder(clean) {
+            verify(clean).delete("some")
             verify(clean).delete("stuff")
             verify(clean).delete("things")
             verify(clean).delete("build")
