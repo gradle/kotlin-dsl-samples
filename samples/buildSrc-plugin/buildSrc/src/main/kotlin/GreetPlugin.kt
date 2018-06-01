@@ -9,7 +9,7 @@ class GreetPlugin : Plugin<Project> {
     override fun apply(project: Project): Unit = project.run {
 
         tasks {
-            "greet" {
+            create("greet") {
                 group = "sample"
                 description = "Prints a description of ${project.name}."
                 doLast {
