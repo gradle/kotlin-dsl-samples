@@ -141,10 +141,8 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
         buildFile.appendText("""
 
             (`the books`) {
-                create("quickStart") {
-                }
-                create("userGuide") {
-                }
+                create("quickStart")
+                create("userGuide")
             }
 
             tasks {
