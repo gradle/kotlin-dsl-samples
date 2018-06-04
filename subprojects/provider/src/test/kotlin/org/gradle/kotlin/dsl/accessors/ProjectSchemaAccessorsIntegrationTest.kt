@@ -141,14 +141,12 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
         buildFile.appendText("""
 
             (`the books`) {
-                "quickStart" {
-                }
-                "userGuide" {
-                }
+                create("quickStart")
+                create("userGuide")
             }
 
             tasks {
-                "books" {
+                create("books") {
                     doLast { println(`the books`.joinToString { it.name }) }
                 }
             }
@@ -345,7 +343,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
 
             gradlePlugin {
                 (plugins) {
-                    "mine" {
+                    create("mine") {
                         id = "mine"
                         implementationClass = "foo.FooPlugin"
                     }
@@ -393,7 +391,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
             }
             gradlePlugin {
                 (plugins) {
-                    "my-plugin" {
+                    create("my-plugin") {
                         id = "my-plugin"
                         implementationClass = "plugins.MyPlugin"
                     }
@@ -481,7 +479,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
             }
             gradlePlugin {
                 (plugins) {
-                    "my-plugin" {
+                    create("my-plugin") {
                         id = "my-plugin"
                         implementationClass = "plugins.MyPlugin"
                     }

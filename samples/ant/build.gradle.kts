@@ -2,7 +2,7 @@
 // See https://docs.gradle.org/current/userguide/ant.html
 
 tasks {
-    "hello" {
+    create("hello") {
         group = "sample"
         doLast {
             ant.withGroovyBuilder {
@@ -11,7 +11,7 @@ tasks {
         }
     }
 
-    "zip" {
+    create("zip") {
         group = "sample"
         doLast {
             ant.withGroovyBuilder {
@@ -40,7 +40,7 @@ dependencies {
 }
 
 tasks {
-    "pmd" {
+    create("pmd") {
         group = "sample"
         doLast {
             ant.withGroovyBuilder {

@@ -9,7 +9,7 @@ version = "1.0"
 
 gradlePlugin {
     (plugins) {
-        "myPlugin" {
+        create("myPlugin") {
             id = "my-plugin"
             implementationClass = "plugin.MyPlugin"
         }

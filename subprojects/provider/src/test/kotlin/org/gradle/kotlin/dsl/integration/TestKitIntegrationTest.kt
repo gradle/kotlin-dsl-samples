@@ -35,7 +35,7 @@ class TestKitIntegrationTest : AbstractIntegrationTest() {
 
             gradlePlugin {
                 (plugins) {
-                    "test" {
+                    create("test") {
                         id = "test"
                         implementationClass = "plugin.TestPlugin"
                     }

@@ -4,14 +4,14 @@ val groovySum: groovy.lang.Closure<Any?> by extra
 
 tasks {
 
-    "stringSum" {
+    create("stringSum") {
         group = "My"
         description = "groovySum(\"Groovy\", \"Kotlin\")"
 
         doLast { println(groovySum("Groovy", "Kotlin")) }
     }
 
-    "intSum" {
+    create("intSum") {
         group = "My"
         description = "groovySum(33, 11)"
 
