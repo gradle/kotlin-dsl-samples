@@ -160,6 +160,69 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `plugin can define multiple NamedDomainObjectContainer extensions`() {
+        withKotlinBuildSrc()
+
+        withFile("buildSrc/src/main/kotlin/my/DocumentationPlugin.kt", """
+            package my
+
+            import org.gradle.api.*
+
+            class DocumentationPlugin : Plugin<Project> {
+
+                override fun apply(project: Project) {
+                    val books = project.container(Book::class.java, ::Book)
+                    project.extensions.add("books", books)
+                    val articles = project.container(Article::class.java, ::Article)
+                    project.extensions.add("articles", articles)
+                }
+            }
+
+            data class Book(val name: String)
+            data class Article(val name: String)
+
+        """)
+
+        val buildFile = withBuildScript("""
+
+            apply<my.DocumentationPlugin>()
+
+        """)
+
+
+        println(
+            build("kotlinDslAccessorsSnapshot").output)
+
+
+        buildFile.appendText("""
+            (books) {
+                "quickStart" { }
+                "userGuide" { }
+            }
+            (articles) {
+                "kotlinDslMigrationGuide" { }
+            }
+
+            tasks {
+                "show" {
+                    doLast { println("books: " + books.joinToString { it.name }) }
+                    doLast { println("articles: " + articles.joinToString { it.name }) }
+                }
+            }
+
+        """)
+
+
+        val output = build("show").output
+        assertThat(
+            output,
+            containsString("books: quickStart, userGuide"))
+        assertThat(
+            output,
+            containsString("articles: kotlinDslMigrationGuide"))
+    }
+
+    @Test
     fun `can access extensions registered by declared plugins via jit accessor`() {
 
         withBuildScript("""
@@ -564,7 +627,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractIntegrationTest() {
     fun hasAccessorsSource() =
         hasItem(
             matching<File>({ appendText("accessors source") }) {
-                File(this, "org/gradle/kotlin/dsl/accessors.kt").isFile
+                File(this, "org/gradle/kotlin/dsl/accessors1.kt").isFile
             })
 
     private

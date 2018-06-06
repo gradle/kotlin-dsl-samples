@@ -19,25 +19,20 @@ package org.gradle.kotlin.dsl.accessors
 import org.gradle.api.Project
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.reflect.TypeOf
-
 import org.gradle.cache.internal.CacheKeyBuilder.CacheKeySpec
-
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
-
+import org.gradle.internal.concurrent.CompositeStoppable
 import org.gradle.kotlin.dsl.cache.ScriptCache
 import org.gradle.kotlin.dsl.codegen.fileHeader
 import org.gradle.kotlin.dsl.support.compileToJar
 import org.gradle.kotlin.dsl.support.loggerFor
 import org.gradle.kotlin.dsl.support.serviceOf
-
 import org.jetbrains.kotlin.metadata.ProtoBuf
 import org.jetbrains.kotlin.metadata.ProtoBuf.Visibility
 import org.jetbrains.kotlin.metadata.deserialization.Flags
 import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
-
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
-
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.ClassReader
 import org.jetbrains.org.objectweb.asm.ClassVisitor
@@ -46,13 +41,13 @@ import org.jetbrains.org.objectweb.asm.Opcodes.ACC_SYNTHETIC
 import org.jetbrains.org.objectweb.asm.Opcodes.ASM6
 import org.jetbrains.org.objectweb.asm.signature.SignatureReader
 import org.jetbrains.org.objectweb.asm.signature.SignatureVisitor
-
-import java.io.BufferedWriter
 import java.io.Closeable
 import java.io.File
-
+import java.io.Writer
 import java.util.*
 import java.util.jar.JarFile
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 
 fun accessorsClassPathFor(project: Project, classPath: ClassPath) =
@@ -123,10 +118,9 @@ fun scriptCacheOf(project: Project) = project.serviceOf<ScriptCache>()
 
 private
 fun buildAccessorsJarFor(projectSchema: ProjectSchema<String>, classPath: ClassPath, outputDir: File) {
-    val sourceFile = File(accessorsSourceDir(outputDir), "org/gradle/kotlin/dsl/accessors.kt")
     val availableSchema = availableProjectSchemaFor(projectSchema, classPath)
-    writeAccessorsTo(sourceFile, availableSchema)
-    require(compileToJar(accessorsJar(outputDir), listOf(sourceFile), logger, classPath.asFiles), {
+    val sourceFiles = writeAccessorsTo( availableSchema, accessorsSourceDir(outputDir))
+    require(compileToJar(accessorsJar(outputDir), sourceFiles, logger, classPath.asFiles), {
         """
             Failed to compile accessors.
 
@@ -522,34 +516,42 @@ fun enabledJitAccessors(project: Project) =
 
 
 private
-fun writeAccessorsTo(outputFile: File, projectSchema: ProjectSchema<TypeAccessibility>): File =
-    outputFile.apply {
-        parentFile.mkdirs()
-        bufferedWriter().use { writer ->
-            writeAccessorsFor(projectSchema, writer)
+fun writeAccessorsTo(projectSchema: ProjectSchema<TypeAccessibility>, outputDir: File): List<File> {
+    var counter = 0
+    val sourceFiles = ArrayList<File>()
+    val writers = HashMap<String, Writer>()
+    try {
+        projectSchema.forEachAccessor { target, accessor ->
+            var writer = writers[target]
+            if (writer == null) {
+                val sourceFile = File(outputDir, "org/gradle/kotlin/dsl/accessors${counter++}.kt")
+                sourceFiles.add(sourceFile)
+                sourceFile.parentFile.mkdirs()
+                writer = sourceFile.bufferedWriter()
+                writers.put(target, writer)
+                writer.apply {
+                    write(fileHeader)
+                    newLine()
+                    appendln("import org.gradle.api.Project")
+                    appendln("import org.gradle.api.artifacts.Configuration")
+                    appendln("import org.gradle.api.artifacts.ConfigurationContainer")
+                    appendln("import org.gradle.api.artifacts.Dependency")
+                    appendln("import org.gradle.api.artifacts.ExternalModuleDependency")
+                    appendln("import org.gradle.api.artifacts.ModuleDependency")
+                    appendln("import org.gradle.api.artifacts.dsl.DependencyHandler")
+                    newLine()
+                    appendln("import org.gradle.kotlin.dsl.*")
+                    newLine()
+                }
+            }
+            writer.apply {
+                appendln(accessor)
+            }
         }
+    } finally {
+        CompositeStoppable.stoppable(writers.values).stop()
     }
-
-
-private
-fun writeAccessorsFor(projectSchema: ProjectSchema<TypeAccessibility>, writer: BufferedWriter) {
-    writer.apply {
-        write(fileHeader)
-        newLine()
-        appendln("import org.gradle.api.Project")
-        appendln("import org.gradle.api.artifacts.Configuration")
-        appendln("import org.gradle.api.artifacts.ConfigurationContainer")
-        appendln("import org.gradle.api.artifacts.Dependency")
-        appendln("import org.gradle.api.artifacts.ExternalModuleDependency")
-        appendln("import org.gradle.api.artifacts.ModuleDependency")
-        appendln("import org.gradle.api.artifacts.dsl.DependencyHandler")
-        newLine()
-        appendln("import org.gradle.kotlin.dsl.*")
-        newLine()
-        projectSchema.forEachAccessor {
-            appendln(it)
-        }
-    }
+    return sourceFiles
 }
 
 

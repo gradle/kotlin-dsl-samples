@@ -24,19 +24,19 @@ import org.jetbrains.kotlin.lexer.KtTokens
 
 
 internal
-fun ProjectSchema<TypeAccessibility>.forEachAccessor(action: (String) -> Unit) {
+fun ProjectSchema<TypeAccessibility>.forEachAccessor(action: (String, String) -> Unit) {
     val seen = SeenAccessorSpecs()
     extensions.mapNotNull(::typedAccessorSpec).forEach { spec ->
         extensionAccessorFor(spec)?.let { extensionAccessor ->
-            action(extensionAccessor)
+            action(spec.targetTypeAccess.type, extensionAccessor)
             seen.add(spec)
         }
     }
     conventions.mapNotNull(::typedAccessorSpec).filterNot(seen::hasConflict).forEach { spec ->
-        conventionAccessorFor(spec)?.let(action)
+        conventionAccessorFor(spec)?.let { action(spec.targetTypeAccess.type, it) }
     }
     configurations.map(::accessorNameSpec).forEach { spec ->
-        configurationAccessorFor(spec)?.let(action)
+        configurationAccessorFor(spec)?.let { action(spec.kotlinIdentifier, it) }
     }
 }
 
