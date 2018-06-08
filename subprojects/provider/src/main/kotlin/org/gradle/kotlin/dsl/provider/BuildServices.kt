@@ -16,49 +16,20 @@
 
 package org.gradle.kotlin.dsl.provider
 
-import org.gradle.api.internal.ClassPathRegistry
-import org.gradle.api.internal.artifacts.dsl.dependencies.DependencyFactory
-
-import org.gradle.cache.internal.GeneratedGradleJarCache
-
 import org.gradle.groovy.scripts.internal.ScriptSourceHasher
 
 import org.gradle.internal.classloader.ClasspathHasher
-
 import org.gradle.internal.logging.progress.ProgressLoggerFactory
 
 import org.gradle.kotlin.dsl.cache.ScriptCache
 import org.gradle.kotlin.dsl.support.EmbeddedKotlinProvider
 import org.gradle.kotlin.dsl.support.ImplicitImports
 
-import org.gradle.plugin.management.internal.autoapply.AutoAppliedPluginHandler
 import org.gradle.plugin.use.internal.PluginRequestApplicator
 
 
 internal
 object BuildServices {
-
-    @Suppress("unused")
-    fun createKotlinScriptClassPathProvider(
-        classPathRegistry: ClassPathRegistry,
-        dependencyFactory: DependencyFactory,
-        jarCache: GeneratedGradleJarCache,
-        progressLoggerFactory: ProgressLoggerFactory
-    ) =
-
-        KotlinScriptClassPathProvider(
-            classPathRegistry,
-            gradleApiJarsProviderFor(dependencyFactory),
-            versionedJarCacheFor(jarCache),
-            StandardJarGenerationProgressMonitorProvider(progressLoggerFactory))
-
-    @Suppress("unused")
-    fun createPluginRequestsHandler(
-        pluginRequestApplicator: PluginRequestApplicator,
-        autoAppliedPluginHandler: AutoAppliedPluginHandler
-    ) =
-
-        PluginRequestsHandler(pluginRequestApplicator, autoAppliedPluginHandler)
 
     @Suppress("unused")
     fun createClassPathModeExceptionCollector() =
@@ -93,13 +64,4 @@ object BuildServices {
             scriptCache,
             implicitImports,
             progressLoggerFactory)
-
-    private
-    fun versionedJarCacheFor(jarCache: GeneratedGradleJarCache): JarCache =
-        { id, creator -> jarCache["$id-$gradleKotlinDslVersion", creator] }
-
-    private
-    val gradleKotlinDslVersion by lazy {
-        this::class.java.`package`.implementationVersion
-    }
 }

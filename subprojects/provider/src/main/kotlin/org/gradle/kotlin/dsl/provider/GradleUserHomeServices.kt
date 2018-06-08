@@ -15,14 +15,37 @@
  */
 package org.gradle.kotlin.dsl.provider
 
-import org.gradle.cache.internal.CrossBuildInMemoryCacheFactory
+import org.gradle.api.internal.ClassPathRegistry
+import org.gradle.api.internal.artifacts.dsl.dependencies.DependencyFactory
+
+import org.gradle.cache.internal.GeneratedGradleJarCache
+
+import org.gradle.internal.logging.progress.ProgressLoggerFactory
 
 
 internal
 object GradleUserHomeServices {
 
     @Suppress("unused")
-    fun createKotlinScriptClassloadingCache(
-        cacheFactory: CrossBuildInMemoryCacheFactory
-    ) = KotlinScriptClassloadingCache(cacheFactory)
+    fun createKotlinScriptClassPathProvider(
+        classPathRegistry: ClassPathRegistry,
+        dependencyFactory: DependencyFactory,
+        jarCache: GeneratedGradleJarCache,
+        progressLoggerFactory: ProgressLoggerFactory
+    ) =
+
+        KotlinScriptClassPathProvider(
+            classPathRegistry,
+            gradleApiJarsProviderFor(dependencyFactory),
+            versionedJarCacheFor(jarCache),
+            StandardJarGenerationProgressMonitorProvider(progressLoggerFactory))
+
+    private
+    fun versionedJarCacheFor(jarCache: GeneratedGradleJarCache): JarCache =
+        { id, creator -> jarCache["$id-$gradleKotlinDslVersion", creator] }
+
+    private
+    val gradleKotlinDslVersion by lazy {
+        this::class.java.`package`.implementationVersion
+    }
 }
