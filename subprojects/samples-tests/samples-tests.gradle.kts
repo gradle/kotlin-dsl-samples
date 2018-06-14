@@ -6,6 +6,7 @@ plugins {
 
 repositories {
     maven(url = "https://repo.gradle.org/gradle/ext-releases-local")
+    maven(url = "https://repo.gradle.org/gradle/libs-releases-local")
 }
 
 dependencies {
