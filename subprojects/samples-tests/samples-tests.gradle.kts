@@ -5,8 +5,12 @@ plugins {
 }
 
 repositories {
+    maven(url = "https://repo.gradle.org/gradle/libs-releases")
     maven(url = "https://repo.gradle.org/gradle/ext-releases-local")
     maven(url = "https://repo.gradle.org/gradle/libs-releases-local")
+    maven(url = "https://repo.gradle.org/gradle/libs-snapshots")
+    maven(url = "https://repo.gradle.org/gradle/ext-snapshots-local")
+    maven(url = "https://repo.gradle.org/gradle/libs-snaphots-local")
 }
 
 dependencies {
@@ -15,10 +19,11 @@ dependencies {
     implementation("org.gradle:sample-check:0.1.0")
 }
 
-val customInstallation by rootProject.tasks
+val customInstallation: Copy by rootProject.tasks
 tasks {
-    "test" {
+    "test"(Test::class) {
         dependsOn(customInstallation)
+        systemProperty("integTest.gradleHomeDir", customInstallation.destinationDir.parentFile.canonicalPath)
         inputs.dir("$rootDir/samples")
     }
 }

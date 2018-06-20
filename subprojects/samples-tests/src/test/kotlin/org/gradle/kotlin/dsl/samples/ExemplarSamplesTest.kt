@@ -21,6 +21,7 @@ import org.gradle.samples.test.normalizer.JavaObjectSerializationOutputNormalize
 import org.gradle.samples.test.runner.GradleSamplesRunner
 import org.gradle.samples.test.runner.SamplesOutputNormalizers
 import org.gradle.samples.test.runner.SamplesRoot
+
 import org.junit.runner.RunWith
 
 
@@ -28,7 +29,9 @@ import org.junit.runner.RunWith
 @SamplesRoot("../../samples")
 @SamplesOutputNormalizers(value = [JavaObjectSerializationOutputNormalizer::class, FileSeparatorOutputNormalizer::class])
 class ExemplarSamplesTest {
-
-
-
+    init {
+        println("=====")
+        System.getProperty("integTest.gradleHomeDir", "NOT HERE").let { println(it) }
+        println("=====")
+    }
 }

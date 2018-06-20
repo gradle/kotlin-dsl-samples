@@ -21,3 +21,6 @@ for (project in rootProject.children) {
         assert(buildFile.isFile)
     }
 }
+
+
+includeBuild("../exemplar")
