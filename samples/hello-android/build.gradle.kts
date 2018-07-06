@@ -1,35 +1,26 @@
-plugins {
-    id("com.android.application") version "2.3.3"
-    kotlin("android") version "1.1.51"
-}
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
 
-android {
-    buildToolsVersion("25.0.0")
-    compileSdkVersion(23)
-
-    defaultConfig {
-        minSdkVersion(15)
-        targetSdkVersion(23)
-
-        applicationId = "com.example.kotlingradle"
-        versionCode = 1
-        versionName = "1.0"
+buildscript {
+    repositories {
+        google()
+        jcenter()
     }
+    dependencies {
+        classpath("com.android.tools.build:gradle:3.1.3")
+        classpath(kotlin("gradle-plugin", version = "1.2.41"))
 
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-            proguardFiles("proguard-rules.pro")
-        }
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle.kts files
     }
 }
 
-dependencies {
-    compile("com.android.support:appcompat-v7:23.4.0")
-    compile("com.android.support.constraint:constraint-layout:1.0.0-alpha8")
-    compile(kotlin("stdlib", "1.1.51"))
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
 }
 
-repositories {
-    jcenter()
+task<Delete>("clean") {
+    delete(rootProject.buildDir)
 }

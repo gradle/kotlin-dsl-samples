@@ -8,7 +8,9 @@ In order to make changes to Gradle, you'll need:
 * A [Java Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html) (JDK) version 1.8 or higher
 * [git](https://git-scm.com/) and a [GitHub account](https://github.com/join)
 
-Gradle Kotlin DSL uses a pull request model for contributions. Fork [gradle/kotlin-dsl](https://github.com/gradle/kotlin-dsl) and clone your fork. Configure your Git username and email with
+Gradle Kotlin DSL uses a pull request model for contributions. Fork [gradle/kotlin-dsl](https://github.com/gradle/kotlin-dsl) and clone your fork. Active development happens in the `develop` branch, so make sure you check out this branch after cloning the repository. 
+
+Configure your Git username and email with
 ```
 git config user.name 'First Last'
 git config user.email user@example.com
@@ -38,10 +40,9 @@ Please consider reading [How to Write a Git Commit Message](http://chris.beams.i
 * Keep commits discrete: avoid including multiple unrelated changes in a single commit
 * Keep commits self-contained: avoid spreading a single change across multiple commits. A single commit should make sense in isolation
 * If your commit pertains to a GitHub issue, include (`See #123`) in the commit message on a separate line
-* Please check that your email address matches that on your [CLA](http://gradle.org/cla)
+* [Sign off](https://git-scm.com/docs/git-commit#git-commit---signoff) your Git commits to indicate that you agree to the terms of [Developer Certificate of Origin](https://developercertificate.org/).
 
 ### Submitting Your Change
-Before we can accept any code contributions, you must complete and electronically sign a [Gradle CLA](http://gradle.org/cla).
 
 All code contributions should be submitted via a [pull request](https://help.github.com/articles/using-pull-requests) from a [forked GitHub repository](https://help.github.com/articles/fork-a-repo).
 

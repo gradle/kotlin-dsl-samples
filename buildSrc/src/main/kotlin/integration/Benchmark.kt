@@ -49,10 +49,10 @@ open class Benchmark : DefaultTask() {
     var latestInstallation: File? = null
 
     @get:Internal
-    var warmUpRuns = 7
+    var warmUpRuns = 11
 
     @get:Internal
-    var observationRuns = 11
+    var observationRuns = 40
 
     @get:Internal
     var maxQuotient: Double = 1.10 // fails if becomes 10% slower
@@ -71,6 +71,7 @@ open class Benchmark : DefaultTask() {
     @Suppress("unused")
     @TaskAction
     fun run() {
+
         val (included, excluded) = project.sampleDirs().partition { isIncludedAndNotExcluded(it.name) }
         reportExcludedSamples(excluded)
 
@@ -78,12 +79,35 @@ open class Benchmark : DefaultTask() {
         val quotients = included.map {
             benchmark(it, config)
         }
+
         val result = QuotientResult(quotients)
+        report(result)
+
         if (result.median > maxQuotient) {
             throw IllegalStateException(
                 "Latest snapshot is around %.2f%% slower than baseline. Unacceptable!".format(
                     quotientToPercentage(result.median)))
         }
+    }
+
+    private
+    fun report(result: QuotientResult) {
+        val median = result.median
+        println(
+            when {
+                median < 0.99 -> {
+                    "It seems the latest is %.2f%% faster than baseline!"
+                        .format(quotientToPercentage(median))
+                }
+                median > 1.01 -> {
+                    "Hm, apparently latest has become %.2f%% slower than baseline."
+                        .format(quotientToPercentage(median))
+                }
+                else -> {
+                    "Excelsior!"
+                }
+            }
+        )
     }
 
     private
@@ -117,24 +141,25 @@ open class Benchmark : DefaultTask() {
         patterns.any { sampleName.contains(it, ignoreCase = true) }
 
     private
-    fun quotientToPercentage(quotient: Double) = (quotient - 1) * 100
+    fun quotientToPercentage(quotient: Double) =
+        (if (quotient > 1) (quotient - 1) else (1 - quotient)) * 100
 
     private
     fun benchmark(sampleDir: File, config: BenchmarkConfig): Double {
         val sampleName = sampleDir.name
         println("samples/$sampleName")
 
-        val baselineConfig = BenchmarkRunConfig("baseline", sampleName, sampleDir, config)
-        val baseline = benchmarkWith(
-            connectorFor(temporaryCopyFor(baselineConfig)),
-            baselineConfig)
-        println("\tbaseline: ${format(baseline)}")
-
         val latestConfig = BenchmarkRunConfig("latest", sampleName, sampleDir, config)
         val latest = benchmarkWith(
-            connectorFor(temporaryCopyFor(latestConfig)).useInstallation(latestInstallation!!),
+            connectorFor(latestConfig).useInstallation(latestInstallation!!),
             latestConfig)
         println("\tlatest:   ${format(latest)}")
+
+        val baselineConfig = BenchmarkRunConfig("baseline", sampleName, sampleDir, config)
+        val baseline = benchmarkWith(
+            connectorFor(baselineConfig),
+            baselineConfig)
+        println("\tbaseline: ${format(baseline)}")
 
         val quotient = latest.median.ms / baseline.median.ms
         println("\tlatest / baseline: %.2f".format(quotient))
@@ -203,13 +228,22 @@ open class Benchmark : DefaultTask() {
                 println("Environment variable not present. Falling back to `git rev-parse`")
                 val stdout = ByteArrayOutputStream()
                 project.exec {
-                    it.commandLine("git", "rev-parse", "HEAD")
-                    it.standardOutput = stdout
+                    commandLine("git", "rev-parse", "HEAD")
+                    standardOutput = stdout
                 }
                 String(stdout.toByteArray()).trim()
             }
         }
     }
+
+    private
+    fun connectorFor(config: BenchmarkRunConfig) =
+        connectorFor(temporaryCopyFor(config))
+            .useGradleUserHomeDir(gradleUserHomeDirFor(config))
+
+    private
+    fun gradleUserHomeDirFor(config: BenchmarkRunConfig) =
+        temporaryDir.resolve("${config.name}-gradle-user-home")
 
     private
     fun temporaryCopyFor(config: BenchmarkRunConfig) =
@@ -232,12 +266,15 @@ open class Benchmark : DefaultTask() {
         File(temporaryDir, "$sampleName/$temporaryDirName")
 }
 
+
 private
 data class BenchmarkRunConfig(
     val name: String,
     val sampleName: String,
     val sampleDir: File,
-    val benchmarkConfig: BenchmarkConfig)
+    val benchmarkConfig: BenchmarkConfig
+)
+
 
 class QuotientResult(observations: List<Double>) : Result<Double>(observations) {
 
@@ -248,11 +285,12 @@ class QuotientResult(observations: List<Double>) : Result<Double>(observations) 
         get() = this
 }
 
+
 fun connectorFor(projectDir: File) =
     newConnector().forProjectDirectory(projectDir)!!
 
-inline
-fun <T> withConnectionFrom(connector: GradleConnector, block: ProjectConnection.() -> T): T {
+
+inline fun <T> withConnectionFrom(connector: GradleConnector, block: ProjectConnection.() -> T): T {
     try {
         return connector.connect().use(block)
     } finally {
@@ -260,8 +298,8 @@ fun <T> withConnectionFrom(connector: GradleConnector, block: ProjectConnection.
     }
 }
 
-inline
-fun <T> ProjectConnection.use(block: (ProjectConnection) -> T): T {
+
+inline fun <T> ProjectConnection.use(block: (ProjectConnection) -> T): T {
     try {
         return block(this)
     } finally {
@@ -269,19 +307,19 @@ fun <T> ProjectConnection.use(block: (ProjectConnection) -> T): T {
     }
 }
 
+
 /**
  * Forces a new daemon process to be started by basing the registry on an unique temp dir.
  */
-inline
-fun <T> withUniqueDaemonRegistry(baseDir: File, block: () -> T) =
+inline fun <T> withUniqueDaemonRegistry(baseDir: File, block: () -> T) =
     withDaemonRegistry(createTempDir("daemon-registry-", directory = baseDir), block)
 
-inline
-fun <T> withDaemonRegistry(registryBase: File, block: () -> T) =
+
+inline fun <T> withDaemonRegistry(registryBase: File, block: () -> T) =
     withSystemProperty("org.gradle.daemon.registry.base", registryBase.path, block)
 
-inline
-fun <T> withSystemProperty(key: String, value: String, block: () -> T): T {
+
+inline fun <T> withSystemProperty(key: String, value: String, block: () -> T): T {
     val originalValue = System.getProperty(key)
     try {
         System.setProperty(key, value)
@@ -290,6 +328,7 @@ fun <T> withSystemProperty(key: String, value: String, block: () -> T): T {
         setOrClearProperty(key, originalValue)
     }
 }
+
 
 fun setOrClearProperty(key: String, value: String?) {
     when (value) {
