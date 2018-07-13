@@ -75,7 +75,7 @@ inline fun Project.defaultTasks(vararg tasks: Task) {
  * @param T the plugin type.
  * @see [PluginAware.apply]
  */
-inline fun <reified T : Plugin<Project>> Project.apply() =
+inline fun <reified T : Plugin<out Project>> Project.apply() =
     (this as PluginAware).apply<T>()
 
 
