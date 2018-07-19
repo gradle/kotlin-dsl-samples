@@ -41,6 +41,7 @@ afterEvaluate {
         publications.create<MavenPublication>("mavenJava") {
             artifactId = base.archivesBaseName
             from(components["java"])
+            artifact(tasks["sourcesJar"])
         }
 
         repositories {
