@@ -28,26 +28,20 @@ dependencies {
 
 
 // --- Enable automatic generation of API extensions -------------------
+val publishedPluginsVersion: String by rootProject.extra
 val apiExtensionsOutputDir = file("src/generated/kotlin")
 
-sourceSets["main"].kotlin {
-    srcDir(apiExtensionsOutputDir)
-}
-
-val publishedPluginsVersion: String by rootProject.extra
-
 val generateKotlinDependencyExtensions by task<GenerateKotlinDependencyExtensions> {
-    outputFile = File(apiExtensionsOutputDir, "org/gradle/kotlin/dsl/KotlinDependencyExtensions.kt")
+    outputFile = apiExtensionsOutputDir.resolve("org/gradle/kotlin/dsl/KotlinDependencyExtensions.kt")
     embeddedKotlinVersion = kotlinVersion
     kotlinDslPluginsVersion = publishedPluginsVersion
 }
 
-val generateExtensions by tasks.creating {
-    dependsOn(generateKotlinDependencyExtensions)
+sourceSets["main"].kotlin {
+    srcDir(files(apiExtensionsOutputDir) {
+        builtBy(generateKotlinDependencyExtensions)
+    })
 }
-
-val compileKotlin by tasks
-compileKotlin.dependsOn(generateExtensions)
 
 val clean: Delete by tasks
 clean.delete(apiExtensionsOutputDir)
