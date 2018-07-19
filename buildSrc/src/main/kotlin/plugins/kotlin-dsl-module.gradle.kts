@@ -39,3 +39,8 @@ afterEvaluate {
         }
     }
 }
+
+tasks.register("sourcesJar", Jar::class.java) {
+    from(main.allSource)
+    classifier = "sources"
+}
