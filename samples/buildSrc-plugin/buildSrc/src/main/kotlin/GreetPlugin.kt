@@ -1,13 +1,15 @@
+
+
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.invoke
 
 
 class GreetPlugin : Plugin<Project> {
 
     override fun apply(project: Project): Unit = project.run {
-
+        extensions.create("greetings", GreetingsExtension::class)
         tasks {
             register("greet") {
                 group = "sample"
@@ -18,4 +20,8 @@ class GreetPlugin : Plugin<Project> {
             }
         }
     }
+}
+
+open class GreetingsExtension {
+    var message = "hey"
 }
