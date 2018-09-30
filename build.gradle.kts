@@ -108,25 +108,28 @@ val benchmark by task<integration.Benchmark> {
 }
 
 
+val Any.extensions get() = (this as org.gradle.api.plugins.ExtensionAware).extensions
+
+
 // -- IntelliJ IDEA configuration --------------------------------------
 idea {
-    project {
-        this as ExtensionAware
-        configure<ProjectSettings> {
-            this as ExtensionAware
-            doNotDetectFrameworks("android", "web")
-            configure<TaskTriggersConfig> {
-                // Build the `customInstallation` after the initial import to:
-                // 1. ensure generated code is available to the IDE
-                // 2. allow integration tests to be executed
-                afterSync(customInstallation.get())
-            }
-            configure<CopyrightConfiguration> {
-                useDefault = "ASL2"
-                profiles {
-                    create("ASL2") {
-                        keyword = "Copyright"
-                        notice = """
+
+    project.extensions.configure<ProjectSettings> {
+
+        doNotDetectFrameworks("android", "web")
+        extensions.configure<TaskTriggersConfig> {
+            // Build the `customInstallation` after the initial import to:
+            // 1. ensure generated code is available to the IDE
+            // 2. allow integration tests to be executed
+            afterSync(customInstallation.get())
+        }
+
+        extensions.configure<CopyrightConfiguration> {
+            useDefault = "ASL2"
+            profiles {
+                create("ASL2") {
+                    keyword = "Copyright"
+                    notice = """
                             Copyright ${LocalDate.now().year} the original author or authors.
 
                             Licensed under the Apache License, Version 2.0 (the "License");
@@ -141,7 +144,6 @@ idea {
                             See the License for the specific language governing permissions and
                             limitations under the License.
                         """.trimIndent()
-                    }
                 }
             }
         }
