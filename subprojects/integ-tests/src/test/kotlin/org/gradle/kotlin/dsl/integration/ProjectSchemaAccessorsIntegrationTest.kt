@@ -922,6 +922,71 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
         build("help")
     }
 
+    @Test
+    fun `accessors to dependency handlers extensions added by plugins`() {
+        withDefaultSettingsIn("buildSrc")
+
+        withBuildScriptIn("buildSrc", """
+            plugins {
+                `kotlin-dsl`
+            }
+
+            gradlePlugin {
+                plugins {
+                    register("my-plugin") {
+                        id = "my-plugin"
+                        implementationClass = "plugins.MyPlugin"
+                    }
+                }
+            }
+
+            $repositoriesBlock
+        """)
+
+        // TODO: Fix to access the need to cast project.dependencies to ExtensionAware after:
+        // https://github.com/gradle/gradle/pull/7414
+        val helloWorldMessage = "Hello world from an extension function on dependencies!"
+        withFile("buildSrc/src/main/kotlin/plugins/MyPlugin.kt", """
+            package plugins
+
+            import org.gradle.api.*
+            import org.gradle.kotlin.dsl.*
+            import org.gradle.api.plugins.*
+
+            open class MyPlugin : Plugin<Project> {
+                override fun apply(project: Project): Unit = project.run {
+                    val doSomething = fun() {
+                        println("$helloWorldMessage")
+                    }
+                    (project.dependencies as ExtensionAware)
+                        .extensions
+                        .add(
+                            typeOf<() -> Unit>(),
+                            "doSomething",
+                            doSomething
+                       )
+                }
+            }
+        """)
+
+        // TODO: Fix to access the nested DependencyHandlerScope.dependencies after:
+        // https://github.com/gradle/gradle/pull/7414
+        withBuildScript("""
+            plugins {
+                id("my-plugin")
+            }
+
+            dependencies {
+                dependencies.doSomething()
+                // This will fail at runtime
+                // doSomething()
+            }
+        """)
+        assertThat(
+            build("help").output,
+            containsString(helloWorldMessage))
+    }
+
     private
     fun withBuildSrc(contents: FoldersDslExpression) {
         withFolders {

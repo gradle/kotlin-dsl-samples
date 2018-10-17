@@ -20,6 +20,7 @@ import org.gradle.api.NamedDomainObjectCollectionSchema
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.ExtensionsSchema
 import org.gradle.api.reflect.HasPublicType
@@ -87,6 +88,7 @@ fun targetSchemaFor(target: Any, targetType: TypeOf<*>): TargetTypedSchema {
             sourceSetsOf(target)?.forEach { sourceSet ->
                 collectSchemaOf(sourceSet, typeOfSourceSet)
             }
+            collectSchemaOf(target.dependencies, typeOfDependencyHandler)
         }
         if (target is NamedDomainObjectContainer<*>) {
             accessibleContainerSchema(target.collectionSchema).forEach { schema ->
@@ -162,6 +164,9 @@ val typeOfConfigurationContainer = typeOf<NamedDomainObjectContainer<Configurati
 
 private
 val typeOfSourceSet = typeOf<SourceSet>()
+
+private
+val typeOfDependencyHandler = typeOf<DependencyHandler>()
 
 
 private
