@@ -4,8 +4,11 @@ composite-build-logic
 Demonstrates how to use [Composite Builds](https://docs.gradle.org/current/userguide/composite_builds.html)
 for build logic.
 
-The build in the [`build-logic`](./build-logic) directory publishes a Gradle Plugin.
-The build in this directory includes the `build-logic` build and uses the Gradle Plugin for its build logic.
+The outer build includes two other builds:
+- `gradle/shared`
+- `gradle/plugins`
+
+Both the outer build and `gradle/plugins` depend on `gradle/shared` in several ways.
 
 Run with:
 
