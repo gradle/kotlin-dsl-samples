@@ -83,7 +83,6 @@ fun targetSchemaFor(target: Any, targetType: TypeOf<*>): TargetTypedSchema {
             accessibleContainerSchema(target.tasks.collectionSchema).forEach { schema ->
                 tasks.add(ProjectSchemaEntry(typeOfTaskContainer, schema.name, schema.publicType))
             }
-            // WARN eagerly realize all source sets
             sourceSetsOf(target)?.forEach { sourceSet ->
                 collectSchemaOf(sourceSet, typeOfSourceSet)
             }
