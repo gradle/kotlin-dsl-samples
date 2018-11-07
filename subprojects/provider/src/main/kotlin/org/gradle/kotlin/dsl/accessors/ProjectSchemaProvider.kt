@@ -19,13 +19,30 @@ package org.gradle.kotlin.dsl.accessors
 import org.gradle.api.Project
 import org.gradle.api.reflect.TypeOf
 
+import org.gradle.kotlin.dsl.typeOf
+
 import java.io.Serializable
 
 
 interface ProjectSchemaProvider {
 
-    fun schemaFor(project: Project): ProjectSchema<TypeOf<*>>
+    fun schemaFor(project: Project): TypedProjectSchema
 }
+
+
+data class SchemaType(val value: TypeOf<*>) {
+
+    companion object {
+        inline fun <reified T> of() = SchemaType(typeOf<T>())
+    }
+
+    val kotlinString = kotlinTypeStringFor(value)
+
+    override fun toString(): String = kotlinString
+}
+
+
+typealias TypedProjectSchema = ProjectSchema<SchemaType>
 
 
 data class ProjectSchema<out T>(
@@ -36,13 +53,13 @@ data class ProjectSchema<out T>(
     val configurations: List<String>
 ) : Serializable {
 
-    fun <U> map(f: (T) -> U) =
-        ProjectSchema(
-            extensions.map { it.map(f) },
-            conventions.map { it.map(f) },
-            tasks.map { it.map(f) },
-            containerElements.map { it.map(f) },
-            configurations.toList())
+    fun <U> map(f: (T) -> U) = ProjectSchema(
+        extensions.map { it.map(f) },
+        conventions.map { it.map(f) },
+        tasks.map { it.map(f) },
+        containerElements.map { it.map(f) },
+        configurations
+    )
 
     fun isNotEmpty(): Boolean =
         extensions.isNotEmpty()
@@ -62,7 +79,3 @@ data class ProjectSchemaEntry<out T>(
     fun <U> map(f: (T) -> U) =
         ProjectSchemaEntry(f(target), name, f(type))
 }
-
-
-fun ProjectSchema<TypeOf<*>>.withKotlinTypeStrings() =
-    map(::kotlinTypeStringFor)

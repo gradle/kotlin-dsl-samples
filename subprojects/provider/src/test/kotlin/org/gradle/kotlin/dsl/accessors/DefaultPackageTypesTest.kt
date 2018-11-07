@@ -16,47 +16,29 @@
 
 package org.gradle.kotlin.dsl.accessors
 
-import org.gradle.kotlin.dsl.accessors.TypeAccessibility.Accessible
-
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 
 import org.junit.Test
 
 
-class DefaultPackageTypesTest {
+class DefaultPackageTypesTest : TestWithClassPath() {
 
     @Test
-    fun `#defaultPackageTypesIn generic type`() {
+    fun `#defaultPackageTypesIn (generic type)`() {
 
         assertThat(
-            defaultPackageTypesIn(listOf("gradle.Container<Extension>")),
-            equalTo(listOf("Extension"))
+            defaultPackageTypesIn(listOf("java.util.Map<Key, Value>")),
+            equalTo(listOf("Key", "Value"))
         )
     }
 
     @Test
-    fun `#importsRequiredBy takes container elements into account`() {
+    fun `#defaultPackageTypesIn (duplicate types)`() {
 
         assertThat(
-            importsRequiredBy(
-                ProjectSchema(
-                    containerElements = listOf(
-                        ProjectSchemaEntry(
-                            Accessible("Container"),
-                            "element",
-                            Accessible("DefaultPackageType")
-                        )
-                    ),
-                    extensions = emptyList(),
-                    conventions = emptyList(),
-                    tasks = emptyList(),
-                    configurations = emptyList()
-                )
-            ),
-            equalTo(
-                listOf("DefaultPackageType")
-            )
+            defaultPackageTypesIn(listOf("java.util.Map<Value, Value>")),
+            equalTo(listOf("Value"))
         )
     }
 }

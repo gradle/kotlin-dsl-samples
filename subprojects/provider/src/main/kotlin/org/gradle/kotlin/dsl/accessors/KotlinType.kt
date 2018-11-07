@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package org.gradle.kotlin.dsl.support
+package org.gradle.kotlin.dsl.accessors
 
-import org.gradle.api.artifacts.dsl.RepositoryHandler
-
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.support.bytecode.KmTypeBuilder
 
 
-/**
- * Adds the Kotlin EAP bintray repository.
- */
-fun RepositoryHandler.kotlinEap() =
-    maven(url = "https://dl.bintray.com/kotlin/kotlin-eap/")
+internal
+object KotlinType {
+
+    val string: KmTypeBuilder = { visitClass("kotlin/String") }
+
+    val unit: KmTypeBuilder = { visitClass("kotlin/Unit") }
+
+    val any: KmTypeBuilder = { visitClass("kotlin/Any") }
+
+    val typeParameter: KmTypeBuilder = { visitTypeParameter(0) }
+}
