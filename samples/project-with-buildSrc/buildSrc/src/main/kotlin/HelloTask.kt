@@ -2,7 +2,7 @@ import org.gradle.api.*
 import org.gradle.api.tasks.*
 import org.gradle.kotlin.dsl.*
 
-open class HelloTask : DefaultTask() {
+class HelloTask : my.DefaultTask() {
 
     init {
         group = "My"
