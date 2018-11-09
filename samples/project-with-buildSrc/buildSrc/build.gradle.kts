@@ -1,11 +1,9 @@
 plugins {
     `kotlin-dsl`
-
-    // see buildSrc/src/main/kotlin/allopen-compiler-plugin.kt
-    id("org.jetbrains.kotlin.plugin.allopen") version "1.3.0"
+    kotlin("plugin.allopen") version KotlinVersion.CURRENT.toString()
 }
 
-// see buildSrc/src/main/kotlin/allopen-compiler-plugin.kt
+// see buildSrc/src/main/kotlin/my/plugin.allopen.kt
 allOpen {
     annotation("my.AllOpen")
 }

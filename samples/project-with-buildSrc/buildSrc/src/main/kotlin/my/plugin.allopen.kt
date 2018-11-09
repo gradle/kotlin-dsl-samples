@@ -46,3 +46,6 @@ abstract class DefaultTask : org.gradle.api.DefaultTask()
 
 @AllOpen
 interface Plugin<T>: org.gradle.api.Plugin<T>
+
+@AllOpen
+interface Extension

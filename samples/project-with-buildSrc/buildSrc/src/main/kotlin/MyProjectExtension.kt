@@ -17,8 +17,7 @@ import org.gradle.api.model.ObjectFactory
 
 import org.gradle.kotlin.dsl.*
 
-@my.AllOpen
-class MyProjectExtension(objects: ObjectFactory) {
+class MyProjectExtension(objects: ObjectFactory) : my.Extension {
 
     val flag = objects.property<Boolean>()
 }
