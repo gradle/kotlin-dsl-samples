@@ -1,3 +1,3 @@
-package tools
+package greeting
 
 fun sayHelloTo(name: String) = "Hello $name"
