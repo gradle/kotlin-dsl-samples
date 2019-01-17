@@ -20,6 +20,7 @@ import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.dsl.DependencyConstraintHandler
 import org.gradle.api.artifacts.dsl.DependencyHandler
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.plugins.ExtensionAware
 
 import org.hamcrest.CoreMatchers.equalTo
@@ -126,18 +127,25 @@ class DependencyHandlerExtensionsTest {
     }
 
     @Test
-    fun `given configuration name and dependency notation, it will add the dependency`() {
+    fun `given configuration name and dependency notations, it will add the dependencies`() {
 
         val dependencyHandler = newDependencyHandlerMock {
             on { add(any(), any()) } doReturn mock<Dependency>()
         }
 
+        val files = mock<ConfigurableFileCollection>()
+
         val dependencies = DependencyHandlerScope.of(dependencyHandler)
         dependencies {
             "configuration"("notation")
+            "configuration2"(listOf("notation1", "notation2"))
+            "configuration3"(files)
         }
 
         verify(dependencyHandler).add("configuration", "notation")
+        verify(dependencyHandler).add("configuration2", "notation1")
+        verify(dependencyHandler).add("configuration2", "notation2")
+        verify(dependencyHandler).add("configuration3", files)
     }
 
     @Test

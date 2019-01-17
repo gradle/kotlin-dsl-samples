@@ -63,6 +63,15 @@
 
 
     /**
+     * Adds a collection of dependencies to the 'api' configuration.
+     *
+     * @param dependencyNotations notations for the dependencies to be added.
+     */
+    fun DependencyHandler.`api`(dependencyNotations: Collection<Any>) =
+        addDependenciesTo(this, "api", dependencyNotations)
+
+
+    /**
      * Adds a dependency to the 'api' configuration.
      *
      * @param dependencyNotation notation for the dependency to be added.

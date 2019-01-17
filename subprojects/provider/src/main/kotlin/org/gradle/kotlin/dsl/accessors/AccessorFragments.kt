@@ -112,6 +112,45 @@ fun fragmentsForConfiguration(accessor: Accessor.ForConfiguration): Fragments = 
             source = name.run {
                 """
                     /**
+                     * Adds a collection of dependencies to the '$original' configuration.
+                     *
+                     * @param dependencyNotations notations for the dependencies to be added.
+                     */
+                    fun DependencyHandler.`$kotlinIdentifier`(dependencyNotations: Collection<Any>) =
+                        addDependenciesTo(this, "$stringLiteral", dependencyNotations)
+                """
+            },
+            bytecode = {
+                publicStaticMethod(signature) {
+                    ALOAD(0)
+                    LDC(name.original)
+                    ALOAD(1)
+                    invokeRuntime(
+                        "addDependenciesTo",
+                        "(L${GradleTypeName.dependencyHandler};Ljava/lang/String;Ljava/util/Collection;)V")
+                    RETURN()
+                }
+            },
+            metadata = {
+                writer.writeFunctionOf(
+                    receiverType = GradleType.dependencyHandler,
+                    returnType = KotlinType.unit,
+                    name = signature.name,
+                    parameters = {
+                        visitParameter("dependencyNotations", genericTypeOf(KotlinType.collection, KotlinType.any))
+                    },
+                    signature = signature
+                )
+            },
+            signature = JvmMethodSignature(
+                name.original,
+                "(Lorg/gradle/api/artifacts/dsl/DependencyHandler;Ljava/util/Collection;)V"
+            )
+        ),
+        AccessorFragment(
+            source = name.run {
+                """
+                    /**
                      * Adds a dependency to the '$original' configuration.
                      *
                      * @param dependencyNotation notation for the dependency to be added.
@@ -476,17 +515,6 @@ fun fragmentsForConfiguration(accessor: Accessor.ForConfiguration): Fragments = 
             signature = JvmMethodSignature(
                 name.original,
                 "(Lorg/gradle/api/artifacts/dsl/ArtifactHandler;Ljava/lang/Object;Lorg/gradle/api/Action;)Lorg/gradle/api/artifacts/PublishArtifact;"
-            )
-        ),
-        AccessorFragment(
-            source = "",
-            bytecode = {
-            },
-            metadata = {
-            },
-            signature = JvmMethodSignature(
-                name.original,
-                ""
             )
         )
     )

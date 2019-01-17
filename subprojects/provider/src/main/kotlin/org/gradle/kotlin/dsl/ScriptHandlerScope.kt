@@ -30,6 +30,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler
 
 import org.gradle.api.initialization.dsl.ScriptHandler
 import org.gradle.api.initialization.dsl.ScriptHandler.CLASSPATH_CONFIGURATION
+import org.gradle.kotlin.dsl.accessors.runtime.addDependenciesTo
 
 import org.gradle.kotlin.dsl.support.unsafeLazy
 
@@ -68,6 +69,14 @@ private constructor(
      */
     fun DependencyHandler.classpath(dependencyNotation: Any): Dependency? =
         add(CLASSPATH_CONFIGURATION, dependencyNotation)
+
+    /**
+     * Adds a collection of dependencies to the script classpath.
+     *
+     * @param dependencyNotations notations for the dependencies to be added.
+     */
+    fun DependencyHandler.classpath(dependencyNotations: Collection<Any>) =
+        addDependenciesTo(this, CLASSPATH_CONFIGURATION, dependencyNotations)
 
     /**
      * Adds a dependency to the script classpath.

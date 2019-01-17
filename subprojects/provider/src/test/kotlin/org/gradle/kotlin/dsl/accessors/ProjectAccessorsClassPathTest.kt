@@ -325,6 +325,10 @@ class ProjectAccessorsClassPathTest : AbstractDslTest() {
                         }
                     }
                 }
+
+                val p: Unit = dependencies.api(listOf("module", "anothermodule"))
+
+                val q: Unit = dependencies.api(listOf("module", mapOf("group" to "g", "name" to "n"), projectDependency))
             """
         )
 
@@ -408,6 +412,17 @@ class ProjectAccessorsClassPathTest : AbstractDslTest() {
             verify(project).dependencies
             verify(dependencies).create(mapOf("group" to "g", "name" to "n"))
             verify(dependencies).add("api", dependency)
+
+            // val p
+            verify(project).dependencies
+            verify(dependencies).add("api", "module")
+            verify(dependencies).add("api", "anothermodule")
+
+            // val q
+            verify(project).dependencies
+            verify(dependencies).add("api", "module")
+            verify(dependencies).add("api", mapOf("group" to "g", "name" to "n"))
+            verify(dependencies).add(eq("api"), same(projectDependency))
 
             verifyNoMoreInteractions()
         }

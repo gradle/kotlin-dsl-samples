@@ -61,6 +61,15 @@ fun <T : Dependency> addDependencyTo(
 }
 
 
+fun addDependenciesTo(
+    dependencies: DependencyHandler,
+    configuration: String,
+    dependencyNotations: Collection<Any>
+) {
+    dependencyNotations.forEach { dependencies.add(configuration, it) }
+}
+
+
 fun addExternalModuleDependencyTo(
     dependencyHandler: DependencyHandler,
     targetConfiguration: String,

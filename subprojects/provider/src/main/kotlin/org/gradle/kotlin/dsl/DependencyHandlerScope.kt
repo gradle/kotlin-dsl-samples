@@ -55,6 +55,14 @@ private constructor(
         dependencies.add(this, dependencyNotation)
 
     /**
+     * Adds dependencies to the given configuration.
+     *
+     * @param dependencyNotations notations for the dependencies to be added.
+     */
+    operator fun String.invoke(dependencyNotations: Collection<Any>) =
+        dependencyNotations.forEach { dependencies.add(this, it) }
+
+    /**
      * Adds a dependency to the given configuration.
      *
      * @param dependencyNotation notation for the dependency to be added.
