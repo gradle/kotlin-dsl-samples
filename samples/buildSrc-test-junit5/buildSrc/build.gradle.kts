@@ -11,6 +11,8 @@ dependencies {
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform {
+        includeTags("fooTag")
+    }
 }
