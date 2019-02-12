@@ -231,7 +231,7 @@ inline fun <reified T : Task> TaskCollection<out Task>.named(name: String, noinl
 
 
 /**
- * Defines a new object, which will be created when it is required.
+ * Defines a new task, which will be created when it is required.
  *
  * @see [TaskContainer.register]
  */
@@ -241,7 +241,7 @@ inline fun <reified T : Task> TaskContainer.register(name: String): TaskProvider
 
 
 /**
- * Defines and configure a new object, which will be created when it is required.
+ * Defines and configure a new task, which will be created when it is required.
  *
  * @see [TaskContainer.register]
  */
@@ -250,8 +250,17 @@ inline fun <reified T : Task> TaskContainer.register(name: String, noinline conf
 
 
 /**
+ * Defines a new task, which will be created when it is required passing the given arguments to the [javax.inject.Inject]-annotated constructor.
+ *
+ * @see [TaskContainer.register]
+ */
+inline fun <reified T : Task> TaskContainer.register(name: String, vararg arguments: Any): TaskProvider<T> =
+    register(name, T::class.java, *arguments)
+
+
+/**
  * Creates a [Task] with the given [name] and type, passing the given arguments to the [javax.inject.Inject]-annotated constructor,
  * and adds it to this project tasks container.
  */
-inline fun <reified T : Task> TaskContainer.create(name: String, vararg arguments: Any) =
+inline fun <reified T : Task> TaskContainer.create(name: String, vararg arguments: Any): T =
     create(name, T::class.java, *arguments)

@@ -23,11 +23,16 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskCollection
 
+import org.gradle.internal.hash.HashUtil
 import org.gradle.util.GradleVersion
 
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
+import org.gradle.kotlin.dsl.support.normaliseLineSeparators
 
 import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.not
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -182,17 +187,21 @@ class GradleApiExtensionsIntegrationTest : AbstractPluginIntegrationTest() {
     }
 
     @Test
+    fun `generated jar is reproducible`() {
+        val generatedJarHash = HashUtil.createHash(generatedExtensionsJarFromTestKitUserHome(), "MD5")
+        assertThat(
+            generatedJarHash.asZeroPaddedHexString(32),
+            equalTo("30f6c4e833395b258a763c9b238a275f")
+        )
+    }
+
+    @Test
     fun `generated jar contains Gradle API extensions sources and byte code`() {
 
         withBuildScript("")
         build("help")
 
-        val gradleUserHomeDir = File(System.getProperty("org.gradle.testkit.dir"))
-
-        val generatedJar = gradleUserHomeDir.resolve("caches")
-            .listFiles { f -> f.isDirectory && f.name == GradleVersion.current().version }.single()
-            .resolve("generated-gradle-jars")
-            .listFiles { f -> f.isFile && f.name.startsWith("gradle-kotlin-dsl-extensions-") }.single()
+        val generatedJar = generatedExtensionsJarFromTestKitUserHome()
 
         val (generatedSources, generatedClasses) = JarFile(generatedJar)
             .use { it.entries().toList().map { entry -> entry.name } }
@@ -220,17 +229,35 @@ class GradleApiExtensionsIntegrationTest : AbstractPluginIntegrationTest() {
                 `filter`(mapOf(*`properties`), `filterType`.java)
             """,
             """
-            @org.gradle.api.Incubating
             inline fun <T : org.gradle.api.Task> org.gradle.api.tasks.TaskContainer.`register`(`name`: String, `type`: kotlin.reflect.KClass<T>, `configurationAction`: org.gradle.api.Action<in T>): org.gradle.api.tasks.TaskProvider<T> =
                 `register`(`name`, `type`.java, `configurationAction`)
             """,
             """
             inline fun <T : Any> org.gradle.api.plugins.ExtensionContainer.`create`(`name`: String, `type`: kotlin.reflect.KClass<T>, vararg `constructionArguments`: Any): T =
                 `create`(`name`, `type`.java, *`constructionArguments`)
+            """,
+            """
+            @org.gradle.api.Incubating
+            inline fun <T : org.gradle.api.Named> org.gradle.api.model.ObjectFactory.`named`(`type`: kotlin.reflect.KClass<T>, `name`: String): T =
+                `named`(`type`.java, `name`)
             """)
 
         assertThat(
             generatedSourceCode,
-            allOf(extensions.map { containsMultiLineString(it) }))
+            allOf(extensions.map { containsString(it.normaliseLineSeparators().trimIndent()) })
+        )
+
+        assertThat(
+            generatedSourceCode,
+            not(containsString("\r"))
+        )
     }
+
+    private
+    fun generatedExtensionsJarFromTestKitUserHome(): File =
+        File(System.getProperty("org.gradle.testkit.dir"))
+            .resolve("caches")
+            .listFiles { f -> f.isDirectory && f.name == GradleVersion.current().version }.single()
+            .resolve("generated-gradle-jars")
+            .listFiles { f -> f.isFile && f.name.startsWith("gradle-kotlin-dsl-extensions-") }.single()
 }

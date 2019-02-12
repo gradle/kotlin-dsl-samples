@@ -26,3 +26,17 @@ fun userHome() = File(System.getProperty("user.home"))
 internal
 inline fun <T : AutoCloseable, U> T.useToRun(action: T.() -> U): U =
     use { run(action) }
+
+
+/**
+ * Appends value to the given Appendable and simple `\n` line separator after it.
+ *
+ * Always using the same line separator on all systems to allow for reproducible outputs.
+ */
+fun Appendable.appendReproducibleNewLine(value: CharSequence = ""): Appendable =
+    append(value).append("\n")
+
+
+internal
+fun File.isParentOf(child: File): Boolean =
+    child.canonicalPath.startsWith(canonicalPath)

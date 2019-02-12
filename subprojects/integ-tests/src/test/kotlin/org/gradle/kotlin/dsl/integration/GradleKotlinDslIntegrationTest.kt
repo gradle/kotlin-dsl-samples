@@ -25,8 +25,8 @@ import org.gradle.kotlin.dsl.fixtures.LightThought
 import org.gradle.kotlin.dsl.fixtures.ZeroThought
 import org.gradle.kotlin.dsl.fixtures.canPublishBuildScan
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
-import org.gradle.kotlin.dsl.fixtures.convertLineSeparators
 import org.gradle.kotlin.dsl.fixtures.rootProjectDir
+import org.gradle.kotlin.dsl.support.normaliseLineSeparators
 
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.containsString
@@ -146,7 +146,7 @@ class GradleKotlinDslIntegrationTest : AbstractPluginIntegrationTest() {
             import org.gradle.api.*
             import org.gradle.kotlin.dsl.*
 
-            open class DeepThoughtPlugin : Plugin<Project> {
+            class DeepThoughtPlugin : Plugin<Project> {
                 override fun apply(project: Project) {
                     project.run {
                         task("compute") {
@@ -572,7 +572,7 @@ class GradleKotlinDslIntegrationTest : AbstractPluginIntegrationTest() {
             withBuildScript("foo")
 
         assertThat(
-            buildFailureOutput().convertLineSeparators(),
+            buildFailureOutput().normaliseLineSeparators(),
             containsString("""
                 FAILURE: Build failed with an exception.
 
@@ -596,7 +596,7 @@ class GradleKotlinDslIntegrationTest : AbstractPluginIntegrationTest() {
         withBuildScript("publishing { }")
 
         assertThat(
-            buildFailureOutput().convertLineSeparators(),
+            buildFailureOutput().normaliseLineSeparators(),
             containsString("""
                 * What went wrong:
                 Script compilation errors:
@@ -617,7 +617,7 @@ class GradleKotlinDslIntegrationTest : AbstractPluginIntegrationTest() {
         val buildFile = withBuildScript("println(foo)\n\n\n\n\nprintln(\"foo\").bar.bazar\n\n\n\nprintln(cathedral)")
 
         assertThat(
-            buildFailureOutput().convertLineSeparators(),
+            buildFailureOutput().normaliseLineSeparators(),
             allOf(
                 containsString("""
                     FAILURE: Build failed with an exception.
@@ -832,7 +832,7 @@ class GradleKotlinDslIntegrationTest : AbstractPluginIntegrationTest() {
 
             class Book(val name: String)
 
-            open class MyPlugin : Plugin<Project> {
+            class MyPlugin : Plugin<Project> {
                 override fun apply(project: Project): Unit = project.run {
                     extensions.add(typeOf<MutableMap<String, String>>(), "mapOfString", mutableMapOf("foo" to "bar"))
                     extensions.add(typeOf<MutableMap<String, Int>>(), "mapOfInt", mutableMapOf("deep" to 42))

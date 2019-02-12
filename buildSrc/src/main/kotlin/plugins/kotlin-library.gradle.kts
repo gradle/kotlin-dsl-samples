@@ -21,18 +21,21 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     kotlin("jvm")
-    id("org.gradle.kotlin.ktlint-convention")
+    id("org.gradle.kotlin-dsl.ktlint-convention")
 }
 
 tasks {
 
     withType<KotlinCompile>().configureEach {
         kotlinOptions {
+            apiVersion = "1.3"
+            languageVersion = "1.3"
             freeCompilerArgs += listOf(
                 "-java-parameters",
                 "-Xjsr305=strict",
                 "-progressive",
-                "-Xskip-runtime-version-check")
+                "-Xskip-runtime-version-check"
+            )
         }
     }
 

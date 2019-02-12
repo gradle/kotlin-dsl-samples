@@ -21,21 +21,14 @@ plugins {
 
 allprojects {
     group = "org.gradle"
-    version = "1.0.4"
+    version = "1.2.0-SNAPSHOT"
 }
 
-val publishedPluginsVersion by extra { "1.0.4" }
-val futurePluginsVersion = "1.0.5"
+val publishedPluginsVersion by extra { "1.1.3" }
+val futurePluginsVersion = "1.1.4"
 project(":plugins") {
     group = "org.gradle.kotlin"
     version = futurePluginsVersion
-}
-
-val publishedPluginsExperimentsVersion by extra { "0.1.15" }
-val futurePluginsExperimentsVersion = "0.1.16"
-project(":plugins-experiments") {
-    group = "org.gradle.kotlin"
-    version = futurePluginsExperimentsVersion
 }
 
 // --- Configure publications ------------------------------------------

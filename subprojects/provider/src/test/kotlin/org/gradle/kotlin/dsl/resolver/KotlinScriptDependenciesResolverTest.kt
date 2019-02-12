@@ -16,29 +16,33 @@
 
 package org.gradle.kotlin.dsl.resolver
 
-import kotlin.script.dependencies.KotlinScriptExternalDependencies
-import kotlin.script.dependencies.ScriptContents
-import kotlin.script.dependencies.ScriptContents.Position
-import kotlin.script.dependencies.ScriptDependenciesResolver.ReportSeverity
+import com.nhaarman.mockito_kotlin.doReturn
+import com.nhaarman.mockito_kotlin.mock
 
 import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 import org.gradle.kotlin.dsl.fixtures.customInstallation
 
-import com.nhaarman.mockito_kotlin.doReturn
-import com.nhaarman.mockito_kotlin.mock
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.hasItems
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.Matcher
+
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
+
 import org.junit.Test
 
 import java.io.File
 
 import kotlin.reflect.KClass
+
+import kotlin.script.dependencies.KotlinScriptExternalDependencies
+import kotlin.script.dependencies.ScriptContents
+import kotlin.script.dependencies.ScriptContents.Position
+import kotlin.script.dependencies.ScriptDependenciesResolver.ReportSeverity
 
 
 class KotlinScriptDependenciesResolverTest : AbstractIntegrationTest() {
@@ -91,7 +95,7 @@ class KotlinScriptDependenciesResolverTest : AbstractIntegrationTest() {
     @Test
     fun `succeeds on precompiled init script`() {
 
-        withPrecompiledScriptBuildSrc()
+        withKotlinBuildSrc()
 
         withDefaultSettings()
 
@@ -103,7 +107,7 @@ class KotlinScriptDependenciesResolverTest : AbstractIntegrationTest() {
     @Test
     fun `succeeds on precompiled settings script`() {
 
-        withPrecompiledScriptBuildSrc()
+        withKotlinBuildSrc()
 
         withSettings("""
             apply(plugin = "my-plugin")
@@ -114,11 +118,10 @@ class KotlinScriptDependenciesResolverTest : AbstractIntegrationTest() {
         """))
     }
 
-
     @Test
     fun `succeeds on precompiled project script`() {
 
-        withPrecompiledScriptBuildSrc()
+        withKotlinBuildSrc()
 
         withDefaultSettings()
         withBuildScript("""
@@ -347,18 +350,6 @@ class KotlinScriptDependenciesResolverTest : AbstractIntegrationTest() {
         ).get()
 
     private
-    fun withPrecompiledScriptBuildSrc() {
-        withDefaultSettingsIn("buildSrc")
-        withBuildScriptIn("buildSrc", """
-            plugins {
-                `java-gradle-plugin`
-                `kotlin-dsl`
-                `kotlin-dsl-precompiled-script-plugins`
-            }
-        """)
-    }
-
-    private
     fun assertSucceeds(editedScript: File? = null) {
 
         resolvedScriptDependencies(editedScript).apply {
@@ -382,14 +373,14 @@ class KotlinScriptDependenciesResolverTest : AbstractIntegrationTest() {
 }
 
 
-private
+internal
 fun scriptContentFor(scriptFile: File?) =
     mock<ScriptContents> {
         on { file } doReturn scriptFile
     }
 
 
-private
+internal
 class ResolverTestRecorder : ResolverEventLogger, (ReportSeverity, String, Position?) -> Unit {
 
     data class LogEvent(
@@ -403,7 +394,10 @@ class ResolverTestRecorder : ResolverEventLogger, (ReportSeverity, String, Posit
         val position: Position?
     )
 
+    private
     val events = mutableListOf<LogEvent>()
+
+    private
     val reports = mutableListOf<IdeReport>()
 
     override fun log(event: ResolverEvent) {
@@ -427,10 +421,10 @@ class ResolverTestRecorder : ResolverEventLogger, (ReportSeverity, String, Posit
         assertThat(
             events.map { it.event },
             hasItems(
-                instanceOf(ResolutionRequest::class.java),
-                instanceOf(SubmittedModelRequest::class.java),
-                instanceOf(ReceivedModelResponse::class.java),
-                instanceOf(ResolvedDependencies::class.java)
+                instanceOf<ResolutionRequest>(),
+                instanceOf<SubmittedModelRequest>(),
+                instanceOf<ReceivedModelResponse>(),
+                instanceOf<ResolvedDependencies>()
             )
         )
         assertThat(events.size, equalTo(4))
@@ -475,3 +469,7 @@ class ResolverTestRecorder : ResolverEventLogger, (ReportSeverity, String, Posit
         }
     }
 }
+
+
+internal
+inline fun <reified T : Any> instanceOf(): Matcher<Any> = instanceOf(T::class.java)

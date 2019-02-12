@@ -24,6 +24,10 @@ import org.gradle.cache.internal.CacheKeyBuilder.CacheKeySpec
 import org.gradle.internal.classpath.ClassPath
 import org.gradle.internal.classpath.DefaultClassPath
 
+import org.gradle.internal.hash.HashCode
+import org.gradle.internal.hash.Hasher
+import org.gradle.internal.hash.Hashing
+
 import org.gradle.kotlin.dsl.cache.ScriptCache
 import org.gradle.kotlin.dsl.codegen.fileHeader
 
@@ -31,6 +35,7 @@ import org.gradle.kotlin.dsl.concurrent.IO
 import org.gradle.kotlin.dsl.concurrent.withAsynchronousIO
 
 import org.gradle.kotlin.dsl.support.ClassBytesRepository
+import org.gradle.kotlin.dsl.support.appendReproducibleNewLine
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.gradle.kotlin.dsl.support.useToRun
 
@@ -463,26 +468,37 @@ val accessorsCacheKeyPrefix = CacheKeySpec.withPrefix("gradle-kotlin-dsl-accesso
 private
 fun cacheKeyFor(projectSchema: TypedProjectSchema, classPath: ClassPath): CacheKeySpec =
     (accessorsCacheKeyPrefix
-        + projectSchema.toCacheKeyString()
+        + hashCodeFor(projectSchema)
         + classPath)
 
 
 internal
-fun TypedProjectSchema.toCacheKeyString(): String =
-    (cacheKeyPartsFor(extensions)
-        + cacheKeyPartsFor(conventions)
-        //+ cacheKeyPartsFor(tasks) // TODO:accessors - add missing test case
-        //+ cacheKeyPartsFor(containerElements) // TODO:accessors - add missing test case
-        + Pair("configuration", configurations.sorted().joinToString(",")))
-        .map { "${it.first}=${it.second}" }
-        .sorted()
-        .joinToString(separator = ":")
+fun hashCodeFor(schema: TypedProjectSchema): HashCode = Hashing.newHasher().run {
+    putAll(schema.extensions)
+    putAll(schema.conventions)
+    putAll(schema.tasks)
+    putAll(schema.containerElements)
+    putAllSorted(schema.configurations)
+    hash()
+}
 
 
 private
-fun cacheKeyPartsFor(schemaEntries: List<ProjectSchemaEntry<SchemaType>>) =
-    schemaEntries.asSequence()
-        .map { "${it.target.kotlinString}.${it.name}" to it.type.kotlinString }
+fun Hasher.putAllSorted(strings: List<String>) {
+    putInt(strings.size)
+    strings.sorted().forEach(::putString)
+}
+
+
+private
+fun Hasher.putAll(entries: List<ProjectSchemaEntry<SchemaType>>) {
+    putInt(entries.size)
+    entries.forEach { entry ->
+        putString(entry.target.kotlinString)
+        putString(entry.name)
+        putString(entry.type.kotlinString)
+    }
+}
 
 
 private
@@ -495,16 +511,16 @@ fun enabledJitAccessors(project: Project) =
 internal
 fun IO.writeAccessorsTo(outputFile: File, accessors: List<String>, imports: List<String> = emptyList()) = io {
     outputFile.bufferedWriter().useToRun {
-        appendln(fileHeaderWithImports)
+        appendReproducibleNewLine(fileHeaderWithImports)
         if (imports.isNotEmpty()) {
             imports.forEach {
-                appendln("import $it")
+                appendReproducibleNewLine("import $it")
             }
-            appendln()
+            appendReproducibleNewLine()
         }
         accessors.forEach {
-            appendln(it.replaceIndent())
-            appendln()
+            appendReproducibleNewLine(it.replaceIndent())
+            appendReproducibleNewLine()
         }
     }
 }
@@ -520,11 +536,14 @@ import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ConfigurablePublishArtifact
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyConstraint
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.PublishArtifact
+import org.gradle.api.artifacts.dsl.ArtifactHandler
 import org.gradle.api.artifacts.dsl.DependencyConstraintHandler
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.tasks.TaskContainer
