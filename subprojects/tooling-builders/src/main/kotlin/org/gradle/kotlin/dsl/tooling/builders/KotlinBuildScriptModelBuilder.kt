@@ -63,7 +63,9 @@ import org.gradle.kotlin.dsl.typeOf
 import org.gradle.tooling.provider.model.ToolingModelBuilder
 
 import java.io.File
+import java.io.PrintWriter
 import java.io.Serializable
+import java.io.StringWriter
 
 import java.util.*
 
@@ -78,7 +80,8 @@ data class StandardKotlinBuildScriptModel(
     override val sourcePath: List<File>,
     override val implicitImports: List<String>,
     override val editorReports: List<EditorReport>,
-    override val exceptions: List<Exception>
+    override val exceptions: List<String>,
+    override val enclosingScriptProjectDir: File?
 ) : KotlinBuildScriptModel, Serializable
 
 
@@ -93,7 +96,10 @@ object KotlinBuildScriptModelBuilder : ToolingModelBuilder {
             .buildModel()
 
     private
-    fun scriptModelBuilderFor(modelRequestProject: ProjectInternal, parameter: KotlinBuildScriptModelParameter): KotlinScriptTargetModelBuilder {
+    fun scriptModelBuilderFor(
+        modelRequestProject: ProjectInternal,
+        parameter: KotlinBuildScriptModelParameter
+    ): KotlinScriptTargetModelBuilder {
 
         val scriptFile = parameter.scriptFile
             ?: return projectScriptModelBuilder(null, modelRequestProject)
@@ -124,7 +130,8 @@ object KotlinBuildScriptModelBuilder : ToolingModelBuilder {
     private
     fun requestParameterOf(modelRequestProject: Project) =
         KotlinBuildScriptModelParameter(
-            modelRequestProject.findProperty(kotlinBuildScriptModelTarget) as? String)
+            modelRequestProject.findProperty(kotlinBuildScriptModelTarget) as? String
+        )
 }
 
 
@@ -134,13 +141,17 @@ fun Project.findProjectWithBuildFile(file: File) =
 
 
 private
-fun Project.enclosingSourceSetOf(file: File): SourceSet? =
+fun Project.enclosingSourceSetOf(file: File): EnclosingSourceSet? =
     findSourceSetOf(file)
         ?: findSourceSetOfFileIn(subprojects, file)
 
 
 private
-fun findSourceSetOfFileIn(projects: Iterable<Project>, file: File): SourceSet? =
+data class EnclosingSourceSet(val project: Project, val sourceSet: SourceSet)
+
+
+private
+fun findSourceSetOfFileIn(projects: Iterable<Project>, file: File): EnclosingSourceSet? =
     projects
         .asSequence()
         .mapNotNull { it.findSourceSetOf(file) }
@@ -148,8 +159,10 @@ fun findSourceSetOfFileIn(projects: Iterable<Project>, file: File): SourceSet? =
 
 
 private
-fun Project.findSourceSetOf(file: File): SourceSet? =
-    sourceSets?.find { file in it.allSource }
+fun Project.findSourceSetOf(file: File): EnclosingSourceSet? =
+    sourceSets?.find { file in it.allSource }?.let {
+        EnclosingSourceSet(this, it)
+    }
 
 
 private
@@ -158,21 +171,32 @@ val Project.sourceSets
 
 
 private
-fun precompiledScriptPluginModelBuilder(scriptFile: File, enclosingSourceSet: SourceSet, modelRequestProject: Project): KotlinScriptTargetModelBuilder =
-    KotlinScriptTargetModelBuilder(
-        scriptFile = scriptFile,
-        project = modelRequestProject,
-        scriptClassPath = DefaultClassPath.of(enclosingSourceSet.compileClasspath))
+fun precompiledScriptPluginModelBuilder(
+    scriptFile: File,
+    enclosingSourceSet: EnclosingSourceSet,
+    modelRequestProject: Project
+) = KotlinScriptTargetModelBuilder(
+    scriptFile = scriptFile,
+    project = modelRequestProject,
+    scriptClassPath = DefaultClassPath.of(enclosingSourceSet.sourceSet.compileClasspath),
+    enclosingScriptProjectDir = enclosingSourceSet.project.projectDir
+)
 
 
 private
-fun projectScriptModelBuilder(scriptFile: File?, project: Project) =
-    KotlinScriptTargetModelBuilder(
-        scriptFile = scriptFile,
-        project = project,
-        scriptClassPath = project.scriptCompilationClassPath,
-        accessorsClassPath = { classPath -> projectAccessorsClassPath(project, classPath) + pluginAccessorsClassPath(project) },
-        sourceLookupScriptHandlers = sourceLookupScriptHandlersFor(project))
+fun projectScriptModelBuilder(
+    scriptFile: File?,
+    project: Project
+) = KotlinScriptTargetModelBuilder(
+    scriptFile = scriptFile,
+    project = project,
+    scriptClassPath = project.scriptCompilationClassPath,
+    accessorsClassPath = { classPath ->
+        projectAccessorsClassPath(project, classPath) + pluginAccessorsClassPath(project)
+    },
+    sourceLookupScriptHandlers = sourceLookupScriptHandlersFor(project),
+    enclosingScriptProjectDir = project.projectDir
+)
 
 
 private
@@ -191,7 +215,8 @@ fun initScriptModelBuilder(scriptFile: File, project: ProjectInternal) = project
         scriptFile = scriptFile,
         project = project,
         scriptClassPath = scriptClassPath,
-        sourceLookupScriptHandlers = listOf(scriptHandler))
+        sourceLookupScriptHandlers = listOf(scriptHandler)
+    )
 }
 
 
@@ -202,7 +227,9 @@ fun settingsScriptModelBuilder(scriptFile: File, project: Project) = project.run
         scriptFile = scriptFile,
         project = project,
         scriptClassPath = settings.scriptCompilationClassPath,
-        sourceLookupScriptHandlers = listOf(settings.buildscript))
+        sourceLookupScriptHandlers = listOf(settings.buildscript),
+        enclosingScriptProjectDir = rootDir
+    )
 }
 
 
@@ -222,7 +249,8 @@ fun settingsScriptPluginModelBuilder(scriptFile: File, project: ProjectInternal)
         scriptFile = scriptFile,
         project = project,
         scriptClassPath = scriptClassPath,
-        sourceLookupScriptHandlers = listOf(scriptHandler, settings.buildscript))
+        sourceLookupScriptHandlers = listOf(scriptHandler, settings.buildscript)
+    )
 }
 
 
@@ -242,7 +270,8 @@ fun projectScriptPluginModelBuilder(scriptFile: File, project: ProjectInternal) 
         scriptFile = scriptFile,
         project = project,
         scriptClassPath = scriptClassPath,
-        sourceLookupScriptHandlers = listOf(scriptHandler, buildscript))
+        sourceLookupScriptHandlers = listOf(scriptHandler, buildscript)
+    )
 }
 
 
@@ -260,15 +289,15 @@ fun compilationClassPathForScriptPluginOf(
     val scriptScope = baseScope.createChild("model-${scriptFile.toURI()}")
     val scriptHandler = scriptHandlerFactory.create(scriptSource, scriptScope)
 
-    kotlinScriptFactoryOf(project)
-        .evaluate(
-            target = target,
-            scriptSource = scriptSource,
-            scriptHandler = scriptHandler,
-            targetScope = scriptScope,
-            baseScope = baseScope,
-            topLevelScript = false,
-            options = EnumSet.of(EvalOption.IgnoreErrors, EvalOption.SkipBody))
+    kotlinScriptFactoryOf(project).evaluate(
+        target = target,
+        scriptSource = scriptSource,
+        scriptHandler = scriptHandler,
+        targetScope = scriptScope,
+        baseScope = baseScope,
+        topLevelScript = false,
+        options = EnumSet.of(EvalOption.IgnoreErrors, EvalOption.SkipBody)
+    )
 
     return scriptHandler to project.compilationClassPathOf(scriptScope)
 }
@@ -305,7 +334,8 @@ data class KotlinScriptTargetModelBuilder(
     val project: Project,
     val scriptClassPath: ClassPath,
     val accessorsClassPath: (ClassPath) -> AccessorsClassPath = { AccessorsClassPath.empty },
-    val sourceLookupScriptHandlers: List<ScriptHandler> = emptyList()
+    val sourceLookupScriptHandlers: List<ScriptHandler> = emptyList(),
+    val enclosingScriptProjectDir: File? = null
 ) {
 
     fun buildModel(): KotlinBuildScriptModel {
@@ -321,7 +351,9 @@ data class KotlinScriptTargetModelBuilder(
             (gradleSource() + classpathSources + accessorsClassPath.src).asFiles,
             implicitImports,
             buildEditorReportsFor(classPathModeExceptionCollector.exceptions),
-            classPathModeExceptionCollector.exceptions)
+            classPathModeExceptionCollector.exceptions.map(::exceptionToString),
+            enclosingScriptProjectDir
+        )
     }
 
     private
@@ -349,6 +381,10 @@ data class KotlinScriptTargetModelBuilder(
             exceptions,
             project.isLocationAwareEditorHintsEnabled
         )
+
+    private
+    fun exceptionToString(exception: Exception) =
+        StringWriter().also { exception.printStackTrace(PrintWriter(it)) }.toString()
 }
 
 

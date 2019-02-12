@@ -76,7 +76,10 @@ object DefaultResolverEventLogger : ResolverEventLogger {
 
     private
     val outputFile by lazy {
-        File(outputDir(), "resolver-${timestampForFileName()}.log")
+        outputDir().let { logDir ->
+            cleanupLogDirectory(logDir)
+            logDir.resolve("resolver-${timestampForFileName()}.log")
+        }
     }
 
     private
@@ -89,20 +92,54 @@ object DefaultResolverEventLogger : ResolverEventLogger {
 
     private
     fun outputDir() =
-        File(userHome(), logDirForOperatingSystem()).apply { mkdirs() }
+        logDirForOperatingSystem().apply { mkdirs() }
 
     private
     fun logDirForOperatingSystem() =
         OperatingSystem.current().run {
             when {
-                isMacOsX -> "Library/Logs/gradle-kotlin-dsl"
-                isWindows -> "Application Data/gradle-kotlin-dsl/log"
-                else -> ".gradle-kotlin-dsl/log"
+                isMacOsX -> userHome().resolve("Library/Logs/gradle-kotlin-dsl")
+                isWindows -> System.getenv("LOCALAPPDATA")
+                    ?.let { File("$it/gradle-kotlin-dsl/log") }
+                    ?: userHome().resolve("AppData/Local/gradle-kotlin-dsl/log")
+                else -> userHome().resolve(".gradle-kotlin-dsl/log")
             }
         }
 
     private
     fun now() = GregorianCalendar.getInstance().time
+
+    private
+    const val cleanupAfterDays = 1
+
+    private
+    const val logFilesExpireAfterDays = 7
+
+    private
+    fun cleanupLogDirectory(logDir: File) =
+        readyForCleanup(logDir) {
+            val expiration = daysAgo(logFilesExpireAfterDays)
+            logDir.listFiles { file ->
+                file.isFile && file.name.matches(resolverLogFilenameRegex) && Date(file.lastModified()).before(expiration)
+            }.forEach { it.delete() }
+        }
+
+    private
+    fun readyForCleanup(logDir: File, cleanup: () -> Unit) =
+        logDir.resolve(".cleanup").run {
+            if (!isFile || (isFile && Date(lastModified()).before(daysAgo(cleanupAfterDays)))) {
+                cleanup()
+                writeBytes(ByteArray(0))
+            }
+        }
+
+    private
+    fun daysAgo(days: Int) =
+        GregorianCalendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, -days) }.time
+
+    private
+    val resolverLogFilenameRegex =
+        Regex("resolver-\\d{4}-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{2}-\\d{3}\\.log")
 
     internal
     fun prettyPrint(e: ResolverEvent): String = e.run {
@@ -169,7 +206,7 @@ object DefaultResolverEventLogger : ResolverEventLogger {
         }
 
     private
-    fun stringForExceptions(exceptions: List<Exception>, indentation: Int?) =
+    fun stringForExceptions(exceptions: List<String>, indentation: Int?) =
         if (exceptions.isNotEmpty())
             indentationStringFor(indentation).let {
                 exceptions.joinToString(prefix = "[\n$it\t", separator = ",\n$it\t", postfix = "]") { exception ->
@@ -180,9 +217,15 @@ object DefaultResolverEventLogger : ResolverEventLogger {
 
     private
     fun stringForException(exception: Exception, indentation: Int?) =
+        stringForException(
+            StringWriter().also { exception.printStackTrace(PrintWriter(it)) }.toString(),
+            indentation
+        )
+
+    private
+    fun stringForException(exception: String, indentation: Int?) =
         indentationStringFor(indentation).let {
-            StringWriter().also { writer -> exception.printStackTrace(PrintWriter(writer)) }.toString()
-                .prependIndent(it)
+            exception.prependIndent(it)
         }
 
     private

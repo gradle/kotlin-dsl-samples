@@ -6,6 +6,7 @@ import org.gradle.kotlin.dsl.fixtures.customDaemonRegistry
 import org.gradle.kotlin.dsl.fixtures.customInstallation
 import org.gradle.kotlin.dsl.fixtures.AbstractPluginTest
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
+import org.gradle.kotlin.dsl.fixtures.normalisedPath
 
 import org.gradle.testkit.runner.TaskOutcome
 
@@ -15,8 +16,6 @@ import org.hamcrest.CoreMatchers.not
 
 import org.junit.Assert.assertThat
 import org.junit.Test
-
-import java.io.File
 
 
 class KotlinDslPluginTest : AbstractPluginTest() {
@@ -108,6 +107,7 @@ class KotlinDslPluginTest : AbstractPluginTest() {
 
             dependencies {
                 testCompile("junit:junit:4.12")
+                testCompile("org.hamcrest:hamcrest-library:1.3")
                 testCompile(gradleTestKit())
             }
 
@@ -141,9 +141,6 @@ class KotlinDslPluginTest : AbstractPluginTest() {
 
             import org.gradle.testkit.runner.GradleRunner
 
-            import org.hamcrest.CoreMatchers.containsString
-            import org.junit.Assert.assertThat
-
             import org.junit.Rule
             import org.junit.Test
             import org.junit.rules.TemporaryFolder
@@ -164,12 +161,12 @@ class KotlinDslPluginTest : AbstractPluginTest() {
 
                     // and:
                     System.setProperty("org.gradle.daemon.idletimeout", "1000")
-                    System.setProperty("org.gradle.daemon.registry.base", "${escapedPathOf(customDaemonRegistry())}")
+                    System.setProperty("org.gradle.daemon.registry.base", "${customDaemonRegistry().normalisedPath}")
                     File(projectRoot, "gradle.properties").writeText("org.gradle.jvmargs=-Xmx128m")
 
                     // and:
                     val runner = GradleRunner.create()
-                        .withGradleInstallation(File("${escapedPathOf(customInstallation())}"))
+                        .withGradleInstallation(File("${customInstallation().normalisedPath}"))
                         .withProjectDir(projectRoot)
                         .withPluginClasspath()
                         .forwardOutput()
@@ -178,7 +175,7 @@ class KotlinDslPluginTest : AbstractPluginTest() {
                     val result = runner.withArguments("help").build()
 
                     // then:
-                    assertThat(result.output, containsString("Plugin Using Embedded Kotlin "))
+                    assert("Plugin Using Embedded Kotlin " in result.output)
                 }
             }
 
@@ -343,10 +340,6 @@ class KotlinDslPluginTest : AbstractPluginTest() {
 
         """)
     }
-
-    private
-    fun escapedPathOf(file: File) =
-        file.absolutePath.replace("\\", "\\\\")
 
     private
     fun outputOf(vararg arguments: String) =

@@ -24,10 +24,6 @@ import java.io.File
 import java.util.Properties
 
 
-internal
-val isCI by lazy { !System.getenv("CI").isNullOrEmpty() }
-
-
 open class AbstractIntegrationTest {
 
     @JvmField
@@ -63,7 +59,9 @@ open class AbstractIntegrationTest {
 
     private
     val defaultProjectRoot
-        get() = File(temporaryFolder.root, toSafeFileName(testName.methodName)).apply { mkdirs() }
+        get() = File(temporaryFolder.root, toSafeFileName(testName.methodName)).canonicalFile.apply {
+            mkdirs()
+        }
 
     protected
     fun <T> withProjectRoot(dir: File, action: () -> T): T {
@@ -75,6 +73,10 @@ open class AbstractIntegrationTest {
             customProjectRoot = previousProjectRoot
         }
     }
+
+    protected
+    fun withFolders(folders: FoldersDslExpression) =
+        projectRoot.withFolders(folders)
 
     protected
     fun withDefaultSettings() =
@@ -201,6 +203,11 @@ open class AbstractIntegrationTest {
         assumeTrue("Test disabled under JDK 9 and higher", JavaVersion.current() < JavaVersion.VERSION_1_9)
     }
 
+    protected
+    fun assumeJavaLessThan11() {
+        assumeTrue("Test disabled under JDK 11 and higher", JavaVersion.current() < JavaVersion.VERSION_11)
+    }
+
     private
     fun withGradleProperties(vararg gradleProperties: Pair<String, String>) =
         mergePropertiesInto(gradlePropertiesFile, gradleProperties.asIterable())
@@ -231,13 +238,11 @@ fun containsBuildScanPluginOutput(): Matcher<String> = allOf(
 )
 
 
-private
 fun gradleRunnerFor(projectDir: File, vararg arguments: String): GradleRunner = GradleRunner.create().run {
     withGradleInstallation(customInstallation())
     withProjectDir(projectDir)
     withDebug(false)
-    if (isCI) withArguments(*arguments, "--stacktrace", "-Dkotlin-daemon.verbose=true")
-    else withArguments(*arguments, "--stacktrace")
+    withArguments(*arguments, "--stacktrace")
     return this
 }
 

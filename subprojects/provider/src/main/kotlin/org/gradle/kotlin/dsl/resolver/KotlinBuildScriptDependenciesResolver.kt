@@ -30,9 +30,6 @@ import org.gradle.tooling.BuildException
 import java.io.File
 import java.net.URI
 
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.suspendCoroutine
-
 import kotlin.script.dependencies.KotlinScriptExternalDependencies
 import kotlin.script.dependencies.ScriptContents
 import kotlin.script.dependencies.ScriptContents.Position
@@ -82,20 +79,15 @@ fun EditorPosition.toIdePosition(): Position =
     Position(if (line == 0) 0 else line - 1, column)
 
 
-class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
+class KotlinBuildScriptDependenciesResolver internal constructor(
 
     private
     val logger: ResolverEventLogger
 
-    @Suppress("unused")
-    constructor() {
-        logger = DefaultResolverEventLogger
-    }
+) : ScriptDependenciesResolver {
 
-    internal
-    constructor(logger: ResolverEventLogger) {
-        this.logger = logger
-    }
+    @Suppress("unused")
+    constructor() : this(DefaultResolverEventLogger)
 
     override fun resolve(
         script: ScriptContents,
@@ -119,7 +111,8 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
                 script.file,
                 environment!!,
                 report,
-                previousDependencies)
+                previousDependencies
+            )
         } catch (e: BuildException) {
             logger.log(ResolutionFailure(script.file, e))
             if (previousDependencies == null) report.fatal(EditorMessages.buildConfigurationFailed)
@@ -139,12 +132,16 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
         environment: Environment,
         report: Report,
         previousDependencies: KotlinScriptExternalDependencies?
-    ): KotlinScriptExternalDependencies {
+    ): KotlinScriptExternalDependencies? {
 
-        val request = modelRequestFrom(scriptFile, environment)
-        logger.log(SubmittedModelRequest(scriptFile, request))
+        val scriptModelRequest = scriptModelRequestFrom(scriptFile, environment)
+        logger.log(SubmittedModelRequest(scriptFile, scriptModelRequest))
 
-        val response = RequestQueue.post(request)
+        val response = DefaultKotlinBuildScriptModelRepository.scriptModelFor(scriptModelRequest)
+        if (response == null) {
+            logger.log(RequestCancelled(scriptFile, scriptModelRequest))
+            return null
+        }
         logger.log(ReceivedModelResponse(scriptFile, response))
 
         response.editorReports.forEach { editorReport ->
@@ -168,7 +165,7 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
     }
 
     private
-    fun modelRequestFrom(scriptFile: File?, environment: Environment): KotlinBuildScriptModelRequest {
+    fun scriptModelRequestFrom(scriptFile: File?, environment: Environment): KotlinBuildScriptModelRequest {
 
         @Suppress("unchecked_cast")
         fun stringList(key: String) =
@@ -177,15 +174,16 @@ class KotlinBuildScriptDependenciesResolver : ScriptDependenciesResolver {
         fun path(key: String) =
             (environment[key] as? String)?.let(::File)
 
-        val importedProjectRoot = environment["projectRoot"] as File
+        val projectDir = environment["projectRoot"] as File
         return KotlinBuildScriptModelRequest(
-            projectDir = scriptFile?.let { projectRootOf(it, importedProjectRoot) } ?: importedProjectRoot,
+            projectDir = projectDir,
             scriptFile = scriptFile,
             gradleInstallation = gradleInstallationFrom(environment),
             gradleUserHome = path("gradleUserHome"),
             javaHome = path("gradleJavaHome"),
             options = stringList("gradleOptions"),
-            jvmOptions = stringList("gradleJvmOptions"))
+            jvmOptions = stringList("gradleJvmOptions")
+        )
     }
 
     private
@@ -213,66 +211,9 @@ class KotlinBuildScriptDependencies(
 ) : KotlinScriptExternalDependencies
 
 
-internal
-fun projectRootOf(scriptFile: File, importedProjectRoot: File): File {
-
-    // TODO remove hardcoded reference to settings.gradle once there's a public TAPI client api for that
-    fun isProjectRoot(dir: File) =
-        File(dir, "settings.gradle.kts").isFile
-            || File(dir, "settings.gradle").isFile
-            || dir.name == "buildSrc"
-
-    tailrec fun test(dir: File): File =
-        when {
-            dir == importedProjectRoot -> importedProjectRoot
-            isProjectRoot(dir) -> dir
-            else -> {
-                val parentDir = dir.parentFile
-                when (parentDir) {
-                    null, dir -> scriptFile.parentFile // external project
-                    else -> test(parentDir)
-                }
-            }
-        }
-
-    return test(scriptFile.parentFile)
-}
-
-
-private
-typealias AsyncModelRequest = Pair<KotlinBuildScriptModelRequest, Continuation<KotlinBuildScriptModel>>
-
-
 /**
  * Handles all incoming [KotlinBuildScriptModelRequest]s via a single [EventLoop] to avoid spawning
  * multiple competing Gradle daemons.
  */
 private
-object RequestQueue {
-
-    suspend fun post(request: KotlinBuildScriptModelRequest) =
-        suspendCoroutine<KotlinBuildScriptModel> { k ->
-            require(eventLoop.accept(request to k))
-        }
-
-    private
-    val eventLoop = EventLoop<AsyncModelRequest> { poll ->
-        while (true) {
-            val (request, k) = poll() ?: break
-            try {
-                handle(request, k)
-            } catch (e: Throwable) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private
-    fun handle(request: KotlinBuildScriptModelRequest, k: Continuation<KotlinBuildScriptModel>) {
-        k.resumeWith(
-            runCatching {
-                fetchKotlinBuildScriptModelFor(request)
-            }
-        )
-    }
-}
+object DefaultKotlinBuildScriptModelRepository : KotlinBuildScriptModelRepository()

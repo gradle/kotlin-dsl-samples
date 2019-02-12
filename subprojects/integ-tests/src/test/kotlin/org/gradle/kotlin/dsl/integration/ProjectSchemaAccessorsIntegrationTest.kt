@@ -19,19 +19,74 @@ package org.gradle.kotlin.dsl.integration
 import org.gradle.kotlin.dsl.fixtures.FoldersDsl
 import org.gradle.kotlin.dsl.fixtures.FoldersDslExpression
 import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
-import org.gradle.kotlin.dsl.fixtures.withFolders
 
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 
+import org.junit.Ignore
 import org.junit.Test
 
 import java.io.File
 
 
 class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
+
+    @Test
+    fun `can access sub-project specific task`() {
+
+        withSettings("""
+            $pluginManagementBlock
+            include(":sub")
+        """)
+
+        withKotlinBuildSrc()
+        withFile("buildSrc/src/main/kotlin/my/base.gradle.kts", """
+            package my
+            tasks.register("myBaseTask")
+        """)
+
+        withBuildScriptIn("sub", """
+            plugins {
+                base
+                my.base
+            }
+
+            tasks {
+                // prove accessing a `base` plugin task works
+                assemble {
+                }
+                myBaseTask {
+                    doLast {
+                        println("*my base*")
+                    }
+                }
+            }
+        """)
+
+        withBuildScript("""
+            plugins {
+                base
+            }
+
+            tasks {
+                wrapper {
+                    gradleVersion = "5.0"
+                }
+                assemble {
+                    doFirst {
+                         println("assembling!")
+                    }
+                }
+            }
+        """)
+
+        assertThat(
+            build(":sub:myBaseTask", "-q").output,
+            containsString("*my base*")
+        )
+    }
 
     @Test
     fun `can access extension of internal type made public`() {
@@ -537,6 +592,86 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
     }
 
     @Test
+    fun `can add artifacts using generated accessors for configurations`() {
+
+        withDefaultSettingsIn("buildSrc")
+
+        withFile("buildSrc/build.gradle.kts", """
+            plugins {
+                `kotlin-dsl`
+            }
+
+            gradlePlugin {
+                plugins {
+                    register("my-plugin") {
+                        id = "my-plugin"
+                        implementationClass = "plugins.MyPlugin"
+                    }
+                }
+            }
+
+            $repositoriesBlock
+        """)
+
+        withFile("buildSrc/src/main/kotlin/plugins/MyPlugin.kt", """
+            package plugins
+
+            import org.gradle.api.*
+
+            class MyPlugin : Plugin<Project> {
+                override fun apply(project: Project): Unit = project.run {
+                    configurations.create("myConfig")
+                }
+            }
+        """)
+
+        withBuildScript("""
+            plugins {
+                id("my-plugin")
+            }
+
+            artifacts {
+                myConfig(file("first.txt"))
+                myConfig(file("second.txt")) {
+                    setType("other-type")
+                }
+            }
+
+            val adhocConfig by configurations.creating
+            configurations.create("for-string-invoke")
+
+            (artifacts) {
+                adhocConfig(file("first.txt"))
+                adhocConfig(file("second.txt")) {
+                    setType("other-type")
+                }
+                "for-string-invoke"(file("first.txt"))
+                "for-string-invoke"(file("second.txt")) {
+                    setType("other-type")
+                }
+            }
+
+            listOf(configurations.myConfig.get(), adhocConfig, configurations["for-string-invoke"]).forEach { config ->
+                config.artifacts.forEach { artifact ->
+                    println("${'$'}{config.name} -> ${'$'}{artifact.name}:${'$'}{artifact.extension}:${'$'}{artifact.type}")
+                }
+            }
+        """)
+
+        val result = build("help", "-q")
+
+        assertThat(
+            result.output,
+            allOf(
+                containsString("myConfig -> first:txt:txt"),
+                containsString("myConfig -> second:txt:other-type"),
+                containsString("adhocConfig -> first:txt:txt"),
+                containsString("adhocConfig -> second:txt:other-type")
+            )
+        )
+    }
+
+    @Test
     fun `accessors tasks applied in a mixed Groovy-Kotlin multi-project build`() {
 
         withSettings("include(\"a\")")
@@ -553,6 +688,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
     }
 
     @Test
+    @Ignore("TODO: change this test not to be dependent on an old version of the build-scan plugin")
     fun `given extension with inaccessible type, its accessor is typed Any`() {
 
         withFile("init.gradle", """
@@ -615,7 +751,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
 
             open class MyExtension<T>
 
-            open class FooPlugin : Plugin<Project> {
+            class FooPlugin : Plugin<Project> {
                 override fun apply(project: Project): Unit = project.run {
                     // Using add() without specifying the public type causes type erasure
                     extensions.add("mine", MyExtension<String>())
@@ -668,9 +804,19 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
             import org.gradle.api.plugins.*
             import org.gradle.api.internal.*
             import org.gradle.api.internal.plugins.*
+            import org.gradle.internal.reflect.Instantiator
+            import org.gradle.kotlin.dsl.support.serviceOf
 
-            open class MyPlugin : Plugin<Project> {
+            class MyPlugin : Plugin<Project> {
                 override fun apply(project: Project): Unit = project.run {
+
+                    val instantiator = project.serviceOf<Instantiator>()
+
+                    fun defaultConvention() = DefaultConvention(instantiator)
+
+                    fun MyExtension(value: String) = MyExtension(defaultConvention(), value)
+
+                    fun MyConvention(value: String) = MyConvention(defaultConvention(), value)
 
                     val rootExtension = MyExtension("root")
                     val rootExtensionNestedExtension = MyExtension("nested-in-extension")
@@ -696,14 +842,12 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
                 }
             }
 
-            class MyExtension(val value: String = "value") : ExtensionAware, HasConvention {
-                private val convention: DefaultConvention = DefaultConvention()
+            class MyExtension(private val convention: DefaultConvention, val value: String) : ExtensionAware, HasConvention {
                 override fun getExtensions(): ExtensionContainer = convention
                 override fun getConvention(): Convention = convention
             }
 
-            class MyConvention(val value: String = "value") : ExtensionAware, HasConvention {
-                private val convention: DefaultConvention = DefaultConvention()
+            class MyConvention(private val convention: DefaultConvention, val value: String = "value") : ExtensionAware, HasConvention {
                 override fun getExtensions(): ExtensionContainer = convention
                 override fun getConvention(): Convention = convention
             }
@@ -760,7 +904,7 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
             import org.gradle.api.*
             import org.gradle.api.plugins.*
 
-            open class MyPlugin : Plugin<Project> {
+            class MyPlugin : Plugin<Project> {
                 override fun apply(project: Project): Unit = project.run {
                     convention.plugins.put("myConvention", MyPrivateConventionImpl())
                 }
@@ -920,6 +1064,35 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
         build("help")
     }
 
+    @Test
+    fun `accessors to extensions of the dependency handler`() {
+
+        withKotlinBuildSrc()
+        withFile("buildSrc/src/main/kotlin/Mine.kt", """
+            open class Mine {
+                val some = 19
+                val more = 23
+            }
+        """)
+        withFile("buildSrc/src/main/kotlin/my-plugin.gradle.kts", """
+            (dependencies as ExtensionAware).extensions.create<Mine>("mine")
+        """)
+
+        withBuildScript("""
+            plugins {
+                `my-plugin`
+            }
+
+            dependencies {
+                println(mine.some + project.dependencies.mine.more)
+            }
+        """.trimIndent())
+
+        build("help").apply {
+            assertThat(output, containsString("42"))
+        }
+    }
+
     private
     fun withBuildSrc(contents: FoldersDslExpression) {
         withFolders {
@@ -929,8 +1102,4 @@ class ProjectSchemaAccessorsIntegrationTest : AbstractPluginIntegrationTest() {
             }
         }
     }
-
-    private
-    fun withFolders(folders: FoldersDslExpression) =
-        projectRoot.withFolders(folders)
 }

@@ -30,8 +30,9 @@ import org.gradle.kotlin.dsl.fixtures.codegen.ClassAndGroovyNamedArguments
 import org.gradle.kotlin.dsl.fixtures.codegen.ClassToKClass
 import org.gradle.kotlin.dsl.fixtures.codegen.ClassToKClassParameterizedType
 import org.gradle.kotlin.dsl.fixtures.codegen.GroovyNamedArguments
-import org.gradle.kotlin.dsl.fixtures.containsMultiLineString
+import org.gradle.kotlin.dsl.support.normaliseLineSeparators
 
+import org.hamcrest.CoreMatchers.containsString
 import org.junit.Assert.assertThat
 import org.junit.Test
 
@@ -307,7 +308,7 @@ class GradleApiExtensionsTest : TestWithClassPath() {
         println(generatedSourceCode)
 
         expectedExtensions.forEach { expectedExtension ->
-            assertThat(generatedSourceCode, containsMultiLineString(expectedExtension))
+            assertThat(generatedSourceCode, containsString(expectedExtension.normaliseLineSeparators().trimIndent()))
         }
     }
 
@@ -328,6 +329,7 @@ class GradleApiExtensionsTest : TestWithClassPath() {
 
         val logger = mock<Logger> {
             on { isTraceEnabled } doReturn false
+            on { isDebugEnabled } doReturn false
         }
         compileKotlinApiExtensionsTo(
             file("out").also { it.mkdirs() },
@@ -337,6 +339,7 @@ class GradleApiExtensionsTest : TestWithClassPath() {
         )
         // Assert no warnings were emitted
         verify(logger, atMost(1)).isTraceEnabled
+        verify(logger, atMost(1)).isDebugEnabled
         verifyNoMoreInteractions(logger)
     }
 }

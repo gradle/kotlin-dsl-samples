@@ -1,7 +1,6 @@
 package org.gradle.kotlin.dsl.integration
 
 import org.gradle.kotlin.dsl.fixtures.FoldersDsl
-import org.gradle.kotlin.dsl.fixtures.withFolders
 
 import org.junit.Test
 
@@ -14,10 +13,10 @@ class PrecompiledScriptPluginModelIntegrationTest : ScriptModelIntegrationTest()
     fun `given a single project build, the classpath of a precompiled script plugin is the compile classpath of its enclosing source-set`() {
 
         val implementationDependency =
-            withFile("implementation.jar")
+            withJar("implementation.jar")
 
         val classpathDependency =
-            withFile("classpath.jar")
+            withJar("classpath.jar")
 
         withDefaultSettings()
 
@@ -55,7 +54,7 @@ class PrecompiledScriptPluginModelIntegrationTest : ScriptModelIntegrationTest()
         val dependencyB =
             withFile("b.jar")
 
-        projectRoot.withFolders {
+        withFolders {
 
             withFile("settings.gradle.kts", """
                 include("project-a")
