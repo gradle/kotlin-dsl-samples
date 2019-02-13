@@ -1,22 +1,9 @@
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-    }
-}
+rootProject.name = "kotlin-dsl-samples"
 
 apply(from = "gradle/shared-with-buildSrc/build-cache-configuration.settings.gradle.kts")
 
-rootProject.name = "gradle-kotlin-dsl"
-
 include(
-    "provider",
-    "provider-plugins",
-    "tooling-models",
-    "tooling-builders",
-    "plugins",
-    "test-fixtures",
-    "samples-tests",
-    "integ-tests"
+    "samples-tests"
 )
 
 for (project in rootProject.children) {
@@ -27,3 +14,4 @@ for (project in rootProject.children) {
         require(buildFile.isFile) { "Project '${project.path} must have a $buildFile build script" }
     }
 }
+
