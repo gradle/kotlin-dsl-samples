@@ -1,0 +1,3 @@
+> Task :plugin:generateScriptPluginAdapters
+> Task :plugin:publish
+> Task :consumer:myCopyTask
