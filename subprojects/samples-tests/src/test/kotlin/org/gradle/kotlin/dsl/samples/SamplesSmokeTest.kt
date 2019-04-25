@@ -1,10 +1,8 @@
 package org.gradle.kotlin.dsl.samples
 
 import org.gradle.kotlin.dsl.embeddedKotlinVersion
-import org.gradle.kotlin.dsl.fixtures.AbstractIntegrationTest
 
 import org.hamcrest.CoreMatchers.containsString
-
 import org.junit.Assert.assertThat
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -17,21 +15,24 @@ import java.io.File
 
 @RunWith(Parameterized::class)
 class SamplesSmokeTest(
-    private val sampleName: String,
-    private val sampleDir: File
-) : AbstractIntegrationTest() {
+
+    private
+    val sampleDirName: String
+
+) : AbstractSampleTest(sampleDirName) {
 
     companion object {
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
-        fun testCases(): Iterable<Array<Any>> =
-            samplesRootDir.listFiles().filter { it.isDirectory }.map { arrayOf(it.name, it) }
+        fun testCases(): List<String> =
+            samplesDirFile.listFiles { file: File -> file.isDirectory }.map { it.name }
     }
 
     @Before
-    fun populateProjectRootWithSample() {
-        ignoreAndroidSampleUnlessAndroidHomeIsSet()
-        copySampleProject(from = sampleDir, to = projectRoot)
+    fun ignoreAndroidSampleUnlessAndroidHomeIsSet() {
+        if (sampleDirName.contains("android")) {
+            assumeAndroidHomeIsSet()
+        }
     }
 
     @Test
@@ -45,7 +46,7 @@ class SamplesSmokeTest(
         val projectPaths = listOf(":") + listSubProjectPaths().map { "$it:" }
         val projectBuilds = projectPaths.map { buildSpec("${it}buildEnvironment") }
         val buildsToCheck =
-            if (File(sampleDir, "buildSrc").isDirectory) {
+            if (samplesDirFile.resolve("buildSrc").isDirectory) {
                 projectBuilds + listOf(buildSpec("-p", "buildSrc", "buildEnvironment"))
             } else {
                 projectBuilds
@@ -55,13 +56,6 @@ class SamplesSmokeTest(
 
         // Mark that test as ignored if not using the kotlin-gradle-plugin
         assumeTrue(foundKotlinGradlePlugin.any { it })
-    }
-
-    private
-    fun ignoreAndroidSampleUnlessAndroidHomeIsSet() {
-        if (sampleName.contains("android")) {
-            assumeAndroidHomeIsSet()
-        }
     }
 
     private

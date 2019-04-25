@@ -1,0 +1,4 @@
+myTask.foo = 42
+Extra foo property value: 42
+myTask.bar = null
+Optional extra bar property value: null
