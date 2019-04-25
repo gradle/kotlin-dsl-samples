@@ -1,7 +1,7 @@
 Gradle Kotlin DSL
 =================
 
-[![TravisCI Build](https://img.shields.io/travis/gradle/kotlin-dsl/develop.svg)](https://travis-ci.org/gradle/kotlin-dsl)
+[![TravisCI Build](https://img.shields.io/travis/gradle/kotlin-dsl/master.svg)](https://travis-ci.org/gradle/kotlin-dsl)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
 
 Welcome! The _Gradle Kotlin DSL_ provides support for writing [Gradle](http://gradle.org) build scripts using JetBrains' [Kotlin](http://kotlinlang.org) language. It aims to provide Gradle users with a rich, flexible and statically-typed approach to developing build logic in conjunction with the best IDE and tooling experience possible.
