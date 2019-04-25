@@ -1,5 +1,5 @@
-Gradle Kotlin DSL
-=================
+Gradle Kotlin DSL Samples
+=========================
 
 [![TravisCI Build](https://img.shields.io/travis/gradle/kotlin-dsl/master.svg)](https://travis-ci.org/gradle/kotlin-dsl)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
@@ -32,7 +32,11 @@ You can read more about the project in our [announcement blog post](http://gradl
 Issue Tracking
 --------------
 
-Found a bug? Have an idea for an improvement? Feel free to [add an issue](../../issues).
+This repository is only for Gradle Kotlin DSL Samples.
+
+Found a bug in one of the samples, have an idea for an improvement or for a new sample? Feel free to [add an issue](../../issues).
+
+If you're dealing with what you believe to be an issue with Gradle or the Gradle Kotlin DSL, please [open an issue](https://github.com/gradle/gradle/issues) on the `gradle/gradle` repository.
 
 If you're dealing with what you believe to be an issue with Kotlin itself or the Kotlin Plugin for IDEA, you may want to search JetBrains' [YouTrack](https://youtrack.jetbrains.com/issues/KT) first to see if it is a known issue. In any case, feel free to add an issue here for it as well. We'd like to know and track what our users are experiencing regardless whether the issue is with the Gradle Kotlin DSL or with Kotlin itself.
 
@@ -45,10 +49,10 @@ Come chat with us in the #kotlin-dsl channel of the public [Gradle Community Sla
 
 License
 -------
-Like the rest of Gradle, the _Gradle Kotlin DSL_ is released under version 2.0 of the [Apache License](LICENSE.md).
+Like the rest of Gradle, the _Gradle Kotlin DSL Samples_ are released under version 2.0 of the [Apache License](LICENSE.md).
 
 
 Contributing
 ------------
 
-Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details of how to build and contribute to _Gradle Kotlin DSL_.
+Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details of how to build and contribute to _Gradle Kotlin DSL Samples_.

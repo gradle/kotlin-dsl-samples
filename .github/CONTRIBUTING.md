@@ -1,6 +1,6 @@
-# Contributing to Gradle Kotlin DSL
+# Contributing to Gradle Kotlin DSL Samples
 
-Thank you for considering making a contribution to Gradle Kotlin DSL! This guide explains how to setup your environment for Gradle Kotlin DSL development and where to get help if you encounter trouble.
+Thank you for considering making a contribution to Gradle Kotlin DSL Samples! This guide explains how to setup your environment for development and where to get help if you encounter trouble.
 
 ## Where is the code?
 
@@ -29,7 +29,7 @@ In order to make changes to the Gradle Kotlin DSL Samples, you'll need:
 * A [Java Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html) (JDK) version 1.8 or higher
 * [git](https://git-scm.com/) and a [GitHub account](https://github.com/join)
 
-Gradle Kotlin DSL uses a pull request model for contributions. Fork [gradle/kotlin-dsl](https://github.com/gradle/kotlin-dsl) and clone your fork. 
+Gradle Kotlin DSL uses a pull request model for contributions. Fork [gradle/kotlin-dsl](https://github.com/gradle/kotlin-dsl) and clone your fork.
 
 Configure your Git username and email with
 ```
@@ -80,4 +80,4 @@ If you run into any trouble, please reach out to us in the #kotlin-dsl channel o
 * Some [diagrams](../doc/c4) provide a good overview of how the Kotlin DSL is structured and interacts with Gradle, Gradle plugins, IDEs.
 
 ## Our Thanks
-We deeply appreciate your effort toward improving Gradle. If you enjoyed this process, perhaps you should consider getting [paid to develop Gradle](https://gradle.com/careers)? 
+We deeply appreciate your effort toward improving Gradle. If you enjoyed this process, perhaps you should consider getting [paid to develop Gradle](https://gradle.com/careers)?
