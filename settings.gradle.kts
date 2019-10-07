@@ -15,3 +15,4 @@ for (project in rootProject.children) {
     }
 }
 
+includeBuild("/Users/daniel/gradle/guides/guides/subprojects/gradle-guides-plugin")

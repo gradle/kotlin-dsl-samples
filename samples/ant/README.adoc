@@ -1,0 +1,5 @@
+= Ant Sample
+
+ifndef::env-github[]
+- link:{zip-base-file-name}-kotlin-dsl.zip[Download Kotlin DSL ZIP]
+endif::[]
