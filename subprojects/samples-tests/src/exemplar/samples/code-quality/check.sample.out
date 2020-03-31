@@ -1,10 +1,6 @@
 > Task :checkstyleMain
 > Task :checkstyleTest
-> Task :findbugsMain
-> Task :findbugsTest
 > Task :test
 > Task :jacocoTestCoverageVerification
-> Task :jdependMain
-> Task :jdependTest
 > Task :pmdMain
 > Task :pmdTest

@@ -1,8 +1,6 @@
 plugins {
     checkstyle
-    findbugs
     pmd
-    jdepend
     jacoco
     application
 }
@@ -22,15 +20,7 @@ checkstyle {
     isIgnoreFailures = true
 }
 
-findbugs {
-    isIgnoreFailures = true
-}
-
 pmd {
-    isIgnoreFailures = true
-}
-
-jdepend {
     isIgnoreFailures = true
 }
 
