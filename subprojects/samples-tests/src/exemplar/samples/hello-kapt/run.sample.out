@@ -1,2 +1,2 @@
-Hello Writer{name=Douglas, age=41, books=[THGttG, DGHDA]}
+warning: The following options were not recognized by any processor: '[SomeKaptArgument, kapt.kotlin.generated]'Hello Writer{name=Douglas, age=41, books=[THGttG, DGHDA]}
 The answer is 42
