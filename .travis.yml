@@ -4,10 +4,10 @@ matrix:
   include:
     - os: linux
       sudo: required
-      jdk: oraclejdk8
+      jdk: openjdk11
     - os: linux
       sudo: required
-      jdk: openjdk11
+      jdk: openjdk12
 
 script: ./gradlew check --info --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
 
