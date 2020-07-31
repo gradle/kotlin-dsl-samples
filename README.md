@@ -1,7 +1,6 @@
 Gradle Kotlin DSL Samples
 =========================
 
-[![TravisCI Build](https://img.shields.io/travis/gradle/kotlin-dsl/master.svg)](https://travis-ci.org/gradle/kotlin-dsl)
 [![License](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
 
 Welcome! The _Gradle Kotlin DSL_ provides support for writing [Gradle](http://gradle.org) build scripts using JetBrains' [Kotlin](http://kotlinlang.org) language. It aims to provide Gradle users with a rich, flexible and statically-typed approach to developing build logic in conjunction with the best IDE and tooling experience possible.
@@ -20,9 +19,7 @@ or, if you don't have Gradle installed already, you can generate Gradle builds o
 
 The Gradle Kotlin DSL is documented in a [dedicated chapter](https://docs.gradle.org/current/userguide/kotlin_dsl.html) in the Gradle user manual.
 
-Moreover, the Gradle [user manual](https://docs.gradle.org/current/userguide/userguide.html) and [guides](https://gradle.org/guides/) contain build script excerpts that demonstrate both the Groovy DSL and the Kotlin DSL. This is the best place where to find how to do this and that with the Gradle Kotlin DSL; and it covers all Gradle features from [using plugins](https://docs.gradle.org/current/userguide/plugins.html#plugins) to [customizing the dependency resolution behavior](https://docs.gradle.org/current/userguide/customizing_dependency_resolution_behavior.html#customizing_dependency_resolution_behavior).
-
-There are also some Gradle Kotlin DSL [samples](samples) in this repository. You'll find complete instructions in the README there.
+Moreover, the Gradle [user manual](https://docs.gradle.org/current/userguide/userguide.html) and [guides](https://gradle.org/guides/) contain build script excerpts that demonstrate both the Groovy DSL and the Kotlin DSL. This is the best place where to find how to do this and that with the Gradle Kotlin DSL; and it covers all Gradle features from [using plugins](https://docs.gradle.org/current/userguide/plugins.html#plugins) to [customizing the dependency resolution behavior](https://docs.gradle.org/current/userguide/customizing_dependency_resolution_behavior.html#customizing_dependency_resolution_behavior). All snippets in the user manual demonstrate both Groovy and Kotlin DSL.
 
 If you are looking into migrating an existing build to the Gradle Kotlin DSL, please also check out the [migration guide](https://guides.gradle.org/migrating-build-logic-from-groovy-to-kotlin/).
 
