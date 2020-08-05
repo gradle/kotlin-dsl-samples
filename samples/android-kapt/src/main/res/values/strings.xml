@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Kapt Example</string>
+    <string name="increment">Increment</string>
+</resources>
